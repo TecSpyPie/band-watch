@@ -2531,3 +2531,107 @@ test("updates: the Windows app installs an update and reloads into the new versi
   await page.waitForEvent("load", { timeout: 15000 });
   assert.deepEqual(errors.filter((e) => !/healthz/.test(e)), []);
 });
+
+/* A pretend ATS Mini (firmware 2.35): ad hoc commands, and a status line every half second once "t" turns it on.
+   Bands and mode order as in the radio's firmware; F outside the current band is refused like the real one. */
+const FAKE_ATS = `(() => {
+  const BANDS = [["VHF",64000,108000,"FM"],["ALL",150,30000,"AM"],["11M",25600,26100,"AM"],["13M",21500,21900,"AM"],["15M",18900,19100,"AM"],
+    ["16M",17400,18100,"AM"],["19M",15100,15900,"AM"],["22M",13500,13900,"AM"],["25M",11000,13000,"AM"],["31M",9000,11000,"AM"],
+    ["41M",7000,9000,"AM"],["49M",5000,7000,"AM"],["60M",4000,5100,"AM"],["75M",3500,4000,"AM"],["90M",3000,3500,"AM"],
+    ["MW3",1700,3500,"AM"],["MW2",495,1701,"AM"],["MW1",150,1800,"AM"],["160M",1800,2000,"LSB"],["80M",3500,4000,"LSB"],
+    ["40M",7000,7300,"LSB"],["30M",10000,10200,"LSB"],["20M",14000,14400,"USB"],["17M",18000,18200,"USB"],["15M",21000,21500,"USB"],
+    ["12M",24800,25000,"USB"],["10M",28000,29700,"USB"],["CB",25000,28000,"AM"]];
+  const MODES = ["FM", "LSB", "USB", "AM"];
+  const per = BANDS.map((b) => ({ mode: b[3], hz: Math.round((b[1] + b[2]) / 2) * 1000 }));
+  const radio = window.__radio = { band: 0, hz: 103900000, sent: [], opened: null, log: false, errors: 0 };
+  Object.defineProperty(radio, "mode", { get: () => per[radio.band].mode });
+  let push = null, seq = 0, pending = "";
+  const say = (s) => push && push(new TextEncoder().encode(s));
+  const select = (i) => { per[radio.band].hz = radio.hz; radio.band = (i + BANDS.length) % BANDS.length; radio.hz = per[radio.band].hz; };
+  setInterval(() => {
+    if (!radio.log) return;
+    const m = radio.mode, fm = m === "FM", ssb = m === "LSB" || m === "USB";
+    const freq = fm ? Math.round(radio.hz / 10000) : Math.floor(radio.hz / 1000), bfo = ssb ? radio.hz - freq * 1000 : 0;
+    seq = (seq + 1) % 256;
+    say([235, freq, bfo, 0, BANDS[radio.band][0], m, "1k", "3.0k", 0, 35, 28, 9, 0, 4.05, seq].join(",") + "\\r\\n");
+  }, 500);
+  const port = {
+    readable: null, writable: null,
+    async open(opts) {
+      radio.opened = opts;
+      this.readable = new ReadableStream({ start(c) { push = (b) => c.enqueue(b); } });
+      this.writable = new WritableStream({ write(chunk) {
+        pending += new TextDecoder().decode(chunk);
+        while (pending) {
+          const c = pending[0];
+          if (c === "F") {
+            const end = pending.search(/[\\r\\n]/);
+            if (end < 0) return;
+            const hz = Number(pending.slice(1, end)); pending = pending.slice(end + 1);
+            radio.sent.push("F" + hz);
+            const b = BANDS[radio.band];
+            if (hz < b[1] * 1000 || hz > b[2] * 1000) { radio.errors++; say("\\r\\nError: Frequency is out of range for the current band\\r\\n"); }
+            else radio.hz = hz;
+            continue;
+          }
+          pending = pending.slice(1);
+          if (c === "\\r" || c === "\\n") continue;
+          radio.sent.push(c);
+          if (c === "t") radio.log = !radio.log;
+          else if (c === "B") select(radio.band + 1);
+          else if (c === "b") select(radio.band - 1);
+          else if ((c === "M" || c === "m") && radio.mode !== "FM") {
+            const o = ["LSB", "USB", "AM"], i = o.indexOf(radio.mode);
+            per[radio.band].mode = o[(i + (c === "M" ? 1 : 2)) % 3];
+          }
+        }
+      } });
+    },
+    async close() { this.readable = null; this.writable = null; },
+  };
+  Object.defineProperty(navigator, "serial", { value: {
+    async getPorts() { return []; },
+    async requestPort() { return port; },
+    addEventListener() {},
+  } });
+})();`;
+
+test("radio control: ATS Mini: switches its status line on, changes band and mode, then sets the frequency; follows its dial", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ATS);
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "atsmini");
+  assert.equal(await page.inputValue("#optRigBaud"), "115200");
+  assert.match(await page.textContent("#optRigBaudHint"), /Ad hoc/);
+  assert.equal(await page.isVisible("#optRigData"), false, "no data mode on an ATS Mini");
+  await page.click("#optRigConnect");
+  // Band Watch turns on the status line with "t", then reads the radio: VHF FM broadcast
+  await page.waitForFunction(() => rig.connected && rig.hz === 103900000 && rig.modeName === "FM", null, { timeout: 8000 });
+  assert.deepEqual(await page.evaluate(() => window.__radio.opened), { baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", flowControl: "none" });
+  await page.waitForFunction(() => /Connected to the ATS Mini \(firmware 2\.35\).*band VHF\. Signal 28 dBµV, SNR 9 dB/.test(document.getElementById("optRigMsg").textContent));
+  await page.keyboard.press("Escape");
+  // FT8 on 20 m: from VHF it steps the bands to 20M (USB already), then sends the frequency
+  await page.evaluate(() => tuneTo(14074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.band === 22 && window.__radio.hz === 14074000 && window.__radio.mode === "USB", null, { timeout: 8000 });
+  // 40 m SSB: band and LSB
+  await page.evaluate(() => tuneTo(7150, "lsb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.band === 20 && window.__radio.hz === 7150000 && window.__radio.mode === "LSB", null, { timeout: 8000 });
+  // 40 m, USB this time: only the mode changes
+  await page.evaluate(() => tuneTo(7074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.band === 20 && window.__radio.hz === 7074000 && window.__radio.mode === "USB", null, { timeout: 8000 });
+  // A broadcast station outside the amateur bands: the ALL band, AM
+  await page.evaluate(() => tuneTo(9650, "am", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.band === 1 && window.__radio.hz === 9650000 && window.__radio.mode === "AM", null, { timeout: 8000 });
+  assert.equal(await page.evaluate(() => window.__radio.errors), 0, "never sent a frequency outside the band");
+  // Out of its range: says so, sends nothing
+  await page.evaluate(() => tuneTo(144300, "usb", { quiet: true }));
+  await page.waitForFunction(() => /can't tune 144,300 kHz/.test(rig.ats.note));
+  // Turning the radio's dial
+  await new Promise((r) => setTimeout(r, 1600));
+  await page.evaluate(() => { window.__radio.hz = 9420000; });
+  await page.waitForFunction(() => listen.kHz === 9420 && listen.mode === "am", null, { timeout: 5000 });
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-rig"))).kind, "atsmini");
+  assert.deepEqual(errors, []);
+});

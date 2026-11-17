@@ -1,5 +1,12 @@
 # What's new
 
+## 1.14.0 (17 Nov 2026)
+- **ATS Mini support:** Band Watch can now control the ATS Mini pocket receiver (SI4732, firmware 2.34 or later)
+  over its USB cable. In **Settings > Radio control**, pick **ATS Mini** and press Connect radio (on the radio, set
+  Settings > USB Port to **Ad hoc** first). Click a spot, the band scope or the band plan and the ATS Mini changes
+  band and mode by itself, then tunes the exact frequency. Turn its dial and Band Watch follows. Settings shows its
+  frequency, band, signal strength and SNR. It covers 150 kHz to 30 MHz (AM, LSB, USB) and 64 to 108 MHz FM.
+
 ## 1.13.1 (17 Nov 2026)
 - **rtl_tcp comes with Band Watch:** the Windows installer now puts `rtl_tcp.exe` (from the RTL-SDR Blog
   drivers V1.4.0, which support the Blog V4) next to Band Watch, so **Listen > My RTL-SDR** works straight

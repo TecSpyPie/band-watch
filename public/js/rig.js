@@ -8,6 +8,7 @@ const RIG_KINDS = {
   yaesu: { name: "Yaesu", bauds: [4800, 9600, 19200, 38400], baud: 4800 },
   kenwood: { name: "Kenwood", bauds: [4800, 9600, 19200, 38400, 57600, 115200], baud: 115200 },
   icom: { name: "Icom", bauds: [4800, 9600, 19200, 38400, 57600, 115200], baud: 115200 },
+  atsmini: { name: "ATS Mini", bauds: [115200, 9600], baud: 115200 },
 };
 const RIG_DEFAULTS = { kind: "yaesu", baud: 4800, civ: "94", follow: true, read: true, dataMode: true, autoConnect: true };
 const RIG_MIN_HZ = 30000;
@@ -35,11 +36,31 @@ const ICOM_LISTEN_MODE = { 0: "lsb", 1: "usb", 2: "am", 3: "cw", 4: "lsb", 5: "f
 const ICOM_RADIOS = { "94": "IC-7300", A4: "IC-705", "98": "IC-7610", A2: "IC-9700", "88": "IC-7100", "8E": "IC-7851", AC: "IC-905", "70": "IC-7000", "7C": "IC-9100" };
 const CIV_ME = 0xe0; // Band Watch's own CI-V address (the usual one for a computer)
 
+/* ATS Mini (the SI4732 pocket receiver, firmware 2.34 or later with Settings > USB Port > Ad hoc).
+   Its "ad hoc" commands are single letters: B/b next/previous band, M/m next/previous mode, t turns its
+   status line on and off (one line every half second), and F<Hz> sets a frequency inside the current band.
+   The bands, in the order B steps through them, as in the radio's firmware (Menu.cpp), in kHz. */
+const ATS_BANDS = [
+  ["VHF", 64000, 108000], ["ALL", 150, 30000], ["11M", 25600, 26100], ["13M", 21500, 21900], ["15M", 18900, 19100],
+  ["16M", 17400, 18100], ["19M", 15100, 15900], ["22M", 13500, 13900], ["25M", 11000, 13000], ["31M", 9000, 11000],
+  ["41M", 7000, 9000], ["49M", 5000, 7000], ["60M", 4000, 5100], ["75M", 3500, 4000], ["90M", 3000, 3500],
+  ["MW3", 1700, 3500], ["MW2", 495, 1701], ["MW1", 150, 1800], ["160M", 1800, 2000], ["80M", 3500, 4000],
+  ["40M", 7000, 7300], ["30M", 10000, 10200], ["20M", 14000, 14400], ["17M", 18000, 18200], ["15M", 21000, 21500],
+  ["12M", 24800, 25000], ["10M", 28000, 29700], ["CB", 25000, 28000],
+];
+const ATS_HAM = ["160M", "80M", "40M", "30M", "20M", "17M", "15M", "12M", "10M"];
+const ATS_MODE_ORDER = ["LSB", "USB", "AM"]; // the order M steps through them (FM is only on the VHF band)
+const ATS_LISTEN_MODE = { FM: "wfm", LSB: "lsb", USB: "usb", AM: "am" };
+
 const rig = {
   ...RIG_DEFAULTS,
   port: null, writer: null, reader: null, connected: false, busy: false,
   hz: 0, modeName: "", listenMode: "", data: false, model: "", buf: "", bytes: [], poll: null, lastSet: 0, error: "",
+  ats: null,
 };
+
+const atsFresh = () => ({ band: -1, bandName: "", mode: "", seq: null, waitSeq: null, sentAt: 0, lastLine: 0, toggledAt: 0, want: null, note: "", version: "", rssi: 0, snr: 0 });
+rig.ats = atsFresh();
 
 function rigSupported() {
   return typeof navigator !== "undefined" && Boolean(navigator.serial) && typeof navigator.serial.requestPort === "function";
@@ -118,6 +139,7 @@ function rigCommands(hz, mode, kHz) {
 
 /** Ask the radio for its frequency and mode. */
 function rigPollCommands(first = false) {
+  if (rig.kind === "atsmini") return "";
   if (rig.kind === "kenwood") return `${first ? "ID;" : ""}FA;MD;${rig.dataMode ? "DA;" : ""}`;
   if (rig.kind === "icom") return [...civFrame(0x03), ...civFrame(0x04), ...(rig.dataMode ? civFrame(0x1a, 0x06) : [])];
   return `${first ? "ID;" : ""}FA;MD0;`;
@@ -132,9 +154,110 @@ async function rigWrite(cmd) {
   }
 }
 
+/* ---------- ATS Mini ---------- */
+
+const atsInBand = (i, kHz) => i >= 0 && kHz >= ATS_BANDS[i][1] && kHz <= ATS_BANDS[i][2];
+
+/** Which band the status line means ("15M" is in the list twice: the one holding the frequency). */
+function atsBandIndex(name, kHz) {
+  const all = ATS_BANDS.map((b, i) => (b[0] === name ? i : -1)).filter((i) => i >= 0);
+  return all.find((i) => atsInBand(i, kHz)) ?? all[0] ?? -1;
+}
+
+/** The band to tune kHz in: the one the radio is on if it fits, else the amateur band, else VHF or ALL. */
+function atsPickBand(kHz) {
+  const a = rig.ats;
+  if (atsInBand(a.band, kHz)) return a.band;
+  const ham = ATS_BANDS.findIndex((b, i) => ATS_HAM.includes(b[0]) && atsInBand(i, kHz));
+  if (ham >= 0) return ham;
+  if (atsInBand(0, kHz)) return 0;
+  if (atsInBand(1, kHz)) return 1;
+  return -1;
+}
+
+function atsSend(s) {
+  rig.lastSet = Date.now();
+  rig.ats.sentAt = Date.now();
+  rig.ats.waitSeq = rig.ats.seq; // wait for a status line after this one before the next step
+  rigWrite(s);
+}
+
+/** Tune the ATS Mini: change band and mode a step at a time if needed, then set the frequency. */
+function atsTune(hz, mode) {
+  rig.ats.want = { hz: Math.round(hz), mode, t: Date.now() };
+  rig.ats.note = "";
+  atsStep();
+}
+
+function atsStep() {
+  const a = rig.ats;
+  const w = a.want;
+  if (!w || a.band < 0 || !rig.connected) return;
+  if (a.waitSeq != null && a.seq === a.waitSeq && Date.now() - a.sentAt < 1500) return; // the radio hasn't caught up yet
+  a.waitSeq = null;
+  if (Date.now() - w.t > 8000) { a.want = null; a.note = "The ATS Mini didn't follow. Is Settings > USB Port set to Ad hoc?"; renderRig(); return; }
+  const kHz = w.hz / 1000;
+  const target = atsPickBand(kHz);
+  if (target < 0) {
+    a.want = null;
+    a.note = `The ATS Mini can't tune ${kHz.toLocaleString()} kHz (it covers 150 kHz to 30 MHz, and 64 to 108 MHz FM).`;
+    renderRig();
+    return;
+  }
+  if (target !== a.band) {
+    const n = ATS_BANDS.length;
+    const up = (target - a.band + n) % n;
+    atsSend(up <= n / 2 ? "B".repeat(up) : "b".repeat(n - up));
+    return;
+  }
+  if (target !== 0) { // VHF is FM only
+    const want = w.mode === "lsb" ? "LSB" : w.mode === "usb" || w.mode === "cw" ? "USB" : "AM";
+    const from = ATS_MODE_ORDER.indexOf(a.mode);
+    if (from >= 0 && a.mode !== want) {
+      const steps = (ATS_MODE_ORDER.indexOf(want) - from + 3) % 3;
+      atsSend(steps === 2 ? "m" : "M");
+      return;
+    }
+  }
+  a.want = null;
+  if (Math.abs(w.hz - rig.hz) >= 10) atsSend(`F${w.hz}\r\n`);
+}
+
+/** One line from the ATS Mini: its status (15 fields, every half second) or an error. */
+function atsLine(line) {
+  const a = rig.ats;
+  if (/^Error:/i.test(line)) { a.note = `The ATS Mini said: ${line.replace(/^Error:\s*/i, "")}.`; return; }
+  const f = line.split(",");
+  if (f.length < 15 || !/^\d+$/.test(f[0]) || !/^\d+$/.test(f[1])) return;
+  const mode = f[5];
+  const ssb = mode === "LSB" || mode === "USB";
+  const hz = mode === "FM" ? Number(f[1]) * 10000 : Number(f[1]) * 1000 + (ssb ? Number(f[2]) || 0 : 0);
+  a.lastLine = Date.now();
+  a.version = `${Math.floor(Number(f[0]) / 100)}.${String(Number(f[0]) % 100).padStart(2, "0")}`;
+  a.band = atsBandIndex(f[4], hz / 1000);
+  a.bandName = f[4];
+  a.mode = mode;
+  a.rssi = Number(f[10]);
+  a.snr = Number(f[11]);
+  a.seq = f[14];
+  rig.model = "ATS Mini";
+  // The ATS Mini has no CW mode: listening to CW on USB, Band Watch stays on CW.
+  const listenMode = ssb && typeof listen !== "undefined" && listen.mode === "cw" ? "cw" : ATS_LISTEN_MODE[mode] || "";
+  rigSetState(hz, mode, listenMode);
+  atsStep();
+}
+
+/** Every second: if the status lines stopped (or never started), switch them on with "t". */
+function atsWatch() {
+  const a = rig.ats;
+  if (Date.now() - Math.max(a.lastLine, a.toggledAt) > 2500) { a.toggledAt = Date.now(); rigWrite("t"); }
+  atsStep();
+}
+
 /** Tune the radio, called whenever Band Watch tunes (tuneTo). */
 function rigTune(kHz, mode) {
   if (!rig.connected || !rig.follow) return;
+  if (rig.kind === "atsmini") { atsTune(kHz * 1000, mode); return; }
   const cmd = rigCommands(kHz * 1000, mode, kHz);
   if (!cmd || !cmd.length) return;
   rig.lastSet = Date.now();
@@ -211,6 +334,16 @@ function rigFeed(value) {
   } else {
     rig.buf += (rig.dec || (rig.dec = new TextDecoder())).decode(value, { stream: true });
     let i;
+    if (rig.kind === "atsmini") {
+      while ((i = rig.buf.indexOf("\n")) >= 0) {
+        const line = rig.buf.slice(0, i).trim();
+        rig.buf = rig.buf.slice(i + 1);
+        if (line) atsLine(line);
+      }
+      if (rig.buf.length > 400) rig.buf = "";
+      renderRig();
+      return;
+    }
     while ((i = rig.buf.indexOf(";")) >= 0) {
       const ans = rig.buf.slice(0, i).trim();
       rig.buf = rig.buf.slice(i + 1);
@@ -223,7 +356,7 @@ function rigFeed(value) {
 
 /** The radio's dial moved: Band Watch follows it (the Listen panel, scope and band plan). */
 function rigFromRadio() {
-  if (!rig.read || !rig.hz || Date.now() - rig.lastSet < 1500) return;
+  if (!rig.read || !rig.hz || Date.now() - rig.lastSet < 1500 || (rig.ats && rig.ats.want)) return;
   const kHz = rig.hz / 1000;
   const mode = rig.listenMode || listen.mode;
   if (Math.abs(kHz - listen.kHz) < 0.01 && mode === listen.mode) return;
@@ -283,11 +416,13 @@ async function rigConnect(pick = true) {
     rig.bytes = [];
     rig.dec = null;
     rig.model = "";
+    rig.ats = atsFresh();
+    if (rig.kind === "atsmini") rig.ats.toggledAt = Date.now() - 1300; // switch its status line on after ~1 s if it isn't
     rigReadLoop();
     await rigWrite(rigPollCommands(true));
     clearInterval(rig.poll);
-    rig.poll = setInterval(() => { if (rig.connected) rigWrite(rigPollCommands()); }, 1000);
-    if (typeof showToast === "function") showToast("Radio connected", "Band Watch will tune your radio when you click a spot or the scope.");
+    rig.poll = setInterval(() => { if (!rig.connected) return; if (rig.kind === "atsmini") atsWatch(); else rigWrite(rigPollCommands()); }, 1000);
+    if (typeof showToast === "function") showToast(rig.kind === "atsmini" ? "ATS Mini connected" : "Radio connected", "Band Watch will tune your radio when you click a spot or the scope.");
     return true;
   } catch (e) {
     if (e && e.name === "NotFoundError") rig.error = ""; // the person closed the port chooser
@@ -338,6 +473,7 @@ const RIG_BAUD_HINTS = {
   yaesu: "Must match the radio's CAT RATE menu (menu 031 on the FT-991A). 4800 is the FT-991A's factory setting.",
   kenwood: "Must match the radio's USB baud rate menu. The TS-590SG, TS-890 and TS-990 come set to 115200.",
   icom: "Must match the radio's CI-V USB Baud Rate menu. On the IC-7300 and IC-705 \"Auto\" works with any of these.",
+  atsmini: "115200 is right for the ATS Mini. On the radio, set Settings > USB Port to Ad hoc (firmware 2.34 or later).",
 };
 
 function renderRigBauds() {
@@ -350,6 +486,7 @@ function renderRigBauds() {
 }
 
 function rigLabel() {
+  if (rig.kind === "atsmini") return "ATS Mini";
   return rig.model || (rig.kind === "icom" ? "Icom radio" : rig.kind === "kenwood" ? "Kenwood radio" : "Yaesu radio");
 }
 
@@ -363,7 +500,12 @@ function renderRig() {
   }
   const msg = $("optRigMsg");
   if (msg) {
-    msg.textContent = rig.error
+    const a = rig.ats;
+    const ats = rig.kind === "atsmini" && rig.connected && !rig.error
+      ? (a.lastLine ? `Connected to the ATS Mini${a.version ? ` (firmware ${a.version})` : ""}: ${fmtRigHz(rig.hz)} MHz ${rig.modeName}, band ${a.bandName}. Signal ${a.rssi} dBµV, SNR ${a.snr} dB.${a.note ? ` ${a.note}` : ""}`
+        : "Connected. Waiting for the ATS Mini to answer… If nothing happens, on the radio set Settings > USB Port to Ad hoc.")
+      : "";
+    msg.textContent = ats || rig.error
       || (!rigSupported() ? "Radio control needs Chrome or Edge on the PC your radio is plugged into."
         : rig.connected ? `Connected at ${rig.baud} baud${rig.model ? ` (${rig.model})` : ""}: ${fmtRigHz(rig.hz)} MHz ${rig.modeName}.`.replace(/ \.$/, ".")
           : "Not connected.");
@@ -378,6 +520,7 @@ function renderRig() {
   }
   if ($("optRigCivRow")) $("optRigCivRow").hidden = rig.kind !== "icom";
   if ($("optRigCivLabel")) $("optRigCivLabel").hidden = rig.kind !== "icom";
+  if ($("optRigData")) $("optRigData").closest(".chkrow").hidden = rig.kind === "atsmini";
   if ($("optRigDataLabel")) $("optRigDataLabel").textContent = rig.kind === "icom" ? "Use USB-D (data mode) on FT8, FT4, WSPR and other digital frequencies"
     : "Use DATA-USB on FT8, FT4, WSPR and other digital frequencies";
   for (const [id, k] of [["optRigFollow", "follow"], ["optRigRead", "read"], ["optRigData", "dataMode"], ["optRigAuto", "autoConnect"]]) if ($(id)) $(id).checked = rig[k];
