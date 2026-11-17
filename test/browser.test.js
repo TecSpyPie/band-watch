@@ -2553,7 +2553,7 @@ const FAKE_ATS = `(() => {
     const m = radio.mode, fm = m === "FM", ssb = m === "LSB" || m === "USB";
     const freq = fm ? Math.round(radio.hz / 10000) : Math.floor(radio.hz / 1000), bfo = ssb ? radio.hz - freq * 1000 : 0;
     seq = (seq + 1) % 256;
-    say([235, freq, bfo, 0, BANDS[radio.band][0], m, "1k", "3.0k", 0, 35, 28, 9, 0, 4.05, seq].join(",") + "\\r\\n");
+    say([radio.version || 245, freq, bfo, 0, BANDS[radio.band][0], m, "1k", "3.0k", 0, 35, 28, 9, 0, 4.05, seq].join(",") + "\\r\\n");
   }, 500);
   const port = {
     readable: null, writable: null,
@@ -2578,9 +2578,10 @@ const FAKE_ATS = `(() => {
           if (c === "\\r" || c === "\\n") continue;
           radio.sent.push(c);
           if (c === "t") radio.log = !radio.log;
-          else if (c === "c") {
-            // Screen picture: status line off, then a 320 x 170 RGB565 BMP, red with a green top row
-            radio.log = false; radio.shots = (radio.shots || 0) + 1;
+          else if ((c === "c" && !radio.oldFirmware) || c === "C") {
+            // Screen picture: status line off, then a 320 x 170 RGB565 BMP, red with a green top row:
+            // "c" sends it as bytes (firmware 2.41 and later), "C" as hex digits in lines (all firmware)
+            radio.log = false; radio.shots = (radio.shots || 0) + 1; radio.shotCmds = (radio.shotCmds || "") + c;
             const W = 320, H = 170, size = 66 + W * H * 2, b = new Uint8Array(size);
             b.set([0x42, 0x4d, size & 255, (size >> 8) & 255, (size >> 16) & 255, 0, 0, 0, 0, 0, 66, 0, 0, 0, 40, 0, 0, 0,
               W & 255, W >> 8, 0, 0, H, 0, 0, 0, 1, 0, 16, 0, 3, 0]);
@@ -2588,7 +2589,12 @@ const FAKE_ATS = `(() => {
               const v = row === H - 1 ? 0x07e0 : 0xf800, o = 66 + (row * W + x) * 2;
               b[o] = v & 255; b[o + 1] = v >> 8;
             }
-            for (let o = 0; o < size; o += 4096) push && push(b.slice(o, o + 4096)); // arrives in pieces, like USB
+            if (c === "C") {
+              const hex = (from, to) => Array.from(b.slice(from, to), (x) => x.toString(16).padStart(2, "0")).join("");
+              let out = "\\r\\n" + hex(0, 66) + "\\r\\n";
+              for (let row = 0; row < H; row++) out += hex(66 + row * W * 2, 66 + (row + 1) * W * 2) + "\\r\\n";
+              for (let o = 0; o < out.length; o += 4096) say(out.slice(o, o + 4096));
+            } else for (let o = 0; o < size; o += 4096) push && push(b.slice(o, o + 4096)); // arrives in pieces, like USB
           }
           else if (c === "B") select(radio.band + 1);
           else if (c === "b") select(radio.band - 1);
@@ -2622,7 +2628,7 @@ test("radio control: ATS Mini: switches its status line on, changes band and mod
   // Band Watch turns on the status line with "t", then reads the radio: VHF FM broadcast
   await page.waitForFunction(() => rig.connected && rig.hz === 103900000 && rig.modeName === "FM", null, { timeout: 8000 });
   assert.deepEqual(await page.evaluate(() => window.__radio.opened), { baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", flowControl: "none" });
-  await page.waitForFunction(() => /Connected to the ATS Mini \(firmware 2\.35\).*band VHF\. Signal 28 dBµV, SNR 9 dB/.test(document.getElementById("optRigMsg").textContent));
+  await page.waitForFunction(() => /Connected to the ATS Mini \(firmware 2\.45\).*band VHF\. Signal 28 dBµV, SNR 9 dB/.test(document.getElementById("optRigMsg").textContent));
   await page.keyboard.press("Escape");
   // FT8 on 20 m: from VHF it steps the bands to 20M (USB already), then sends the frequency
   await page.evaluate(() => tuneTo(14074, "usb", { quiet: true }));
@@ -2662,6 +2668,9 @@ test("radio control: with an FT-991A and an ATS Mini both plugged in, each make 
   await page.reload();
   await page.waitForFunction(() => rig.connected && rig.hz === 103900000, null, { timeout: 8000 });
   assert.equal(await page.evaluate(() => window.__radio.wrongPort || false), false, "never opened the FT-991A's port");
+  await page.click("#optBtn");
+  await page.waitForFunction(() => /Port: Espressif \(ATS Mini\) \(USB 303A:1001\)/.test(document.getElementById("optRigMsg").textContent), null, { timeout: 5000 });
+  await page.keyboard.press("Escape");
   // Switching the make to Yaesu: no Yaesu port has been used yet besides the FT-991A's, which is the one that fits
   await page.click("#optBtn");
   await page.selectOption("#optRigKind", "yaesu");
@@ -2682,6 +2691,7 @@ test("ATS Mini panel: shows the radio's screen, its buttons work, and a drawn sc
   await page.click("#atsConnect");
   await page.waitForFunction(() => rig.connected && rig.ats.shots >= 2, null, { timeout: 15000 });
   if (process.env.ATS_SHOT) await (await page.$("#secAts")).screenshot({ path: process.env.ATS_SHOT });
+  assert.match(await page.evaluate(() => window.__radio.shotCmds), /^c+$/, "firmware 2.45: the quick binary picture");
   // Red screen, green top row: decoded and the right way up
   const px = await page.$eval("#atsScreen", (c) => { const g = c.getContext("2d"); return [Array.from(g.getImageData(160, 100, 1, 1).data), Array.from(g.getImageData(160, 0, 1, 1).data), c.width, c.height]; });
   assert.deepEqual(px, [[255, 0, 0, 255], [0, 255, 0, 255], 320, 170]);
@@ -2777,5 +2787,22 @@ test("radio control: Malahit DSP2 (Kenwood TS-480 commands): tunes HF and VHF/UH
   await new Promise((r) => setTimeout(r, 1600));
   await page.evaluate(() => { window.__radio.hz = 9650000; window.__radio.mode = "5"; });
   await page.waitForFunction(() => listen.kHz === 9650 && listen.mode === "am", null, { timeout: 5000 });
+  assert.deepEqual(errors, []);
+});
+
+test("ATS Mini panel: older firmware (before 2.41) gets its screen with the hex command", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ATS.replace("log: false, errors: 0 }", "log: false, errors: 0, version: 236, oldFirmware: true }"));
+  await page.addInitScript(() => localStorage.setItem("bw-rig", JSON.stringify({ kind: "atsmini", baud: 115200, autoConnect: false })));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#atsConnect");
+  await page.waitForFunction(() => rig.connected && rig.ats.shots >= 2, null, { timeout: 20000 });
+  assert.match(await page.evaluate(() => window.__radio.shotCmds), /^C+$/);
+  const px = await page.$eval("#atsScreen", (c) => { const g = c.getContext("2d"); return [Array.from(g.getImageData(160, 100, 1, 1).data), Array.from(g.getImageData(160, 0, 1, 1).data)]; });
+  assert.deepEqual(px, [[255, 0, 0, 255], [0, 255, 0, 255]]);
+  // and the radio still tunes between pictures
+  await page.evaluate(() => tuneTo(14074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.band === 22 && window.__radio.hz === 14074000, null, { timeout: 12000 });
   assert.deepEqual(errors, []);
 });

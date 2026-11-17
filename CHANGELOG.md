@@ -5,6 +5,11 @@
   **Malahit CAT** port. Band Watch tunes it from 10 kHz to 2 GHz (HF, and VHF/UHF like 2 m FM) when you click a spot,
   the scope or the band plan, and follows its dial. Works with the DSP1 and DSP3 too. Windows may need the Malahit
   USB CAT driver from malahiteam.com.
+- **ATS Mini screen fix:** the live screen was black on ATS Mini firmware older than 2.41, which doesn't know the quick
+  picture command. Band Watch now checks the firmware version and uses the older command when needed (and tries the
+  other one if no picture comes). The panel shows the firmware version.
+- **Which port:** Settings and the radio panels now say which USB device Band Watch is connected to, e.g.
+  "Espressif (ATS Mini)". Browsers don't tell web pages the COM number; Edge's port list shows it, e.g. (COM4).
 - **Using an ATS Mini:**
   1. On the ATS Mini (firmware 2.34 or later): **Settings > USB Port > Ad hoc**.
   2. Plug it into your PC with its USB cable.

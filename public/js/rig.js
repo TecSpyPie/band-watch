@@ -61,7 +61,7 @@ const rig = {
   ats: null,
 };
 
-const atsFresh = () => ({ raw: new Uint8Array(0), shotWanted: false, shotSize: 0, shotAt: 0, nextShot: 0, shots: 0, band: -1, bandName: "", mode: "", seq: null, waitSeq: null, sentAt: 0, lastLine: 0, toggledAt: 0, want: null, note: "", version: "", rssi: 0, snr: 0 });
+const atsFresh = () => ({ raw: new Uint8Array(0), hex: "", shotCmd: "", shotFails: 0, shotWanted: false, shotSize: 0, shotAt: 0, nextShot: 0, shots: 0, band: -1, bandName: "", mode: "", seq: null, waitSeq: null, sentAt: 0, lastLine: 0, toggledAt: 0, want: null, note: "", version: "", rssi: 0, snr: 0 });
 rig.ats = atsFresh();
 
 function rigSupported() {
@@ -257,8 +257,10 @@ function atsWatch() {
   const a = rig.ats;
   if (a.shotWanted) {
     if (Date.now() - a.shotAt < 6000) return;
-    a.shotWanted = false; a.shotSize = 0; a.raw = new Uint8Array(0); // the picture never came: carry on without it
-    a.screenNote = "The ATS Mini didn't send its screen. Its firmware may be too old for this (it needs 2.34 or later).";
+    a.shotWanted = false; a.shotSize = 0; a.raw = new Uint8Array(0); a.hex = ""; // the picture never came
+    a.shotFails++;
+    a.shotCmd = a.shotCmd === "c" ? "C" : "c"; // try the other way of asking for it
+    a.screenNote = a.shotFails >= 4 ? "The ATS Mini isn't sending its screen. Updating its firmware may help (see the ATS Mini manual)." : "";
   }
   if (Date.now() - Math.max(a.lastLine, a.toggledAt) > 2500) { a.toggledAt = Date.now(); rigWrite("t"); }
   atsStep();
@@ -393,6 +395,18 @@ async function rigReadLoop() {
 /* ---------- Connecting ---------- */
 
 const ESPRESSIF_VID = 0x303a; // the ATS Mini's ESP32-S3 USB port
+// Makers of the USB chips radios use, to say which port Band Watch is on (browsers don't tell a page the COM number).
+const USB_MAKERS = { 0x303a: "Espressif (ATS Mini)", 0x10c4: "Silicon Labs CP210x", 0x0403: "FTDI", 0x1a86: "CH340", 0x067b: "Prolific", 0x0483: "STM32", 0x0c26: "Icom", 0x0b28: "Kenwood" };
+
+/** "Silicon Labs CP210x (USB 10C4:EA60)" for the port in use, or "" if the browser doesn't say. */
+function rigPortName(port) {
+  try {
+    const { usbVendorId: v, usbProductId: p } = port.getInfo();
+    if (v == null) return "";
+    const id = `USB ${v.toString(16).toUpperCase().padStart(4, "0")}:${(p ?? 0).toString(16).toUpperCase().padStart(4, "0")}`;
+    return USB_MAKERS[v] ? `${USB_MAKERS[v]} (${id})` : id;
+  } catch { return ""; }
+}
 
 /** Could this port be the chosen make of radio? The ATS Mini is an Espressif USB device; the others never are. */
 function rigPortFits(port) {
@@ -425,6 +439,7 @@ async function rigConnect(pick = true) {
     // Yaesu and Kenwood radios use 2 stop bits at 4800 baud and 1 at the faster rates.
     await port.open({ baudRate: rig.baud, dataBits: 8, stopBits: rig.baud === 4800 && rig.kind !== "icom" ? 2 : 1, parity: "none", flowControl: "none" });
     rig.port = port;
+    rig.portName = rigPortName(port);
     rig.writer = port.writable.getWriter();
     rig.connected = true;
     rig.buf = "";
@@ -519,12 +534,12 @@ function renderRig() {
   if (msg) {
     const a = rig.ats;
     const ats = rig.kind === "atsmini" && rig.connected && !rig.error
-      ? (a.lastLine ? `Connected to the ATS Mini${a.version ? ` (firmware ${a.version})` : ""}: ${fmtRigHz(rig.hz)} MHz ${rig.modeName}, band ${a.bandName}. Signal ${a.rssi} dBµV, SNR ${a.snr} dB.${a.note ? ` ${a.note}` : ""}`
+      ? (a.lastLine ? `Connected to the ATS Mini${a.version ? ` (firmware ${a.version})` : ""}: ${fmtRigHz(rig.hz)} MHz ${rig.modeName}, band ${a.bandName}. Signal ${a.rssi} dBµV, SNR ${a.snr} dB.${rig.portName ? ` Port: ${rig.portName}.` : ""}${a.note ? ` ${a.note}` : ""}`
         : "Connected. Waiting for the ATS Mini to answer… If nothing happens, on the radio set Settings > USB Port to Ad hoc.")
       : "";
     msg.textContent = ats || rig.error
       || (!rigSupported() ? "Radio control needs Chrome or Edge on the PC your radio is plugged into."
-        : rig.connected ? `Connected at ${rig.baud} baud${rig.model ? ` (${rig.model})` : ""}: ${fmtRigHz(rig.hz)} MHz ${rig.modeName}.`.replace(/ \.$/, ".")
+        : rig.connected ? `Connected at ${rig.baud} baud${rig.model ? ` (${rig.model})` : ""}: ${fmtRigHz(rig.hz)} MHz ${rig.modeName}.`.replace(/ \.$/, ".") + (rig.portName ? ` Port: ${rig.portName}.` : "")
           : "Not connected.");
   }
   if ($("optRigConnect")) $("optRigConnect").textContent = rig.connected ? "Disconnect" : "Connect radio";
@@ -620,6 +635,7 @@ function atsFeed(value) {
   let raw = new Uint8Array(a.raw.length + value.length);
   raw.set(a.raw);
   raw.set(value, a.raw.length);
+  if (a.shotWanted && a.shotCmd === "C") { a.raw = new Uint8Array(0); atsFeedHex(raw); return; }
   for (;;) {
     if (a.shotSize) {
       if (raw.length < a.shotSize) break;
@@ -646,6 +662,38 @@ function atsFeed(value) {
     break;
   }
   a.raw = raw.length > 300000 ? new Uint8Array(0) : raw.slice();
+}
+
+/** The older picture command "C" sends the same BMP as hex digits, in lines. */
+function atsFeedHex(bytes) {
+  const a = rig.ats;
+  let text = new TextDecoder().decode(bytes);
+  if (!a.hex) {
+    const i = text.toLowerCase().indexOf("424d"); // "BM"
+    if (i < 0) { // not started yet: anything before it is ordinary lines (keep a little in case "424d" is split)
+      const nl = text.lastIndexOf("\n");
+      if (nl >= 0) { atsText(new TextEncoder().encode(text.slice(0, nl + 1))); text = text.slice(nl + 1); }
+      a.hexPending = (a.hexPending || "") + text;
+      if (a.hexPending.length > 8) {
+        const j = a.hexPending.toLowerCase().indexOf("424d");
+        if (j < 0) { a.hexPending = a.hexPending.slice(-3); return; }
+        text = a.hexPending.slice(j); a.hexPending = "";
+      } else return;
+    } else {
+      atsText(new TextEncoder().encode(text.slice(0, i)));
+      text = text.slice(i);
+    }
+  }
+  a.hex += text.replace(/[^0-9a-fA-F]/g, "");
+  if (a.hex.length < 12) return;
+  const size = parseInt(a.hex.slice(10, 12) + a.hex.slice(8, 10) + a.hex.slice(6, 8) + a.hex.slice(4, 6), 16);
+  if (!(size > 66 && size < 1000000)) { a.hex = ""; return; }
+  if (a.hex.length < size * 2) return;
+  const bmp = new Uint8Array(size);
+  for (let k = 0; k < size; k++) bmp[k] = parseInt(a.hex.substr(k * 2, 2), 16);
+  a.hex = "";
+  atsShowScreen(bmp);
+  atsShotDone();
 }
 
 /** Where a picture starts: "BM" followed by a 40-byte BITMAPINFOHEADER (or too few bytes yet to tell). */
@@ -688,6 +736,7 @@ function atsShowScreen(bmp) {
   }
   g.putImageData(img, 0, 0);
   a.shots++;
+  a.shotFails = 0;
   a.screenNote = "";
 }
 
@@ -709,9 +758,13 @@ function atsScreenTick() {
   if (a.shotWanted || a.want || document.visibilityState === "hidden" || $("secAts").hidden) return;
   if (Date.now() < a.nextShot) return;
   a.nextShot = Date.now() + 1500;
+  if (!a.shotCmd) a.shotCmd = Number(a.version) >= 2.41 ? "c" : "C"; // "c" (binary, quicker) came in firmware 2.41
   a.shotWanted = true;
   a.shotAt = Date.now();
-  rigWrite("c");
+  a.hex = "";
+  a.hexPending = "";
+  if (a.shotCmd === "C") a.nextShot = Date.now() + 2500; // hex is twice the size: ask a little less often
+  rigWrite(a.shotCmd);
 }
 
 /** Without the live picture: a simple screen drawn from the radio's status line. */
@@ -751,7 +804,7 @@ function renderAts() {
   if (sec.hidden) return;
   const a = rig.ats;
   $("atsState").textContent = rig.connected
-    ? (a.lastLine ? `${fmtRigHz(rig.hz)} MHz ${rig.modeName} · ${a.bandName} · Signal ${a.rssi} dBµV, SNR ${a.snr} dB` : "Connected, waiting for the radio…")
+    ? (a.lastLine ? `${fmtRigHz(rig.hz)} MHz ${rig.modeName} · ${a.bandName} · Signal ${a.rssi} dBµV, SNR ${a.snr} dB${a.version ? ` · firmware ${a.version}` : ""}` : "Connected, waiting for the radio…")
     : rig.busy ? "Connecting…" : "Not connected";
   $("atsConnect").textContent = rig.connected ? "Disconnect" : "Connect";
   for (const b of sec.querySelectorAll("[data-ats]")) b.disabled = !rig.connected;
