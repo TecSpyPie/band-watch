@@ -11,8 +11,8 @@ Windows shows a SmartScreen warning.)*
 
 ## Team roles
 
-- Committers and reviewers: [M3vrv](https://github.com/OWNER) (the repository owner)
-- Approvers: [M3vrv](https://github.com/OWNER)
+- Committers and reviewers: [M3vrv](https://github.com/TecSpyPie) (the repository owner)
+- Approvers: [M3vrv](https://github.com/TecSpyPie)
 
 Every release is approved by hand in SignPath before it is signed.
 
