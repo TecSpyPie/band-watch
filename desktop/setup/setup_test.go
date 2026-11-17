@@ -13,7 +13,8 @@ func TestInstall(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{"BandWatch.exe", "start-bandwatch.bat", "stop-bandwatch.bat", "uninstall.bat", "make-shortcuts.ps1",
-		"bandwatch.ico", "README-Windows.txt", "server/server.js", "server/public/index.html", "server/public/js/ft8.js"} {
+		"bandwatch.ico", "README-Windows.txt", "server/server.js", "server/public/index.html", "server/public/js/ft8.js",
+		"rtl_tcp.exe", "rtlsdr.dll", "pthreadVC2.dll", "msvcr100.dll", "COPYING-rtl-sdr.txt", "README-rtl-sdr.txt"} {
 		if _, ok := files[want]; !ok {
 			t.Errorf("payload is missing %s", want)
 		}

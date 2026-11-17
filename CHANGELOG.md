@@ -1,5 +1,13 @@
 # What's new
 
+## 1.13.1 (17 Nov 2026)
+- **rtl_tcp comes with Band Watch:** the Windows installer now puts `rtl_tcp.exe` (from the RTL-SDR Blog
+  drivers V1.4.0, which support the Blog V4) next to Band Watch, so **Listen > My RTL-SDR** works straight
+  away: no more "Band Watch couldn't find rtl_tcp". The files are the RTL-SDR Blog release's own, unchanged
+  and checked against its fingerprint when Band Watch is built. rtl-sdr is GPL-2.0: its licence is in
+  `C:\BandWatch\COPYING-rtl-sdr.txt`, and its source is attached to this release. The dongle still needs its
+  USB driver set once with Zadig, as for any RTL-SDR program.
+
 ## 1.13.0 (17 Nov 2026)
 - **Icom and Kenwood radio control:** Settings > Radio control has a new **Radio make** choice. Icom radios
   (IC-7300, IC-705, IC-7610, IC-9700 and other CI-V radios) and Kenwood radios (TS-590, TS-890, TS-990,

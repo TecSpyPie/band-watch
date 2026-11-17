@@ -59,14 +59,13 @@ Listening
 
 Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
   Band Watch can listen through your own dongle instead of a web receiver.
-  1. Install the RTL-SDR Blog drivers for Windows (they support the Blog V4):
-     see the Quick Start Guide on https://www.rtl-sdr.com. It includes
-     setting the dongle's USB driver with Zadig, as for any RTL-SDR program.
-  2. Start rtl_tcp from those drivers, in a Command Prompt:
-       rtl_tcp -a 127.0.0.1
-     (Leave it running. Smart App Control may block rtl_tcp.exe the same way
-     it blocks BandWatch.exe; see Smart App Control above.)
-  3. In Band Watch, Listen > Receiver > "My RTL-SDR", then press Listen.
+  1. Set the dongle's USB driver once with Zadig, as for any RTL-SDR program:
+     see the Quick Start Guide on https://www.rtl-sdr.com.
+  2. In Band Watch, Listen > Receiver > "My RTL-SDR", then press Listen.
+     Band Watch comes with rtl_tcp.exe (from the RTL-SDR Blog drivers V1.4.0,
+     which support the Blog V4; see README-rtl-sdr.txt) and starts it for you.
+     (Smart App Control may block rtl_tcp.exe the same way it blocks
+     BandWatch.exe; see Smart App Control above.)
   You get a spectrum and waterfall (click them to tune), USB, LSB, CW, AM, FM
   and broadcast FM, from 500 kHz to 1,766 MHz. Below 28.8 MHz the V4 switches
   in its built-in HF upconverter by itself.
@@ -74,8 +73,8 @@ Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
     - Connection: the rtl_tcp address (a Raspberry Pi or other PC on your
       home network works too), the dongle number if you have more than one,
       "Start rtl_tcp for me" (Band Watch runs rtl_tcp.exe itself when you
-      press Listen: give its location, or put rtl_tcp.exe next to
-      BandWatch.exe), Start/Stop rtl_tcp buttons that show what rtl_tcp
+      press Listen: it uses the one next to BandWatch.exe, or give the
+      location of another), Start/Stop rtl_tcp buttons that show what rtl_tcp
       says, "Reconnect if the connection drops", and Test connection.
     - Dongle: RTL-SDR Blog V4 (HF through its upconverter, automatic),
       Blog V3 (HF by direct sampling below 24 MHz, switched for you) or

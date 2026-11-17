@@ -15,6 +15,9 @@ cp desktop/build/payload/BUILD-INFO.txt LICENSE "$W/"
 cp windows/app/* "$W/app/"
 cp server.js qrz.js clock.js package.json build-info.json "$W/app/server/"
 cp -R public "$W/app/server/public"
+# rtl_tcp goes next to BandWatch.exe (install.bat copies app\ into C:\BandWatch)
+sh tools/fetch-rtl-sdr.sh desktop/build/rtl-sdr
+cp desktop/build/rtl-sdr/* "$W/app/"
 mkdir -p dist
 rm -f dist/BandWatch-Windows.zip
 (cd "$T" && zip -qr -9 BandWatch-Windows.zip BandWatch-Windows)
@@ -22,5 +25,12 @@ mv "$T/BandWatch-Windows.zip" dist/
 cp "desktop/build/BandWatch-Setup-$VERSION.exe" dist/
 cp "desktop/build/BandWatch-Setup-$VERSION.exe" dist/BandWatch-Setup.exe
 rm -rf "$T"
+# The source of the rtl-sdr version included (GPL-2.0), attached to the release beside the binaries.
+RTL_SRC=rtl-sdr-blog-V1.4.0-source.tar.gz
+if ! curl -fsSL --retry 3 -o "dist/$RTL_SRC" "https://github.com/rtlsdrblog/rtl-sdr-blog/archive/refs/tags/V1.4.0.tar.gz"; then
+  rm -f "dist/$RTL_SRC"
+  if [ "${CI:-}" = true ]; then echo "Couldn't fetch the rtl-sdr source"; exit 1; fi
+  echo "(rtl-sdr source not fetched: only needed for a release)"
+fi
 (cd dist && sha256sum BandWatch-Setup.exe "BandWatch-Setup-$VERSION.exe" BandWatch-Windows.zip > SHA256SUMS.txt)
 ls -l dist
