@@ -31,7 +31,7 @@ var startedAt = time.Now()
 
 const (
 	solarTTL = 15 * time.Minute
-	xotaTTL  = time.Minute
+	xotaTTL  = 2 * time.Minute
 	spotsTTL = 5 * time.Minute
 	sunTTL   = 30 * time.Minute
 	cacheMax = 200
@@ -43,7 +43,6 @@ type Config struct {
 	PskURL    string // https://retrieve.pskreporter.info/query
 	QrzURL    string // https://xmldata.qrz.com/xml/current/
 	PotaURL   string // https://api.pota.app/spot/activator
-	SotaURL   string // https://api2.sota.org.uk/api/spots/60/all
 	TestHooks bool   // /api/test/reset and /api/test/advance
 	Desktop   bool   // only answer to localhost, and allow /api/quit
 	Quit      func() // called by /api/quit
@@ -55,7 +54,6 @@ func defaultConfig() Config {
 		PskURL:  "https://retrieve.pskreporter.info/query",
 		QrzURL:  "https://xmldata.qrz.com/xml/current/",
 		PotaURL: "https://api.pota.app/spot/activator",
-		SotaURL: "https://api2.sota.org.uk/api/spots/60/all",
 	}
 }
 

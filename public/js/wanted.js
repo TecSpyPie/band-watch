@@ -1,5 +1,5 @@
 /* Wanted alerts: tell me when a station, country prefix or grid square I want turns up in the spots,
-   my FT8/FT4 decodes or the POTA/SOTA activators. Optionally, any grid square that isn't in my log yet. */
+   my decodes or the POTA activators. Optionally, any grid square that isn't in my log yet. */
 "use strict";
 
 const WANTED_REPEAT_MS = 30 * 60 * 1000; // the same station on the same band alerts again after 30 minutes
@@ -64,7 +64,7 @@ function checkWanted() {
       if (why) found.push({ call: who.call, grid: who.grid, kHz, mode: r.mode || "FT8", where: "your decodes", why });
     }
   }
-  // POTA and SOTA activators
+  // POTA activators
   if (typeof xota !== "undefined") {
     for (const x of xota.spots) {
       const why = wantedReason(x.call, x.grid, { canWorkIt: true });
@@ -144,7 +144,8 @@ function setupWanted() {
     const h = b && wanted.hits[Number(b.dataset.i)];
     if (!h) return;
     const m = String(h.mode || "").toUpperCase();
-    tuneTo(h.kHz, m === "CW" ? "cw" : m === "AM" ? "am" : m === "FM" ? "fm" : modeForFreq(h.kHz), { scroll: true });
+    const data = /^(FT8|FT4|WSPR|JS8|RTTY|PSK|MFSK|OLIVIA|JT65|JT9|Q65|FST4|MSK144|DATA)/.test(m);
+    tuneTo(h.kHz, m === "CW" ? "cw" : m === "AM" ? "am" : m === "FM" ? "fm" : data ? "usb" : modeForFreq(h.kHz), { scroll: true });
   });
   renderWanted();
 }

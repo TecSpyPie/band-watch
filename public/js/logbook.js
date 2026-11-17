@@ -1,4 +1,4 @@
-/* Logbook: contacts kept in this browser, logged by hand or with one click from a decode, a POTA/SOTA
+/* Logbook: contacts kept in this browser, logged by hand or with one click from a decode, a POTA
    activator or a callsign lookup. Exports and imports ADIF for LoTW, eQSL, QRZ and other loggers. */
 "use strict";
 

@@ -48,7 +48,6 @@ const XOTA = require("./fixtures/xota.js");
 
 function upstreamHandler(kind, url) {
   if (kind === "pota") return feed.potaDown ? { status: 503 } : (feed.pota ? feed.pota() : XOTA.potaRows());
-  if (kind === "sota") return feed.sotaDown ? { status: 503 } : XOTA.sotaRows();
   if (kind === "qrz") {
     const q = url.searchParams;
     const xml = (inner) => `<QRZDatabase>${inner}</QRZDatabase>`;
@@ -1858,8 +1857,8 @@ test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS
   await page.click("#lsStop");
 
   // 6. Parks and summits, wanted alerts and the logbook
-  await page.waitForFunction(() => xota.spots.length === 3);
-  await page.fill("#wnCalls", "GW VP8LP");
+  await page.waitForFunction(() => xota.spots.length === 2);
+  await page.fill("#wnCalls", "N0 VP8LP");
   await page.fill("#wnGrids", "PM95 QF");
   await page.dispatchEvent("#wnCalls", "change");
   await page.check("#wnNew");
@@ -1877,7 +1876,7 @@ test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS
     saveLog(); renderLog(); renderXota();
     $("toast").classList.remove("on");
   });
-  await page.locator("#secXota").screenshot({ path: require("path").join(dir, "pota-sota.png") });
+  await page.locator("#secXota").screenshot({ path: require("path").join(dir, "pota.png") });
   await page.locator("#secWanted").screenshot({ path: require("path").join(dir, "wanted.png") });
   await page.locator("#secLog").screenshot({ path: require("path").join(dir, "logbook.png") });
 
@@ -2010,54 +2009,51 @@ test("radio control: reconnects by itself, and explains when the browser can't d
   assert.match(await p2.textContent("#optRigMsg"), /needs Chrome or Edge/);
 });
 
-test("parks and summits: POTA and SOTA activators listed, filtered, on the map and scope, click to tune", { skip }, async (t) => {
+test("parks on the air: POTA activators listed, filtered, on the map and scope, click to tune", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
-  await page.waitForFunction(() => document.querySelectorAll("#xtList .xtrow").length === 3);
+  await page.waitForFunction(() => document.querySelectorAll("#xtList .xtrow").length === 2);
   const rows = await page.$$eval("#xtList .xtrow", (els) => els.map((e) => e.innerText.replace(/\s+/g, " ").trim()));
   assert.match(rows[0], /POTA G0ABC 14,244 kHz SSB GB-0123 Log Peak District National Park · GB-ENG · \d[\d,]* km 3 min ago · 59 in IO93/);
-  assert.match(rows[1], /SOTA GW0SUM 10,118 kHz CW GW\/NW-001 Log Yr Wyddfa, 1085m, 10 Points · GW 5 min ago · QRV now/);
-  assert.match(rows[2], /POTA N0POTA 7,074 kHz FT8 US-0001/);
-  assert.match(await page.textContent("#xtNote"), /3 of 3 activators/);
+  assert.match(rows[1], /POTA N0POTA 7,074 kHz FT8 US-0001/);
+  assert.match(await page.textContent("#xtNote"), /2 of 2 activators\. Updated every two minutes/);
   assert.equal(await page.getAttribute("#xtList .xtref a", "href"), "https://pota.app/#/park/GB-0123");
+  assert.doesNotMatch(await page.textContent("#secXota"), /SOTA/);
 
-  // Filters: SOTA only, then POTA on 40 m data
-  await page.click('#xtSrc button[data-src="sota"]');
-  assert.equal(await page.locator("#xtList .xtrow").count(), 1);
-  await page.click('#xtSrc button[data-src="pota"]');
+  // Filters: 40 m data
   await page.selectOption("#xtBand", "40");
   await page.selectOption("#xtMode", "data");
   assert.deepEqual(await page.$$eval("#xtList .xtcall", (els) => els.map((e) => e.textContent)), ["N0POTA"]);
-  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-xota"))), { src: "pota", band: "40", mode: "data", alerts: false, onMap: true });
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-xota"))), { band: "40", mode: "data", alerts: false, onMap: true });
 
-  // On the map for the selected band (40 m), with the US park
+  // On the map for the selected band (40 m)
   await page.evaluate(() => selectBand("40"));
   await page.waitForFunction(() => document.querySelectorAll("#map .xtmark.pota").length === 1);
 
-  // Click to tune: FT8 in USB on 7074 kHz; SSB on 20 m in USB, CW on 30 m
+  // Click to tune: FT8 in USB on 7074 kHz; SSB on 20 m in USB
   await page.click("#xtList .xttune");
   assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "7074 usb");
-  await page.click('#xtSrc button[data-src="both"]');
   await page.selectOption("#xtBand", "all");
   await page.selectOption("#xtMode", "all");
   await page.click('#xtList .xttune >> text="14,244 kHz SSB"');
   assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "14244 usb");
-  await page.click('#xtList .xttune >> text="10,118 kHz CW"');
-  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "10118 cw");
 
   // Alerts for activators that appear later
   await page.check("#xtAlerts");
   feed.pota = () => [...XOTA.potaRows(), { activator: "F0NEW", frequency: "14062", mode: "CW", reference: "FR-0042", parkName: "Parc", spotTime: new Date().toISOString().slice(0, 19) }];
-  await page.evaluate(() => fetch("/api/test/advance?ms=120000", { method: "POST" }));
+  await page.evaluate(() => fetch("/api/test/advance?ms=300000", { method: "POST" }));
   await page.evaluate(() => refreshXota());
   await page.waitForFunction(() => /New POTA activator/.test(document.body.innerText) && /F0NEW at FR-0042/.test(document.body.innerText));
+  // The CW activator tunes in CW
+  await page.click('#xtList .xttune >> text="14,062 kHz CW"');
+  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "14062 cw");
   feed.pota = null;
   assert.deepEqual(errors, []);
 });
 
-test("parks and summits: says so when the feeds are down", { skip }, async (t) => {
+test("parks on the air: says so when the feed is down", { skip }, async (t) => {
   const { page } = await openPage(t, { potaDown: true });
-  await page.waitForFunction(() => /POTA not available just now/.test(document.getElementById("xtNote").textContent));
-  assert.equal(await page.locator("#xtList .xtrow").count(), 1);
+  await page.waitForFunction(() => /Couldn't load POTA spots/.test(document.getElementById("xtNote").textContent));
+  assert.equal(await page.locator("#xtList .xtrow").count(), 0);
 });
 
 test("logbook: log from a decode and an activator, edit, delete and undo, ADIF export and import", { skip }, async (t) => {
@@ -2090,7 +2086,7 @@ test("logbook: log from a decode and an activator, edit, delete and undo, ADIF e
   await page.click('#lgForm button[type="reset"]');
 
   // A POTA activator: park reference filled in, then marked as worked
-  await page.waitForFunction(() => document.querySelectorAll("#xtList .xtlog").length === 3);
+  await page.waitForFunction(() => document.querySelectorAll("#xtList .xtlog").length === 2);
   await page.click('#xtList .xtrow:first-child .xtlog');
   assert.deepEqual(await page.evaluate(() => ["lgCall", "lgKHz", "lgMode", "lgRef", "lgSent", "lgGrid"].map((id) => document.getElementById(id).value)),
     ["G0ABC", "14244", "SSB", "GB-0123", "59", "IO93ah"]);
@@ -2153,13 +2149,13 @@ ${adi.split("<EOH>")[1].split("<EOR>")[0]}<EOR>`;
 
 test("wanted alerts: wanted calls, prefixes and new grids from decodes and activators, once each", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
-  await page.waitForFunction(() => xota.spots.length === 3);
+  await page.waitForFunction(() => xota.spots.length === 2);
   assert.match(await page.textContent("#wnHits"), /Nothing wanted heard yet/);
-  // GW (a prefix) and EA8XYZ (a callsign)
-  await page.fill("#wnCalls", "gw, EA8XYZ");
+  // N0 (a prefix) and EA8XYZ (a callsign)
+  await page.fill("#wnCalls", "n0, EA8XYZ");
   await page.dispatchEvent("#wnCalls", "change");
-  await page.waitForFunction(() => /GW0SUM/.test(document.getElementById("wnHits").textContent));
-  assert.match(await page.textContent("#toast"), /Wanted station heard.*GW0SUM on 30 m CW, SOTA GW\/NW-001: matches GW/);
+  await page.waitForFunction(() => /N0POTA/.test(document.getElementById("wnHits").textContent));
+  assert.match(await page.textContent("#toast"), /Wanted station heard.*N0POTA on 40 m FT8, POTA US-0001: matches N0/);
   // A decode of EA8XYZ
   await page.evaluate(() => {
     tuneTo(14074, "usb", { quiet: true });
@@ -2178,9 +2174,9 @@ test("wanted alerts: wanted calls, prefixes and new grids from decodes and activ
   await page.evaluate(() => { checkWanted(); checkWanted(); });
   assert.equal(await page.evaluate(() => wanted.hits.length), n);
   // Tune from the list
-  await page.click('#wnHits .wntune >> text="10,118 kHz CW"');
-  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "10118 cw");
-  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-wanted"))), { calls: "gw, EA8XYZ", grids: "", newGrids: true, sound: true });
+  await page.click('#wnHits .wntune >> text="7,074 kHz FT8"');
+  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "7074 usb");
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-wanted"))), { calls: "n0, EA8XYZ", grids: "", newGrids: true, sound: true });
   // Matching rules
   assert.deepEqual(await page.evaluate(() => [
     callMatches("VK2ABC", "VK"), callMatches("VK2ABC", "VK*"), callMatches("G4ABC", "G4AB"), callMatches("G4ABCD", "G4ABC"),

@@ -18,7 +18,7 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **Radio control:** tunes your Yaesu FT-991A (also FT-710, FTDX10, FTDX101) over USB when you click a spot,
   the scope or a decoder, and follows the radio's dial (Chrome or Edge on the PC the radio is plugged into)
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
-- **POTA and SOTA:** live park and summit activators on a list, the map and the scope, with alerts
+- **POTA:** live park activators on a list, the map and the scope, with alerts
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL, QRZ and Club Log
 - **Wanted alerts:** callsigns, prefixes and grid squares you need, and new grid squares not in your log
 - UK band plan, sunspots and space weather, world clock, band monitor alerts
@@ -34,9 +34,9 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 |---|---|
 | ![FT4 decoder decoding CQ M3VRV IO93 from the RTL-SDR](docs/images/ft4-decoder.png) | ![The separate decode results window](docs/images/decode-results.png) |
 
-| Parks and summits on the air | Logbook |
+| Parks on the air (POTA) | Logbook |
 |---|---|
-| ![POTA and SOTA activators with click to tune and one-click logging](docs/images/pota-sota.png) | ![The logbook with ADIF export and import](docs/images/logbook.png) |
+| ![POTA activators with click to tune and one-click logging](docs/images/pota.png) | ![The logbook with ADIF export and import](docs/images/logbook.png) |
 
 | Wanted alerts | WSPR decoder |
 |---|---|
@@ -87,8 +87,14 @@ both exes, `/healthz` reports it under `build`, and Settings > About this build 
     windows/             install.bat, start/stop/uninstall scripts and README-Windows.txt
     test/                node:test suites
 
+## About SOTA
+
+Band Watch doesn't show SOTA spots. SOTA's API terms say software written with AI may not connect to the SOTA
+API without their approval, and Band Watch is written with Claude. You can still log summit contacts and
+export them with their SOTA reference in ADIF.
+
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Data: spots from [PSK Reporter](https://pskreporter.info), solar and
+MIT, see [LICENSE](LICENSE). Data: spots from [PSK Reporter](https://pskreporter.info), park activators from [POTA](https://pota.app), solar and
 space weather from [NOAA SWPC](https://www.swpc.noaa.gov). Please keep refresh rates modest:
 PSK Reporter is run by a volunteer.

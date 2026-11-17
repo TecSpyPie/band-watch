@@ -396,7 +396,8 @@ func summariseSun(got map[string]any, at int64) (map[string]any, error) {
 	return out, nil
 }
 
-/* ---------- POTA and SOTA activators ---------- */
+/* ---------- POTA activators ---------- */
+// SOTA spots are not used: SOTA's API terms don't allow AI-written software without their approval.
 
 var xotaCallRe = regexp.MustCompile(`^[A-Z0-9/]{3,20}$`)
 var zoneRe = regexp.MustCompile(`([zZ]|[+-]\d\d:?\d\d)$`)
@@ -447,30 +448,6 @@ func potaSpot(r map[string]any) map[string]any {
 	}
 }
 
-func sotaSpot(r map[string]any) map[string]any {
-	var kHz any
-	if mhz, ok := numOf(r["frequency"]); ok {
-		kHz = math.Round(mhz*100000) / 100
-	}
-	ref := clip(r["summitCode"], 20)
-	if a, c := clip(r["associationCode"], 10), clip(r["summitCode"], 12); a != "" && c != "" {
-		ref = a + "/" + c
-	}
-	call := clip(r["activatorCallsign"], 20)
-	if call == "" {
-		call = clip(r["callsign"], 20)
-	}
-	name := clip(r["summitDetails"], 120)
-	if name == "" {
-		name = clip(r["summitName"], 120)
-	}
-	return map[string]any{
-		"src": "sota", "call": strings.ToUpper(call), "kHz": kHz, "mode": strings.ToUpper(clip(r["mode"], 12)), "ref": ref,
-		"name": name, "loc": clip(r["associationCode"], 10), "grid": "", "lat": numOrNil(r["latitude"]), "lon": numOrNil(r["longitude"]),
-		"time": utcTime(r["timeStamp"]), "by": strings.ToUpper(clip(r["callsign"], 20)), "note": clip(r["comments"], 200),
-	}
-}
-
 func (s *Server) getXota() (map[string]any, error) {
 	return s.cache.Get("xota", xotaTTL, func() (map[string]any, error) {
 		type result struct {
@@ -490,22 +467,13 @@ func (s *Server) getXota() (map[string]any, error) {
 			}
 			return result{spots: out}
 		}
-		pc, sc := make(chan result, 1), make(chan result, 1)
-		go func() { pc <- load(s.cfg.PotaURL, potaSpot) }()
-		go func() { sc <- load(s.cfg.SotaURL, sotaSpot) }()
-		pota, sota := <-pc, <-sc
-		if pota.err != nil && sota.err != nil {
-			return nil, errors.New("POTA and SOTA are both unavailable")
+		pota := load(s.cfg.PotaURL, potaSpot)
+		if pota.err != nil {
+			return nil, pota.err
 		}
 		failed := []string{}
-		if pota.err != nil {
-			failed = append(failed, "pota")
-		}
-		if sota.err != nil {
-			failed = append(failed, "sota")
-		}
 		spots := []map[string]any{}
-		for _, x := range append(pota.spots, sota.spots...) {
+		for _, x := range pota.spots {
 			k, ok := x["kHz"].(float64)
 			if !ok || k <= 100 || k >= 1.3e6 || !xotaCallRe.MatchString(x["call"].(string)) {
 				continue

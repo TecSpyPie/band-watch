@@ -61,7 +61,6 @@ async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node")
     BW_PSK_URL: `${upstreamBase}/psk/query`,
     BW_QRZ_URL: `${upstreamBase}/qrz/xml/current/`,
     BW_POTA_URL: `${upstreamBase}/pota/spot/activator`,
-    BW_SOTA_URL: `${upstreamBase}/sota/api/spots/60/all`,
   };
   const child = kind === "go"
     ? spawn(buildGo(), ["--serve"], { env, stdio: ["ignore", "inherit", "inherit"] })

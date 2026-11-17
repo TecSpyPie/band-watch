@@ -1,8 +1,9 @@
-/* Parks and summits on the air: live POTA and SOTA activators, on a list, the map and the band scope.
-   Click one to tune Listen (and your radio, if it's connected) to them. */
+/* Parks on the air: live POTA activators, on a list, the map and the band scope.
+   Click one to tune Listen (and your radio, if it's connected) to them.
+   (No SOTA: SOTA's API terms don't allow AI-written software like this without their approval.) */
 "use strict";
 
-const XOTA_REFRESH = 60 * 1000;
+const XOTA_REFRESH = 2 * 60 * 1000; // POTA is volunteer-run: every two minutes is plenty
 const xota = {
   spots: [], failed: [], at: 0, loading: false, error: "", timer: null,
   src: "both", band: "all", mode: "all", alerts: false, onMap: true, seen: null,
@@ -11,7 +12,6 @@ const xota = {
 function loadXota() {
   try {
     const s = JSON.parse(load("bw-xota") || "{}");
-    if (["both", "pota", "sota"].includes(s.src)) xota.src = s.src;
     if (typeof s.band === "string") xota.band = s.band;
     if (["all", "cw", "ssb", "data"].includes(s.mode)) xota.mode = s.mode;
     if (typeof s.alerts === "boolean") xota.alerts = s.alerts;
@@ -19,7 +19,7 @@ function loadXota() {
   } catch { /* defaults */ }
 }
 function saveXota() {
-  store("bw-xota", { src: xota.src, band: xota.band, mode: xota.mode, alerts: xota.alerts, onMap: xota.onMap });
+  store("bw-xota", { band: xota.band, mode: xota.mode, alerts: xota.alerts, onMap: xota.onMap });
 }
 
 /** CW, SSB or data, from the mode the spotter wrote. */
@@ -66,7 +66,6 @@ function xotaDistance(x) {
 function renderXota() {
   const list = $("xtList");
   if (!list) return;
-  for (const b of document.querySelectorAll("#xtSrc button")) b.setAttribute("aria-pressed", String(b.dataset.src === xota.src));
   $("xtBand").value = xota.band;
   $("xtMode").value = xota.mode;
   $("xtAlerts").checked = xota.alerts;
@@ -87,8 +86,8 @@ function renderXota() {
   }).join("") || `<li class="small muted">${xota.loading ? "Loading activators…" : "No activators on the air right now with these filters."}</li>`;
   const counts = `${shown.length} of ${xota.spots.length} activators`;
   $("xtNote").textContent = xota.error
-    ? `Couldn't load POTA and SOTA spots: ${xota.error}`
-    : `${counts}${xota.failed.length ? ` (${xota.failed.map((f) => f.toUpperCase()).join(" and ")} not available just now)` : ""}. Updated every minute. Click a frequency to tune there.`;
+    ? `Couldn't load POTA spots: ${xota.error}`
+    : `${counts}${xota.failed.length ? ` (${xota.failed.map((f) => f.toUpperCase()).join(" and ")} not available just now)` : ""}. Updated every two minutes. Click a frequency to tune there.`;
 }
 
 async function refreshXota() {
@@ -131,7 +130,7 @@ function xotaTune(key) {
   tuneTo(x.kHz, xotaListenMode(x), { scroll: false });
 }
 
-/** Activators on the map: green triangles for parks, brown for summits (selected band only). */
+/** Activators on the map: green triangles (selected band only). */
 function xotaMapSvg(X, Y) {
   if (!xota.onMap) return "";
   let svg = "";
@@ -160,12 +159,6 @@ function setupXota() {
   loadXota();
   const bands = Object.keys(FT8).sort((a, b) => Number(b) - Number(a));
   $("xtBand").innerHTML = `<option value="all">All bands</option>${bands.map((b) => `<option value="${b}">${b} m</option>`).join("")}`;
-  $("xtSrc").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-src]");
-    if (!b) return;
-    xota.src = b.dataset.src;
-    saveXota(); renderXota(); drawMap(); drawScope();
-  });
   $("xtBand").addEventListener("change", () => { xota.band = $("xtBand").value; saveXota(); renderXota(); drawMap(); drawScope(); });
   $("xtMode").addEventListener("change", () => { xota.mode = $("xtMode").value; saveXota(); renderXota(); drawMap(); drawScope(); });
   $("xtAlerts").addEventListener("change", () => { xota.alerts = $("xtAlerts").checked; saveXota(); });

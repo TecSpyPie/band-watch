@@ -1,15 +1,19 @@
 # What's new
 
+## 1.12.1 (17 Nov 2026)
+- SOTA spots removed. SOTA's API terms don't allow AI-written software without their approval, and the address
+  Band Watch used had been retired. POTA activators stay, now checked every two minutes.
+
 ## 1.12.0 (17 Nov 2026)
 - **Radio control:** Band Watch tunes your Yaesu FT-991A (and FT-710, FTDX10, FTDX101) over its USB cable when
   you click a spot, the scope, the band plan or a decoder, and follows the radio when you turn its dial.
   DATA-USB on FT8, FT4 and WSPR frequencies. Works in Chrome or Edge on the PC the radio is plugged into.
-- **Parks and summits on the air:** live POTA and SOTA activators, filtered by band and mode, on the map and the
-  band scope, with alerts for new ones. Click to tune, one click to log.
+- **Parks on the air:** live POTA activators, filtered by band and mode, on the map and the band scope,
+  with alerts for new ones. Click to tune, one click to log. (1.12.0 also showed SOTA; removed in 1.12.1.)
 - **Logbook:** log contacts from a decode, an activator or a callsign lookup; edit, search, delete and undo;
   export ADIF for LoTW, eQSL, QRZ Logbook and Club Log, and import ADIF from other loggers.
 - **Wanted alerts:** callsigns, prefixes and grid squares you want, and new grid squares not in your log yet,
-  from the spots, your decodes and POTA/SOTA, with a sound and a notification.
+  from the spots, your decodes and POTA, with a sound and a notification.
 - **WSPR and CW decoders** in the decoder panel, beside FT8 and FT4.
 
 ## 1.11.1 (16 Nov 2026)

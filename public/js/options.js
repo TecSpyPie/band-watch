@@ -298,7 +298,8 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
-  ["1.12.0", "Yaesu FT-991A radio control over USB; POTA and SOTA activators on a list, the map and the scope; a logbook with ADIF export and import; wanted alerts; WSPR and CW decoders"],
+  ["1.12.1", "SOTA spots removed (SOTA's API terms don't allow AI-written software without approval); POTA checked every two minutes"],
+  ["1.12.0", "Yaesu FT-991A radio control over USB; POTA activators on a list, the map and the scope; a logbook with ADIF export and import; wanted alerts; WSPR and CW decoders"],
   ["1.11.1", "Everything in C:\\BandWatch, including the log; install.bat installs there too and removes the old copy in AppData"],
   ["1.11.0", "Live band scope: real spectrum and waterfall from your RTL-SDR, with spotted stations marked; switch back to the spot-based scope any time"],
   ["1.10.0", "RTL-SDR settings: dongle type (Blog V4, V3 with direct sampling, others), sample rate up to 2.4 MS/s, filter widths, squelch, AGC speed, FM de-emphasis; build dates shown here"],
