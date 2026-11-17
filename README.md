@@ -23,6 +23,9 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
 - **POTA:** live park activators on a list, the map and the scope, with alerts
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook
+- **Radio panel:** a radio-style front panel with a tuning knob, mode and band buttons and an S-meter
+- **DX cluster** spots (data provided by HamQTH.com) and a **Best time to call** chart for any place
+- **Logbook map** of your contacts, which you can save as a picture
 - **Wanted alerts:** callsigns, prefixes and grid squares you need, and new grid squares not in your log
 - UK band plan, sunspots and space weather, world clock, band monitor alerts
 - QRZ.com lookups (sign in with your own QRZ account; your password goes only to QRZ.com and is never stored)

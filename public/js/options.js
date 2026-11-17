@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.14.0", "Radio panel (a radio front panel with a tuning knob); DX cluster spots from HamQTH.com; Best time to call chart; a map of your logbook contacts; continents on the maps"],
   ["1.13.0", "Icom (CI-V) and Kenwood radio control beside Yaesu; Send to QRZ puts your log straight into your QRZ logbook; Listen starts rtl_tcp for you and shows problems clearly; the Twente WebSDR opens in its own window; an Updates section at the top of Settings, with links to Band Watch on GitHub"],
   ["1.12.3", "On Windows, Band Watch opens in its own window (no address bar or tabs) instead of a browser tab; brighter, glossy colours"],
   ["1.12.2", "Install updates from Settings, About this build; the installer updates your copy in place (no need to uninstall)"],

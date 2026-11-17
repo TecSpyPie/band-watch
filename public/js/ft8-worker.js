@@ -3,7 +3,7 @@
  * cycle or two, and decodes each 15 s (FT8) or 7.5 s (FT4) cycle as soon as it is complete,
  * lined up with UTC as WSJT-X does (so the PC clock needs to be right to within a second). */
 "use strict";
-importScripts("/js/ft8.js?v=1.13.0", "/js/wspr.js?v=1.13.0", "/js/cw.js?v=1.13.0");
+importScripts("/js/ft8.js?v=1.14.0", "/js/wspr.js?v=1.14.0", "/js/cw.js?v=1.14.0");
 
 // WSPR: two-minute cycles on the even minute, decoded at 12000 samples a second.
 const WSPR_PROTO = { name: "WSPR", period: 120, fs: 12000 };

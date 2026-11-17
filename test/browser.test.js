@@ -2251,6 +2251,75 @@ test("DX cluster: says so when HamQTH can't be reached", { skip }, async (t) => 
   await page.waitForFunction(() => /Couldn't load DX spots/.test(document.getElementById("dxNote").textContent));
 });
 
+test("best time to call: a band-by-hour chart for a place or grid square, with a plain summary", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.waitForFunction(() => document.querySelectorAll("#plRows tr").length === 10);
+  assert.equal(await page.locator("#plHead th").count(), 25, "band column and 24 hours");
+  assert.equal(await page.locator("#plRows td").count(), 240);
+  assert.equal(await page.locator("#plRows td.now").count(), 10, "the current hour is outlined");
+  assert.match(await page.textContent("#plSummary"), /^Japan, [\d,]+ km away\. (Best now: .+|Nothing looks likely right now\.)/);
+  // A daytime/night shape: low bands at night and high bands by day on a long path
+  const shape = await page.evaluate(() => {
+    const at = (h) => planPath(app.home, { lat: 40.7, lon: -74 }, Date.UTC(2026, 10, 17, h, 30), 150, 2);
+    const s = (row, b) => row.find((x) => x.b === b).s;
+    return { noon20: s(at(15), "20"), night20: s(at(3), "20"), noon80: s(at(15), "80"), night80: s(at(3), "80") };
+  });
+  assert.ok(shape.noon20 > shape.night20, JSON.stringify(shape));
+  assert.ok(shape.night80 > shape.noon80, JSON.stringify(shape));
+  // Pick a place; type a grid square; a bad one is explained; both remembered
+  await page.selectOption("#plPlace", "Australia (east)");
+  assert.match(await page.textContent("#plSummary"), /^Australia \(east\), /);
+  await page.fill("#plGrid", "fn42");
+  await page.press("#plGrid", "Enter");
+  assert.match(await page.textContent("#plSummary"), /^grid FN42, /);
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-plan"))), { place: "Australia (east)", grid: "FN42" });
+  await page.fill("#plGrid", "zz99");
+  await page.press("#plGrid", "Enter");
+  assert.match(await page.textContent("#plNote"), /should look like PM95/);
+  // Time spans across midnight read as one span
+  assert.deepEqual(await page.evaluate(() => planRuns(Array.from({ length: 24 }, (_, h) => h >= 20 || h < 6))), [[20, 6]]);
+  assert.deepEqual(await page.evaluate(() => planRuns(Array.from({ length: 24 }, (_, h) => (h >= 2 && h < 4) || (h >= 10 && h < 12)))), [[2, 4], [10, 12]]);
+  assert.deepEqual(errors, []);
+});
+
+test("radio panel: big display, knob, mode and band buttons tune Listen (and the radio)", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.click("#rpBtn");
+  assert.equal(await page.evaluate(() => document.getElementById("rpDlg").open), true);
+  assert.equal(await page.textContent("#rpFreq"), "14.200.00");
+  assert.equal(await page.textContent("#rpMode"), "USB");
+  // Band and mode buttons
+  await page.click('#rpBands button[data-b="40"]');
+  await page.waitForFunction(() => listen.band === "40" && document.querySelector('#rpBands button[data-b="40"]').getAttribute("aria-pressed") === "true");
+  await page.click('#rpModes button[data-m="cw"]');
+  assert.equal(await page.evaluate(() => listen.mode), "cw");
+  await page.waitForFunction(() => document.getElementById("rpMode").textContent === "CW");
+  // The knob: arrow keys, the wheel, and dragging; each 15 degrees is one step
+  await page.evaluate(() => tuneTo(7030, "cw", { quiet: true }));
+  await page.focus("#rpKnob");
+  await page.keyboard.press("ArrowUp");
+  assert.equal(await page.evaluate(() => listen.kHz), 7031);
+  await page.click("#rpStepBtn"); // 1 kHz -> 5 kHz
+  assert.equal(await page.evaluate(() => listen.step), 5);
+  await page.focus("#rpKnob");
+  await page.keyboard.press("ArrowDown");
+  assert.equal(await page.evaluate(() => listen.kHz), 7026);
+  const box = await page.locator("#rpKnob").boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width - 8, box.y + box.height / 2, { steps: 10 }); // a quarter turn clockwise
+  await page.mouse.up();
+  assert.ok(await page.evaluate(() => listen.kHz >= 7026 + 5 * 5), "dragging clockwise tunes up");
+  await page.waitForFunction(() => document.getElementById("rpFreq").textContent === rpFreqText(listen.kHz));
+  assert.equal(await page.evaluate(() => rpFreqText(3573.5)), "3.573.50");
+  assert.equal(await page.evaluate(() => rpFreqText(145500)), "145.500.00");
+  // No signal shown without the RTL-SDR
+  assert.equal(await page.textContent("#rpS"), "–");
+  await page.click("#rpClose");
+  assert.equal(await page.evaluate(() => document.getElementById("rpDlg").open), false);
+  assert.deepEqual(errors, []);
+});
+
 test("parks on the air: POTA activators listed, filtered, on the map and scope, click to tune", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.waitForFunction(() => document.querySelectorAll("#xtList .xtrow").length === 2);

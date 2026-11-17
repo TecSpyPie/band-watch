@@ -67,7 +67,7 @@ function planPath(from, to, t, sfi, kp) {
   for (let h = 0; h < hops; h++) {
     const cp = gcPoint(from, to, (h + 0.5) / hops);
     const s = Math.sin(sunElevation(cp.lat, cp.lon, t) * RAD);
-    const k = Math.max(0, Math.min(1, (s + 0.05) / 0.4)) ** 0.5; // the F2 layer is near its daytime level once the sun is ~15 degrees up
+    const k = Math.max(0, Math.min(1, (s + 0.1) / 0.45)) ** 0.5; // the F2 layer is near its daytime level once the sun is ~15 degrees up
     muf = Math.min(muf, (night + (day - night) * k) * M);
     sunMax = Math.max(sunMax, s);
     if (Math.abs(cp.lat) > 55) highLat = true;

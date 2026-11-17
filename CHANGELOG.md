@@ -1,5 +1,18 @@
 # What's new
 
+## 1.14.0
+- **Radio panel:** press **Radio panel** at the top for Band Watch's own radio front panel: a big glowing
+  frequency display, a tuning knob (drag it, scroll it or use the arrow keys), mode and band buttons, a tuning
+  step button, Listen, and an S-meter from your RTL-SDR. It tunes your connected radio too.
+- **DX cluster:** live spots of stations other hams are hearing, with band and mode filters, click to tune,
+  one-click logging, and marks on the map. Data provided by HamQTH.com.
+- **Best time to call:** pick a place (or type a grid square) to see which bands are likely open at each hour
+  today, with a plain summary and a dot when stations near there are being heard right now. A rough guide from
+  the solar flux and where the sun is along the path.
+- **Logbook map:** every contact in your log on a world map, coloured by band, with a band filter and
+  **Save as picture** for sharing.
+- The maps now show the continents.
+
 ## 1.13.0 (17 Nov 2026)
 - **Icom and Kenwood radio control:** Settings > Radio control has a new **Radio make** choice. Icom radios
   (IC-7300, IC-705, IC-7610, IC-9700 and other CI-V radios) and Kenwood radios (TS-590, TS-890, TS-990,
