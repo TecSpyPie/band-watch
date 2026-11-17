@@ -55,8 +55,8 @@ which runs Band Watch with Node.js. See [windows/README-Windows.txt](windows/REA
     sh desktop/build-setup.sh    # desktop/build/BandWatch-Setup-<version>.exe
     sh tools/package-windows.sh  # dist/BandWatch-Windows.zip and the setup exe
 
-Pushing a tag such as `v1.11.1` builds, tests and publishes a GitHub release with these files
-(`.github/workflows/release.yml`).
+Raising the version in `package.json` and pushing to main builds, tests and publishes GitHub release
+`v<version>` with these files (`.github/workflows/release.yml`).
 
 `sh desktop/build.sh` writes `build-info.json` (version and UTC build time). The date goes into
 both exes, `/healthz` reports it under `build`, and Settings > About this build shows it. Set

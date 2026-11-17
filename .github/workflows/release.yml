@@ -1,4 +1,5 @@
-# Tests every push. A version tag (v1.11.1) also builds the Windows files and publishes a release.
+# Tests every push. When main has a version (package.json) that has no release yet, it also builds
+# the Windows files and publishes release v<version>. Bump the version to make a new release.
 #
 # Code signing (SignPath Foundation, free for open source): once the project is approved, add the
 # repository secret SIGNPATH_API_TOKEN and the repository variable SIGNPATH_ORGANIZATION_ID
@@ -36,10 +37,35 @@ jobs:
           (cd desktop/setup && go test ./...)
           BW_SERVER=go node --test test/api.test.js
 
-  windows:
+  plan:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Is this version released yet?
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(node -p 'require("./package.json").version')"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$tag is already released"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  windows:
+    needs: plan
+    if: needs.plan.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.plan.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,10 +82,6 @@ jobs:
           for t in llvm-rc llvm-cvtres; do
             command -v $t >/dev/null || sudo ln -sf "$(ls /usr/lib/llvm-*/bin/$t | sort -V | tail -1)" /usr/local/bin/$t
           done
-      - name: Version matches the tag
-        run: |
-          v=$(node -p 'require("./package.json").version')
-          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "package.json says $v but the tag is ${GITHUB_REF_NAME}"; exit 1; }
       - name: Build BandWatch.exe
         run: sh desktop/build.sh
 
@@ -132,7 +154,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" --title "Band Watch ${GITHUB_REF_NAME#v}" --notes-file notes.md \
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "Band Watch ${TAG#v}" --notes-file notes.md \
             dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/SHA256SUMS.txt \
-          || gh release upload "${GITHUB_REF_NAME}" --clobber \
+          || gh release upload "$TAG" --clobber \
             dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/SHA256SUMS.txt
