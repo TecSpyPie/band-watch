@@ -2578,6 +2578,18 @@ const FAKE_ATS = `(() => {
           if (c === "\\r" || c === "\\n") continue;
           radio.sent.push(c);
           if (c === "t") radio.log = !radio.log;
+          else if (c === "c") {
+            // Screen picture: status line off, then a 320 x 170 RGB565 BMP, red with a green top row
+            radio.log = false; radio.shots = (radio.shots || 0) + 1;
+            const W = 320, H = 170, size = 66 + W * H * 2, b = new Uint8Array(size);
+            b.set([0x42, 0x4d, size & 255, (size >> 8) & 255, (size >> 16) & 255, 0, 0, 0, 0, 0, 66, 0, 0, 0, 40, 0, 0, 0,
+              W & 255, W >> 8, 0, 0, H, 0, 0, 0, 1, 0, 16, 0, 3, 0]);
+            for (let row = 0; row < H; row++) for (let x = 0; x < W; x++) {
+              const v = row === H - 1 ? 0x07e0 : 0xf800, o = 66 + (row * W + x) * 2;
+              b[o] = v & 255; b[o + 1] = v >> 8;
+            }
+            for (let o = 0; o < size; o += 4096) push && push(b.slice(o, o + 4096)); // arrives in pieces, like USB
+          }
           else if (c === "B") select(radio.band + 1);
           else if (c === "b") select(radio.band - 1);
           else if ((c === "M" || c === "m") && radio.mode !== "FM") {
@@ -2633,5 +2645,74 @@ test("radio control: ATS Mini: switches its status line on, changes band and mod
   await page.evaluate(() => { window.__radio.hz = 9420000; });
   await page.waitForFunction(() => listen.kHz === 9420 && listen.mode === "am", null, { timeout: 5000 });
   assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-rig"))).kind, "atsmini");
+  assert.deepEqual(errors, []);
+});
+
+test("radio control: with an FT-991A and an ATS Mini both plugged in, each make reconnects to its own port", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  // The FT-991A's Silicon Labs port (10C4) comes first; opening it as an ATS Mini would be wrong.
+  const twoPorts = FAKE_ATS
+    .replace("readable: null, writable: null,", "readable: null, writable: null, getInfo: () => ({ usbVendorId: 0x303a, usbProductId: 0x1001 }),")
+    .replace("async getPorts() { return []; }", `async getPorts() {
+      const ft = { getInfo: () => ({ usbVendorId: 0x10c4, usbProductId: 0xea70 }), async open() { window.__radio.wrongPort = true; throw new Error("that's the FT-991A"); } };
+      return [ft, port];
+    }`);
+  await page.addInitScript(twoPorts);
+  await page.addInitScript(() => localStorage.setItem("bw-rig", JSON.stringify({ kind: "atsmini", baud: 115200, autoConnect: true })));
+  await page.reload();
+  await page.waitForFunction(() => rig.connected && rig.hz === 103900000, null, { timeout: 8000 });
+  assert.equal(await page.evaluate(() => window.__radio.wrongPort || false), false, "never opened the FT-991A's port");
+  // Switching the make to Yaesu: no Yaesu port has been used yet besides the FT-991A's, which is the one that fits
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "yaesu");
+  await page.waitForFunction(() => !rig.connected && window.__radio.wrongPort === true);
+  // ...and back to the ATS Mini: its own port again
+  await page.selectOption("#optRigKind", "atsmini");
+  await page.waitForFunction(() => rig.connected && rig.kind === "atsmini", null, { timeout: 8000 });
+  assert.deepEqual(errors, []);
+});
+
+test("ATS Mini panel: shows the radio's screen, its buttons work, and a drawn screen when Live screen is off", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ATS);
+  await page.addInitScript(() => localStorage.setItem("bw-rig", JSON.stringify({ kind: "atsmini", baud: 115200, autoConnect: false })));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  assert.equal(await page.isVisible("#secAts"), true, "the panel shows for an ATS Mini");
+  await page.click("#atsConnect");
+  await page.waitForFunction(() => rig.connected && rig.ats.shots >= 2, null, { timeout: 15000 });
+  if (process.env.ATS_SHOT) await (await page.$("#secAts")).screenshot({ path: process.env.ATS_SHOT });
+  // Red screen, green top row: decoded and the right way up
+  const px = await page.$eval("#atsScreen", (c) => { const g = c.getContext("2d"); return [Array.from(g.getImageData(160, 100, 1, 1).data), Array.from(g.getImageData(160, 0, 1, 1).data), c.width, c.height]; });
+  assert.deepEqual(px, [[255, 0, 0, 255], [0, 255, 0, 255], 320, 170]);
+  // The status line keeps coming between pictures
+  await page.evaluate(() => { window.__radio.hz = 98500000; });
+  await page.waitForFunction(() => /98\.500\.000 MHz FM · VHF/.test(document.getElementById("atsState").textContent), null, { timeout: 8000 });
+  // Buttons
+  await page.click('[data-ats="B"]');
+  await page.waitForFunction(() => window.__radio.band === 1);
+  // Tuning still works with the screen live
+  await page.evaluate(() => tuneTo(14074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.band === 22 && window.__radio.hz === 14074000, null, { timeout: 10000 });
+  // Drawn screen
+  await page.uncheck("#atsLive");
+  const shots = await page.evaluate(() => window.__radio.shots);
+  await new Promise((r) => setTimeout(r, 2500));
+  assert.ok(await page.evaluate(() => window.__radio.shots) <= shots + 1, "stops asking for pictures");
+  await page.waitForFunction(() => /own view/.test(document.getElementById("atsScreenMsg").textContent));
+  // Colour, brightness and contrast are kept; the radio's own light buttons send L and l
+  await page.selectOption("#atsColour", "amber");
+  await page.$eval("#atsBright", (e) => { e.value = "70"; e.dispatchEvent(new Event("input")); });
+  await page.$eval("#atsContrast", (e) => { e.value = "150"; e.dispatchEvent(new Event("input")); });
+  assert.equal(await page.$eval("#atsScreen", (c) => c.style.filter), "brightness(70%) contrast(150%)");
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-ats"))), { live: false, bright: 70, contrast: 150, colour: "amber" });
+  await page.click('[data-ats="L"]');
+  await page.waitForFunction(() => window.__radio.sent.includes("L"));
+  if (process.env.ATS_SHOT) { await new Promise((r) => setTimeout(r, 400)); await (await page.$("#secAts")).screenshot({ path: process.env.ATS_SHOT.replace(".png", "-drawn.png") }); }
+  // Not shown for other radios
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "yaesu");
+  await page.keyboard.press("Escape");
+  assert.equal(await page.isVisible("#secAts"), false);
   assert.deepEqual(errors, []);
 });

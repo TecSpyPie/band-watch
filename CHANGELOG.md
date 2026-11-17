@@ -1,5 +1,13 @@
 # What's new
 
+## 1.15.0 (17 Nov 2026)
+- **ATS Mini panel:** when your radio make is ATS Mini, a new panel shows a **live picture of the radio's own
+  screen**, about every 1½ seconds, with buttons for Band, Tune, Push, Mode and Volume, Connect, **Choose port** and
+  **Save picture**. Untick Live screen for a simpler screen Band Watch draws from the radio's status (frequency, band,
+  mode, signal and SNR).
+- **Radio ports:** with an FT-991A and an ATS Mini both plugged in, changing the radio make no longer reconnects to the
+  other radio's port. Each make uses its own port, and Band Watch asks you to pick one if it doesn't know it yet.
+
 ## 1.14.0 (17 Nov 2026)
 - **ATS Mini support:** Band Watch can now control the ATS Mini pocket receiver (SI4732, firmware 2.34 or later)
   over its USB cable. In **Settings > Radio control**, pick **ATS Mini** and press Connect radio (on the radio, set

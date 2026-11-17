@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.15.0", "ATS Mini panel: a live picture of the radio's screen with buttons, and each radio make keeps to its own USB port"],
   ["1.14.0", "ATS Mini support: pick it in Settings > Radio control and Band Watch changes its band and mode and tunes it for you"],
   ["1.13.1", "rtl_tcp comes with the Windows app, so Listen with your RTL-SDR works straight away (rtl-sdr's GPL licence is in C:\\BandWatch\\COPYING-rtl-sdr.txt)"],
   ["1.13.0", "Icom (CI-V) and Kenwood radio control beside Yaesu; Send to QRZ puts your log straight into your QRZ logbook; Listen starts rtl_tcp for you and shows problems clearly; the Twente WebSDR opens in its own window; an Updates section at the top of Settings, with links to Band Watch on GitHub"],

@@ -59,7 +59,7 @@ const rig = {
   ats: null,
 };
 
-const atsFresh = () => ({ band: -1, bandName: "", mode: "", seq: null, waitSeq: null, sentAt: 0, lastLine: 0, toggledAt: 0, want: null, note: "", version: "", rssi: 0, snr: 0 });
+const atsFresh = () => ({ raw: new Uint8Array(0), shotWanted: false, shotSize: 0, shotAt: 0, nextShot: 0, shots: 0, band: -1, bandName: "", mode: "", seq: null, waitSeq: null, sentAt: 0, lastLine: 0, toggledAt: 0, want: null, note: "", version: "", rssi: 0, snr: 0 });
 rig.ats = atsFresh();
 
 function rigSupported() {
@@ -250,6 +250,11 @@ function atsLine(line) {
 /** Every second: if the status lines stopped (or never started), switch them on with "t". */
 function atsWatch() {
   const a = rig.ats;
+  if (a.shotWanted) {
+    if (Date.now() - a.shotAt < 6000) return;
+    a.shotWanted = false; a.shotSize = 0; a.raw = new Uint8Array(0); // the picture never came: carry on without it
+    a.screenNote = "The ATS Mini didn't send its screen. Its firmware may be too old for this (it needs 2.34 or later).";
+  }
   if (Date.now() - Math.max(a.lastLine, a.toggledAt) > 2500) { a.toggledAt = Date.now(); rigWrite("t"); }
   atsStep();
 }
@@ -331,19 +336,11 @@ function rigFeed(value) {
       if (f.length >= 6 && f[1] === 0xfe) rigIcomFrame(f);
     }
     if (rig.bytes.length > 200) rig.bytes = [];
+  } else if (rig.kind === "atsmini") {
+    atsFeed(value);
   } else {
     rig.buf += (rig.dec || (rig.dec = new TextDecoder())).decode(value, { stream: true });
     let i;
-    if (rig.kind === "atsmini") {
-      while ((i = rig.buf.indexOf("\n")) >= 0) {
-        const line = rig.buf.slice(0, i).trim();
-        rig.buf = rig.buf.slice(i + 1);
-        if (line) atsLine(line);
-      }
-      if (rig.buf.length > 400) rig.buf = "";
-      renderRig();
-      return;
-    }
     while ((i = rig.buf.indexOf(";")) >= 0) {
       const ans = rig.buf.slice(0, i).trim();
       rig.buf = rig.buf.slice(i + 1);
@@ -390,6 +387,16 @@ async function rigReadLoop() {
 
 /* ---------- Connecting ---------- */
 
+const ESPRESSIF_VID = 0x303a; // the ATS Mini's ESP32-S3 USB port
+
+/** Could this port be the chosen make of radio? The ATS Mini is an Espressif USB device; the others never are. */
+function rigPortFits(port) {
+  let vid;
+  try { vid = port.getInfo().usbVendorId; } catch { /* no info */ }
+  if (vid == null) return true;
+  return rig.kind === "atsmini" ? vid === ESPRESSIF_VID : vid !== ESPRESSIF_VID;
+}
+
 /** Open the radio's COM port. With pick=true the browser asks which port (the first time). */
 async function rigConnect(pick = true) {
   if (!rigSupported()) {
@@ -404,9 +411,12 @@ async function rigConnect(pick = true) {
   try {
     let port = null;
     const known = await navigator.serial.getPorts();
-    if (known.length && !pick) port = known[0];
+    if (!pick) port = known.find(rigPortFits) || null;
     else if (pick) port = await navigator.serial.requestPort();
-    if (!port) return false;
+    if (!port) {
+      if (!pick && known.length) rig.error = `Press Connect radio and pick your ${rigKind().name}'s port.`;
+      return false;
+    }
     // Yaesu and Kenwood radios use 2 stop bits at 4800 baud and 1 at the faster rates.
     await port.open({ baudRate: rig.baud, dataBits: 8, stopBits: rig.baud === 4800 && rig.kind !== "icom" ? 2 : 1, parity: "none", flowControl: "none" });
     rig.port = port;
@@ -524,6 +534,7 @@ function renderRig() {
   if ($("optRigDataLabel")) $("optRigDataLabel").textContent = rig.kind === "icom" ? "Use USB-D (data mode) on FT8, FT4, WSPR and other digital frequencies"
     : "Use DATA-USB on FT8, FT4, WSPR and other digital frequencies";
   for (const [id, k] of [["optRigFollow", "follow"], ["optRigRead", "read"], ["optRigData", "dataMode"], ["optRigAuto", "autoConnect"]]) if ($(id)) $(id).checked = rig[k];
+  renderAts();
 }
 
 async function rigReconnect() {
@@ -534,6 +545,7 @@ async function rigReconnect() {
 
 function setupRig() {
   loadRig();
+  setupAts();
   const civ = $("optRigCiv");
   if (civ) {
     civ.innerHTML = Object.entries(ICOM_RADIOS).map(([a, n]) => `<option value="${a}">${n} (${a}h)</option>`).join("");
@@ -548,7 +560,10 @@ function setupRig() {
     rig.baud = rigKind().baud;
     saveRig();
     renderRigBauds();
-    await rigReconnect();
+    const was = rig.connected;
+    await rigDisconnect(); // a different make is a different port: never reuse the old radio's
+    rig.error = "";
+    if (was || rig.autoConnect) await rigConnect(false); // a port this make used before, if there is one
     renderRig();
   });
   $("optRigBaud").addEventListener("change", async () => {
@@ -571,4 +586,213 @@ function setupRig() {
     if (rig.autoConnect) navigator.serial.getPorts().then((ports) => { if (ports.length) rigConnect(false); }).catch(() => {});
   }
   renderRig();
+}
+
+/* ---------- ATS Mini: its screen, and its buttons ---------- */
+
+const atsShot = { live: true, bright: 100, contrast: 100, colour: "blue" };
+// The drawn screen's colours: [heading, frequency]
+const ATS_COLOURS = { blue: ["#9cf", "#fff"], green: ["#7e7", "#bfb"], amber: ["#fc6", "#ffd28a"], white: ["#ddd", "#fff"] };
+
+function atsSaveView() {
+  store("bw-ats", { live: atsShot.live, bright: atsShot.bright, contrast: atsShot.contrast, colour: atsShot.colour });
+}
+
+/** Brightness and contrast for the picture (the radio's own light is the Light buttons). */
+function atsApplyView() {
+  const c = $("atsScreen");
+  if (c) c.style.filter = atsShot.bright === 100 && atsShot.contrast === 100 ? "" : `brightness(${atsShot.bright}%) contrast(${atsShot.contrast}%)`;
+  if ($("atsBright")) $("atsBright").value = String(atsShot.bright);
+  if ($("atsContrast")) $("atsContrast").value = String(atsShot.contrast);
+  if ($("atsColour")) $("atsColour").value = atsShot.colour;
+}
+
+/** Bytes from the ATS Mini: text lines, and (after "c") a picture of its screen as a binary RGB565 BMP. */
+function atsFeed(value) {
+  const a = rig.ats;
+  let raw = new Uint8Array(a.raw.length + value.length);
+  raw.set(a.raw);
+  raw.set(value, a.raw.length);
+  for (;;) {
+    if (a.shotSize) {
+      if (raw.length < a.shotSize) break;
+      atsShowScreen(raw.subarray(0, a.shotSize));
+      raw = raw.subarray(a.shotSize);
+      atsShotDone();
+      continue;
+    }
+    if (a.shotWanted) {
+      const i = atsFindBmp(raw);
+      if (i >= 0) {
+        atsText(raw.subarray(0, i));
+        raw = raw.subarray(i);
+        if (raw.length < 26) break; // the rest of the header is on its way
+        const w = raw[18] | (raw[19] << 8), h = raw[22] | (raw[23] << 8);
+        const size = (raw[2] | (raw[3] << 8) | (raw[4] << 16) | (raw[5] << 24)) >>> 0;
+        if (w > 0 && h > 0 && w <= 640 && h <= 480 && size === 66 + w * h * 2) { a.shotSize = size; continue; }
+        raw = raw.subarray(2); // "BM" that wasn't a picture
+        continue;
+      }
+    }
+    const nl = raw.lastIndexOf(10);
+    if (nl >= 0) { atsText(raw.subarray(0, nl + 1)); raw = raw.subarray(nl + 1); }
+    break;
+  }
+  a.raw = raw.length > 300000 ? new Uint8Array(0) : raw.slice();
+}
+
+/** Where a picture starts: "BM" followed by a 40-byte BITMAPINFOHEADER (or too few bytes yet to tell). */
+function atsFindBmp(raw) {
+  for (let i = 0; i + 1 < raw.length; i++) {
+    if (raw[i] !== 0x42 || raw[i + 1] !== 0x4d) continue;
+    if (raw.length < i + 15 || raw[i + 14] === 40) return i;
+  }
+  return -1;
+}
+
+function atsText(bytes) {
+  if (!bytes.length) return;
+  for (const line of new TextDecoder().decode(bytes).split("\n")) if (line.trim()) atsLine(line.trim());
+}
+
+/** Draw the BMP (RGB565, rows bottom-up) on the panel's canvas. */
+function atsShowScreen(bmp) {
+  const a = rig.ats;
+  const w = bmp[18] | (bmp[19] << 8), h = bmp[22] | (bmp[23] << 8);
+  const off = bmp[10] | (bmp[11] << 8);
+  const c = $("atsScreen");
+  if (!c) return;
+  if (c.width !== w) c.width = w;
+  if (c.height !== h) c.height = h;
+  const g = c.getContext("2d");
+  const img = g.createImageData(w, h);
+  const d = img.data;
+  for (let row = 0; row < h; row++) {
+    const y = h - 1 - row;
+    let o = off + row * w * 2;
+    let p = y * w * 4;
+    for (let x = 0; x < w; x++, o += 2, p += 4) {
+      const v = bmp[o] | (bmp[o + 1] << 8);
+      d[p] = (((v >> 11) & 31) * 527 + 23) >> 6;
+      d[p + 1] = (((v >> 5) & 63) * 259 + 33) >> 6;
+      d[p + 2] = ((v & 31) * 527 + 23) >> 6;
+      d[p + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  a.shots++;
+  a.screenNote = "";
+}
+
+/** After a picture the radio's status line is off: turn it back on. */
+function atsShotDone() {
+  const a = rig.ats;
+  a.shotWanted = false;
+  a.shotSize = 0;
+  a.toggledAt = Date.now();
+  a.lastLine = Date.now();
+  rigWrite("t");
+}
+
+/** Ask for a picture of the screen every 1.5 s while the panel is showing and nothing else is going on. */
+function atsScreenTick() {
+  const a = rig.ats;
+  if (rig.kind !== "atsmini" || !rig.connected || !a.lastLine) return;
+  if (!atsShot.live) { atsDrawSim(); return; }
+  if (a.shotWanted || a.want || document.visibilityState === "hidden" || $("secAts").hidden) return;
+  if (Date.now() < a.nextShot) return;
+  a.nextShot = Date.now() + 1500;
+  a.shotWanted = true;
+  a.shotAt = Date.now();
+  rigWrite("c");
+}
+
+/** Without the live picture: a simple screen drawn from the radio's status line. */
+function atsDrawSim() {
+  const c = $("atsScreen");
+  if (!c) return;
+  const a = rig.ats;
+  if (c.width !== 320) c.width = 320;
+  if (c.height !== 170) c.height = 170;
+  const g = c.getContext("2d");
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, 320, 170);
+  if (!rig.connected) return;
+  const [head, main] = ATS_COLOURS[atsShot.colour] || ATS_COLOURS.blue;
+  g.fillStyle = head;
+  g.font = "bold 16px system-ui, sans-serif";
+  g.fillText(`${a.bandName || ""}  ${rig.modeName || ""}`, 12, 26);
+  g.fillStyle = main;
+  g.font = "bold 34px system-ui, sans-serif";
+  const fm = rig.modeName === "FM";
+  g.fillText(fm ? `${(rig.hz / 1e6).toFixed(2)} MHz` : `${(rig.hz / 1000).toLocaleString(undefined, { minimumFractionDigits: rig.modeName === "AM" ? 0 : 3, maximumFractionDigits: 3 })} kHz`, 12, 86);
+  // Signal: 0 to 127 dBµV, shown up to 70
+  const level = Math.max(0, Math.min(1, a.rssi / 70));
+  g.fillStyle = "#333";
+  g.fillRect(12, 112, 296, 14);
+  g.fillStyle = level > 0.6 ? "#4c4" : level > 0.3 ? "#cc4" : "#c84";
+  g.fillRect(12, 112, Math.round(296 * level), 14);
+  g.fillStyle = "#aaa";
+  g.font = "14px system-ui, sans-serif";
+  g.fillText(`Signal ${a.rssi} dBµV   SNR ${a.snr} dB`, 12, 150);
+}
+
+function renderAts() {
+  const sec = $("secAts");
+  if (!sec) return;
+  sec.hidden = rig.kind !== "atsmini";
+  if (sec.hidden) return;
+  const a = rig.ats;
+  $("atsState").textContent = rig.connected
+    ? (a.lastLine ? `${fmtRigHz(rig.hz)} MHz ${rig.modeName} · ${a.bandName} · Signal ${a.rssi} dBµV, SNR ${a.snr} dB` : "Connected, waiting for the radio…")
+    : rig.busy ? "Connecting…" : "Not connected";
+  $("atsConnect").textContent = rig.connected ? "Disconnect" : "Connect";
+  for (const b of sec.querySelectorAll("[data-ats]")) b.disabled = !rig.connected;
+  $("atsScreenMsg").textContent = !rig.connected
+    ? (rig.error || "Connect the ATS Mini to see its screen here. On the radio, set Settings > USB Port to Ad hoc first.")
+    : a.screenNote || (atsShot.live ? (a.shots ? "Live picture of the radio's screen." : "Getting the radio's screen…") : "Band Watch's own view, from the radio's status. Tick Live screen for the real picture.");
+}
+
+function setupAts() {
+  if (!$("secAts")) return;
+  try {
+    const s = JSON.parse(load("bw-ats") || "{}");
+    if (typeof s.live === "boolean") atsShot.live = s.live;
+    if (Number.isFinite(s.bright)) atsShot.bright = Math.max(50, Math.min(160, s.bright));
+    if (Number.isFinite(s.contrast)) atsShot.contrast = Math.max(50, Math.min(200, s.contrast));
+    if (ATS_COLOURS[s.colour]) atsShot.colour = s.colour;
+  } catch { /* defaults */ }
+  atsApplyView();
+  $("atsBright").addEventListener("input", () => { atsShot.bright = Number($("atsBright").value); atsApplyView(); atsSaveView(); });
+  $("atsContrast").addEventListener("input", () => { atsShot.contrast = Number($("atsContrast").value); atsApplyView(); atsSaveView(); });
+  $("atsColour").addEventListener("change", () => { atsShot.colour = ATS_COLOURS[$("atsColour").value] ? $("atsColour").value : "blue"; atsApplyView(); atsSaveView(); });
+  $("atsViewReset").addEventListener("click", () => { Object.assign(atsShot, { bright: 100, contrast: 100, colour: "blue" }); atsApplyView(); atsSaveView(); });
+  $("atsLive").checked = atsShot.live;
+  $("atsLive").addEventListener("change", () => {
+    atsShot.live = $("atsLive").checked;
+    atsSaveView();
+    rig.ats.nextShot = 0;
+    renderAts();
+  });
+  $("atsConnect").addEventListener("click", () => (rig.connected ? rigDisconnect() : rigConnect(true)));
+  $("atsPort").addEventListener("click", async () => { await rigDisconnect(); rigConnect(true); });
+  for (const b of $("secAts").querySelectorAll("[data-ats]")) {
+    b.addEventListener("click", () => {
+      if (!rig.connected) return;
+      rigWrite(b.dataset.ats);
+      rig.ats.nextShot = Date.now() + 250; // show the result soon
+    });
+  }
+  $("atsSave").addEventListener("click", () => {
+    $("atsScreen").toBlob((blob) => {
+      if (!blob) return;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `ats-mini-screen-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.png`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+    });
+  });
+  setInterval(atsScreenTick, 250);
+  renderAts();
 }

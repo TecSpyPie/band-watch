@@ -372,3 +372,10 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 :root:not([data-theme="contrast"]):not([data-theme="night"]) tbody tr:hover{background:color-mix(in srgb,var(--cool) 7%,transparent)}
 :root:not([data-theme="contrast"]):not([data-theme="night"]) tbody tr[aria-selected="true"]{background:linear-gradient(90deg,color-mix(in srgb,var(--warm) 14%,var(--surface)),var(--surface))}
 :root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.ctl input,.lk input,select,textarea){border-radius:8px;box-shadow:inset 0 1px 3px var(--shade)}
+
+/* ATS Mini panel: a live copy of the radio's 320 x 170 screen */
+.atsview{margin:8px 0}
+#atsScreen{display:block;width:100%;max-width:480px;aspect-ratio:320/170;image-rendering:pixelated;background:#000;border:1px solid var(--line);border-radius:8px}
+.atsbtns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.atspanel .phead{justify-content:flex-start;gap:10px;flex-wrap:wrap}
+.atsview-set label{display:inline-flex;align-items:center;gap:6px;margin-right:10px}

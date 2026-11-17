@@ -22,7 +22,8 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
   IC-9700 and other CI-V radios) or Kenwood (TS-590, TS-890, TS-990, TS-480, TS-2000) over USB when you click
   a spot, the scope or a decoder, and follows the radio's dial (Chrome or Edge on the PC the radio is plugged into)
 - **ATS Mini:** the SI4732 pocket receiver (firmware 2.34 or later, Settings > USB Port > Ad hoc) works the same way:
-  Band Watch changes its band and mode and tunes it, and shows its signal strength and SNR
+  Band Watch changes its band and mode and tunes it, shows its signal strength and SNR, and has a panel with a
+  live picture of the radio's screen and its buttons
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
 - **POTA:** live park activators on a list, the map and the scope, with alerts
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook

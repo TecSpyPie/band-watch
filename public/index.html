@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.14.0">
-<link rel="stylesheet" href="/listen.css?v=1.14.0">
+<link rel="stylesheet" href="/style.css?v=1.15.0">
+<link rel="stylesheet" href="/listen.css?v=1.15.0">
 </head>
 <body>
 <div class="wrap">
@@ -180,6 +180,43 @@
   </section>
 
   <div class="lsdock" id="lsDock">The Listen panel is in its own window. <button type="button" class="lbtn" id="lsDockBtn">Put it back here</button></div>
+
+  <section class="panel atspanel" id="secAts" aria-labelledby="atsTitle" hidden>
+    <div class="phead">
+      <h2 id="atsTitle">ATS Mini</h2>
+      <span class="small muted" id="atsState" role="status">Not connected</span>
+      <button type="button" class="lbtn" id="atsConnect">Connect</button>
+      <button type="button" class="lbtn" id="atsPort" title="Pick which USB port the ATS Mini is on">Choose port</button>
+    </div>
+    <div class="atsview">
+      <canvas id="atsScreen" width="320" height="170" role="img" aria-label="The ATS Mini's screen"></canvas>
+      <p class="small muted" id="atsScreenMsg">Connect the ATS Mini to see its screen here.</p>
+    </div>
+    <div class="atsbtns" role="group" aria-label="ATS Mini buttons">
+      <button type="button" class="tune" data-ats="b" title="Previous band">Band −</button>
+      <button type="button" class="tune" data-ats="B" title="Next band">Band +</button>
+      <button type="button" class="tune" data-ats="r" title="Turn the knob down">◀ Tune</button>
+      <button type="button" class="tune" data-ats="e" title="Press the knob">Push</button>
+      <button type="button" class="tune" data-ats="R" title="Turn the knob up">Tune ▶</button>
+      <button type="button" class="tune" data-ats="M" title="Next mode (AM, LSB, USB)">Mode</button>
+      <button type="button" class="tune" data-ats="v" title="Volume down">Vol −</button>
+      <button type="button" class="tune" data-ats="V" title="Volume up">Vol +</button>
+      <button type="button" class="tune" data-ats="l" title="The radio's own screen light down">Light −</button>
+      <button type="button" class="tune" data-ats="L" title="The radio's own screen light up">Light +</button>
+    </div>
+    <div class="optrow small atsview-set">
+      <label>Brightness <input type="range" id="atsBright" min="50" max="160" step="5" value="100"></label>
+      <label>Contrast <input type="range" id="atsContrast" min="50" max="200" step="5" value="100"></label>
+      <label>Colour <select id="atsColour">
+        <option value="blue">Blue</option><option value="green">Green</option><option value="amber">Amber</option><option value="white">White</option>
+      </select></label>
+      <button type="button" class="lbtn" id="atsViewReset">Reset</button>
+    </div>
+    <div class="optrow small">
+      <label><input type="checkbox" id="atsLive" checked> Live screen</label>
+      <button type="button" class="lbtn" id="atsSave">Save picture</button>
+    </div>
+  </section>
 
   <section class="panel" id="secDecode" aria-labelledby="dcTitle">
     <div class="phead">
@@ -684,30 +721,30 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.14.0"></script>
-<script src="/js/bandplan.js?v=1.14.0"></script>
-<script src="/js/core.js?v=1.14.0"></script>
-<script src="/js/modes.js?v=1.14.0"></script>
-<script src="/js/map.js?v=1.14.0"></script>
-<script src="/js/scope.js?v=1.14.0"></script>
-<script src="/js/monitor.js?v=1.14.0"></script>
-<script src="/js/lookup.js?v=1.14.0"></script>
-<script src="/js/worldclock.js?v=1.14.0"></script>
-<script src="/js/locator.js?v=1.14.0"></script>
-<script src="/js/activity.js?v=1.14.0"></script>
-<script src="/js/qrz.js?v=1.14.0"></script>
-<script src="/js/hovercard.js?v=1.14.0"></script>
-<script src="/js/station.js?v=1.14.0"></script>
-<script src="/js/sdr-dsp.js?v=1.14.0"></script>
-<script src="/js/sdr.js?v=1.14.0"></script>
-<script src="/js/listen.js?v=1.14.0"></script>
-<script src="/js/rig.js?v=1.14.0"></script>
-<script src="/js/xota.js?v=1.14.0"></script>
-<script src="/js/logbook.js?v=1.14.0"></script>
-<script src="/js/wanted.js?v=1.14.0"></script>
-<script src="/js/decoders.js?v=1.14.0"></script>
-<script src="/js/sun.js?v=1.14.0"></script>
-<script src="/js/options.js?v=1.14.0"></script>
-<script src="/js/app.js?v=1.14.0"></script>
+<script src="/js/install.js?v=1.15.0"></script>
+<script src="/js/bandplan.js?v=1.15.0"></script>
+<script src="/js/core.js?v=1.15.0"></script>
+<script src="/js/modes.js?v=1.15.0"></script>
+<script src="/js/map.js?v=1.15.0"></script>
+<script src="/js/scope.js?v=1.15.0"></script>
+<script src="/js/monitor.js?v=1.15.0"></script>
+<script src="/js/lookup.js?v=1.15.0"></script>
+<script src="/js/worldclock.js?v=1.15.0"></script>
+<script src="/js/locator.js?v=1.15.0"></script>
+<script src="/js/activity.js?v=1.15.0"></script>
+<script src="/js/qrz.js?v=1.15.0"></script>
+<script src="/js/hovercard.js?v=1.15.0"></script>
+<script src="/js/station.js?v=1.15.0"></script>
+<script src="/js/sdr-dsp.js?v=1.15.0"></script>
+<script src="/js/sdr.js?v=1.15.0"></script>
+<script src="/js/listen.js?v=1.15.0"></script>
+<script src="/js/rig.js?v=1.15.0"></script>
+<script src="/js/xota.js?v=1.15.0"></script>
+<script src="/js/logbook.js?v=1.15.0"></script>
+<script src="/js/wanted.js?v=1.15.0"></script>
+<script src="/js/decoders.js?v=1.15.0"></script>
+<script src="/js/sun.js?v=1.15.0"></script>
+<script src="/js/options.js?v=1.15.0"></script>
+<script src="/js/app.js?v=1.15.0"></script>
 </body>
 </html>
