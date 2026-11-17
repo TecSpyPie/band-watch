@@ -124,8 +124,6 @@ func runStopScript(script, dest string) {
 	_ = hidden(exec.Command("cmd", "/c", script, "quiet")).Run()
 }
 
-func fileExists(p string) bool { st, err := os.Stat(p); return err == nil && !st.IsDir() }
-
 func makeShortcuts(dest string, startup bool) error {
 	s := "no"
 	if startup {

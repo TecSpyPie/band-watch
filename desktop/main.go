@@ -55,6 +55,8 @@ func main() {
 	cfg.PskURL = env("BW_PSK_URL", cfg.PskURL)
 	cfg.QrzURL = env("BW_QRZ_URL", cfg.QrzURL)
 	cfg.PotaURL = env("BW_POTA_URL", cfg.PotaURL)
+	cfg.UpdateURL = env("BW_UPDATE_URL", cfg.UpdateURL)
+	cfg.UpdateAssets = os.Getenv("BW_UPDATE_ASSETS")
 
 	if *serve {
 		cfg.TestHooks = os.Getenv("BW_TEST") == "1"

@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.12.2", "Install updates from Settings, About this build; the installer updates your copy in place (no need to uninstall)"],
   ["1.12.1", "SOTA spots removed (SOTA's API terms don't allow AI-written software without approval); POTA checked every two minutes"],
   ["1.12.0", "Yaesu FT-991A radio control over USB; POTA activators on a list, the map and the scope; a logbook with ADIF export and import; wanted alerts; WSPR and CW decoders"],
   ["1.11.1", "Everything in C:\\BandWatch, including the log; install.bat installs there too and removes the old copy in AppData"],
@@ -322,6 +323,7 @@ function renderAbout() {
   const page = (document.querySelector('script[src*="app.js?v="]') || {}).src || "";
   const pageVer = (page.match(/v=([\d.]+)/) || [])[1] || "";
   $("abHist").innerHTML = VERSION_HISTORY.map(([v, what]) => `<li><b>${esc(v)}</b>: ${esc(what)}</li>`).join("");
+  checkForUpdate();
   getJson("/healthz").then((h) => {
     const b = h.build || {};
     const ago = (iso) => {
@@ -344,5 +346,83 @@ function renderAbout() {
     $("optAbout").innerHTML = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
   }).catch(() => {
     $("optAbout").innerHTML = `<dt>Version</dt><dd>${esc(pageVer || "unknown")}</dd><dt>Built</dt><dd>Couldn't reach the server</dd>`;
+  });
+}
+
+/* ---------- Updates ---------- */
+
+const updateState = { info: null, installing: false };
+
+/** Ask the server whether there's a newer Band Watch. */
+async function checkForUpdate() {
+  try {
+    const r = await fetch("/api/update", { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    updateState.info = await r.json();
+  } catch {
+    updateState.info = { error: true };
+  }
+  renderUpdate();
+  return updateState.info;
+}
+
+function renderUpdate() {
+  const el = $("abUpdate");
+  if (!el) return;
+  const u = updateState.info;
+  if (updateState.installing) {
+    el.innerHTML = `Installing Band Watch ${esc(updateState.installing)}… Band Watch closes and opens again by itself in a minute or so.`;
+    return;
+  }
+  if (!u) { el.textContent = "Checking for updates…"; return; }
+  if (u.error) { el.innerHTML = `Couldn't check for updates just now. <button type="button" class="linkbtn" id="abCheck">Try again</button>`; }
+  else if (!u.newer) { el.innerHTML = `You have the newest version. <button type="button" class="linkbtn" id="abCheck">Check again</button>`; }
+  else if (u.canInstall) {
+    el.innerHTML = `<b>Band Watch ${esc(u.latest)} is available.</b> <button type="button" class="tune" id="abInstall">Install update</button>
+      <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">What's new</a>`;
+  } else {
+    el.innerHTML = `<b>Band Watch ${esc(u.latest)} is available.</b> <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">Download it</a>
+      <span class="small muted">(The web version updates itself: just reload the page.)</span>`;
+  }
+  if ($("abCheck")) $("abCheck").onclick = () => { updateState.info = null; renderUpdate(); checkForUpdate(); };
+  if ($("abInstall")) $("abInstall").onclick = installUpdate;
+}
+
+/** The Windows app downloads the new installer from GitHub, checks it, and installs it over this copy. */
+async function installUpdate() {
+  const u = updateState.info;
+  if (!u || !u.canInstall) return;
+  $("abInstall").disabled = true;
+  $("abInstall").textContent = "Downloading…";
+  try {
+    const r = await fetch("/api/update/install", { method: "POST", headers: { "X-Band-Watch": "update" } });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `the app answered ${r.status}`);
+    updateState.installing = d.installing;
+    renderUpdate();
+    // When the new version answers, reload into it.
+    const until = Date.now() + 5 * 60 * 1000;
+    const poll = async () => {
+      try {
+        const h = await (await fetch("/healthz", { cache: "no-store" })).json();
+        if (h.version === d.installing) { location.reload(); return; }
+      } catch { /* restarting */ }
+      if (Date.now() < until) setTimeout(poll, 2000);
+    };
+    setTimeout(poll, 4000);
+  } catch (e) {
+    $("abUpdate").innerHTML = `The update didn't work: ${esc(e.message)}. You can <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">download it</a> instead.`;
+  }
+}
+
+/** In the Windows app, look for an update once a day, and mention it. */
+function updateNudge() {
+  if (!app.desktop) return;
+  let last = 0;
+  try { last = Number(load("bw-update-checked")) || 0; } catch { /* none */ }
+  if (Date.now() - last < 20 * 3600 * 1000) return;
+  store("bw-update-checked", String(Date.now()));
+  checkForUpdate().then((u) => {
+    if (u && u.newer) showToast(`Band Watch ${u.latest} is available`, "Settings, About this build: Install update.");
   });
 }

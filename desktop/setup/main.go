@@ -60,10 +60,20 @@ func main() {
 		}
 	}
 	chosen := *dest != ""
+	update := false
 	if !chosen {
-		*dest = previousLocation() // an update goes where Band Watch already is
-		if *dest == "" {
-			*dest = defaultDest()
+		*dest = suggestedDest(previousLocation(), defaultDest())
+		update = fileExists(filepath.Join(*dest, "BandWatch.exe"))
+	}
+	if update && !*silent {
+		// An update: one question, then it goes over the old copy in the same folder.
+		old := installedVersion(*dest)
+		q := fmt.Sprintf("Update Band Watch by M3vrv in %s\n\nfrom %s to %s?\n\nYes: update it (your settings and log are kept)\nNo: install somewhere else\nCancel: don't install", *dest, old, versionText())
+		switch askInstallWhere(q) {
+		case answerYes:
+			chosen = true
+		case answerCancel:
+			return
 		}
 	}
 	if err := install(*dest, *silent, chosen); err != nil {
@@ -157,6 +167,32 @@ func chooseDest(suggested string) (string, error) {
 		}
 		dest = picked
 	}
+}
+
+// suggestedDest is where to install: where Band Watch already is, except that a copy in the old
+// %LOCALAPPDATA%\BandWatch folder moves to C:\BandWatch (removeOldCopy then tidies the old folder away).
+func suggestedDest(previous, def string) string {
+	if previous == "" {
+		return def
+	}
+	old := filepath.Join(localAppData(), "BandWatch")
+	if strings.EqualFold(filepath.Clean(previous), filepath.Clean(old)) && !strings.EqualFold(filepath.Clean(def), filepath.Clean(old)) {
+		return def
+	}
+	return previous
+}
+
+// installedVersion reads the version of the copy in a folder (BUILD-INFO.txt), or "the version you have".
+func installedVersion(dir string) string {
+	b, err := os.ReadFile(filepath.Join(dir, "BUILD-INFO.txt"))
+	if err == nil {
+		for _, line := range strings.Split(string(b), "\n") {
+			if v, ok := strings.CutPrefix(strings.TrimSpace(line), "Version "); ok && v != "" {
+				return v
+			}
+		}
+	}
+	return "the version you have"
 }
 
 // defaultDest is C:\BandWatch (the system drive), or the user's own folder if that drive's top level can't be written.
@@ -280,3 +316,5 @@ func dirSizeKB(dir string) int64 {
 	})
 	return n / 1024
 }
+
+func fileExists(p string) bool { st, err := os.Stat(p); return err == nil && !st.IsDir() }

@@ -50,6 +50,7 @@ function handle(kind, url) {
   if (kind === "qrz") return qrzMock(url.searchParams);
   if (kind === "pota") return up.potaDown ? { status: 503 } : XOTA.potaRows();
   if (kind === "sota") return up.sotaDown ? new Error("down") : XOTA.sotaRows();
+  if (kind === "update") return up.updateDown ? { status: 503 } : { tag_name: up.latestTag || "v99.1.0", html_url: "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0", assets: [] };
   if (kind === "psk") return up.psk;
   const p = url.pathname;
   if (p.endsWith("f107_cm_flux.json")) return up.flux;
@@ -587,4 +588,26 @@ test("GET /api/xota: POTA down is a 502", async () => {
   up.potaDown = true;
   const r = await get("/api/xota");
   assert.equal(r.status, 502);
+});
+
+test("GET /api/update: the newest release on GitHub, and whether this copy can install it", async () => {
+  const r = await get("/api/update");
+  assert.equal(r.status, 200);
+  const d = JSON.parse(r.body);
+  assert.equal(d.current, require("../package.json").version);
+  assert.equal(d.latest, "99.1.0");
+  assert.equal(d.newer, true);
+  assert.equal(d.canInstall, false, "only the Windows app installs updates");
+  assert.match(d.page, /releases\/tag\/v99\.1\.0$/);
+  await srv.reset();
+  up.latestTag = `v${require("../package.json").version}`;
+  assert.equal(JSON.parse((await get("/api/update")).body).newer, false);
+  await srv.reset();
+  up.updateDown = true;
+  assert.equal((await get("/api/update")).status, 502);
+});
+
+test("POST /api/update/install: not available outside the Windows app", async () => {
+  const r = await get("/api/update/install", { method: "POST", headers: { "X-Band-Watch": "update" } });
+  assert.ok([404, 405].includes(r.status), `status ${r.status}`);
 });

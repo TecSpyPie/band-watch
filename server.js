@@ -3,6 +3,7 @@
 //   GET  /api/solar            -> { sfi, kp, at }          (NOAA SWPC, cached 15 min)
 //   GET  /api/spots?grid=IO93  -> { grid, spots[], at }    (PSK Reporter, cached 5 min per grid)
 //   GET  /api/xota             -> { spots[], at, failed[] } POTA activators (cached 2 min)
+//   GET  /api/update           -> { current, latest, newer, page, canInstall } (GitHub releases, cached 1 hour)
 //   GET  /api/sun              -> sunspot regions, sunspot number, X-rays, solar wind, NOAA scales (cached 30 min)
 //   GET  /api/qrz/status       -> { loggedIn, user, subscriber }
 //   POST /api/qrz/login        <- { username, password }   (sets an HttpOnly session cookie)
@@ -41,6 +42,8 @@ const PSK_QUERY = process.env.BW_PSK_URL || "https://retrieve.pskreporter.info/q
 const POTA_URL = process.env.BW_POTA_URL || "https://api.pota.app/spot/activator";
 // SOTA spots are not used: SOTA's API terms don't allow AI-written software without their approval.
 const XOTA_TTL = 2 * 60 * 1000;
+const UPDATE_URL = process.env.BW_UPDATE_URL || "https://api.github.com/repos/TecSpyPie/band-watch/releases/latest";
+const UPDATE_TTL = 60 * 60 * 1000;
 const TEST_HOOKS = process.env.BW_TEST === "1";
 // The RTL-SDR bridge connects to rtl_tcp on this PC or the local network, so it is only switched
 // on where Band Watch runs on the user's own PC (start-bandwatch.bat sets BW_SDR=1), never online.
@@ -126,6 +129,27 @@ async function getXota() {
       .slice(0, 400);
     return { spots, at: clock.now(), failed: [] };
   });
+}
+
+/* ---------- Updates ---------- */
+
+/** Is version a ("1.12.2" or "v1.12.2") newer than b? */
+function newerVersion(a, b) {
+  const pa = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(String(a)), pb = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(String(b));
+  if (!pa || !pb) return false;
+  for (let i = 1; i <= 3; i++) if (Number(pa[i]) !== Number(pb[i])) return Number(pa[i]) > Number(pb[i]);
+  return false;
+}
+
+/** The newest release on GitHub. This server only reports it: installing is done by the Windows app. */
+async function getUpdate() {
+  const rel = await cached("update", UPDATE_TTL, async () => {
+    const r = await (await fetchOk(UPDATE_URL, 20000)).json();
+    const latest = String(r.tag_name || "").replace(/^v/, "");
+    if (!/^\d+\.\d+\.\d+$/.test(latest)) throw new Error("no version number");
+    return { latest, page: String(r.html_url || "") };
+  });
+  return { current: VERSION, latest: rel.latest, newer: newerVersion(rel.latest, VERSION), page: rel.page, canInstall: false };
 }
 
 /* ---------- Helpers ---------- */
@@ -576,6 +600,7 @@ async function handle(req, res) {
     if (url.pathname === "/api/sun") return sendJson(res, 200, await getSun());
     if (url.pathname === "/api/solar") return sendJson(res, 200, await getSolar());
     if (url.pathname === "/api/xota") return sendJson(res, 200, await getXota());
+    if (url.pathname === "/api/update") return sendJson(res, 200, await getUpdate());
     if (url.pathname === "/api/spots") {
       const grid = String(url.searchParams.get("grid") || "").toUpperCase().slice(0, 4);
       if (!/^[A-R]{2}\d{2}$/.test(grid)) return sendJson(res, 400, { error: "grid must look like IO93" });

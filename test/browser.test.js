@@ -47,6 +47,7 @@ const SUN = {
 const XOTA = require("./fixtures/xota.js");
 
 function upstreamHandler(kind, url) {
+  if (kind === "update") return { tag_name: feed.latestTag || "v99.1.0", html_url: "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0", assets: [] };
   if (kind === "pota") return feed.potaDown ? { status: 503 } : (feed.pota ? feed.pota() : XOTA.potaRows());
   if (kind === "qrz") {
     const q = url.searchParams;
@@ -2236,4 +2237,40 @@ test("WSPR and CW decoders: in the decoder panel, through the background worker"
   assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-decode"))).mode, "CW");
   await page.click("#dcStart");
   assert.deepEqual(errors, []);
+});
+
+test("updates: Settings says when a newer Band Watch is out, with a download link on the web", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.click("#optBtn");
+  await page.waitForFunction(() => /Band Watch 99\.1\.0 is available/.test(document.getElementById("abUpdate").textContent));
+  assert.equal(await page.locator("#abInstall").count(), 0, "no install button outside the Windows app");
+  assert.equal(await page.getAttribute("#abUpdate a", "href"), "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0");
+  // Up to date
+  feed.latestTag = `v${require("../package.json").version}`;
+  await srv.reset();
+  await page.click("#abUpdate a").catch(() => {}); // (the link opens a new tab; ignore it)
+  await page.evaluate(() => checkForUpdate());
+  await page.waitForFunction(() => /You have the newest version/.test(document.getElementById("abUpdate").textContent));
+  feed.latestTag = null;
+  assert.deepEqual(errors, []);
+});
+
+test("updates: the Windows app installs an update and reloads into the new version", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  // Pretend to be the Windows app with an update waiting
+  let installed = false;
+  await page.route("**/api/update", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ current: "1.0.0", latest: "1.0.1", newer: true, canInstall: true, page: "https://github.com/TecSpyPie/band-watch/releases/tag/v1.0.1" }) }));
+  await page.route("**/api/update/install", (r) => {
+    installed = r.request().headers()["x-band-watch"] === "update";
+    r.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, installing: "1.0.1" }) });
+  });
+  await page.click("#optBtn");
+  await page.waitForSelector("#abInstall");
+  await page.click("#abInstall");
+  await page.waitForFunction(() => /Installing Band Watch 1\.0\.1/.test(document.getElementById("abUpdate").textContent));
+  assert.equal(installed, true);
+  // When the new version answers, the page reloads into it
+  await page.route("**/healthz", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, version: "1.0.1" }) }));
+  await page.waitForEvent("load", { timeout: 15000 });
+  assert.deepEqual(errors.filter((e) => !/healthz/.test(e)), []);
 });

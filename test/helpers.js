@@ -18,7 +18,7 @@ async function startUpstream(handle) {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://upstream");
     calls.push(url.toString());
-    const kind = ["psk", "qrz", "pota", "sota"].find((k) => url.pathname.startsWith(`/${k}`)) || "noaa";
+    const kind = ["psk", "qrz", "pota", "sota", "update"].find((k) => url.pathname.startsWith(`/${k}`)) || "noaa";
     let out;
     try { out = handle(kind, url); } catch (e) { out = e; }
     if (out instanceof Error) { req.socket.destroy(); return; }
@@ -61,6 +61,7 @@ async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node")
     BW_PSK_URL: `${upstreamBase}/psk/query`,
     BW_QRZ_URL: `${upstreamBase}/qrz/xml/current/`,
     BW_POTA_URL: `${upstreamBase}/pota/spot/activator`,
+    BW_UPDATE_URL: `${upstreamBase}/update/releases/latest`,
   };
   const child = kind === "go"
     ? spawn(buildGo(), ["--serve"], { env, stdio: ["ignore", "inherit", "inherit"] })

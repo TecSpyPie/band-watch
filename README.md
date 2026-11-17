@@ -7,6 +7,8 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **On a Windows PC:** download **BandWatch-Setup.exe** from the
   [latest release](https://github.com/TecSpyPie/band-watch/releases/latest), run it, answer Yes. It installs to `C:\BandWatch`
   for you only (no administrator rights) and adds desktop and Start menu shortcuts.
+- **Updating:** Settings > About this build > **Install update**, or run a newer BandWatch-Setup.exe: it
+  updates your copy in place. No need to uninstall first.
 
 ![Band Watch: your best band right now, world clock, map and band table](docs/images/overview.png)
 

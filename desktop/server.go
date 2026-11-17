@@ -39,21 +39,24 @@ const (
 
 // Config says where the feeds are and which extras are switched on.
 type Config struct {
-	NoaaURL   string // https://services.swpc.noaa.gov
-	PskURL    string // https://retrieve.pskreporter.info/query
-	QrzURL    string // https://xmldata.qrz.com/xml/current/
-	PotaURL   string // https://api.pota.app/spot/activator
-	TestHooks bool   // /api/test/reset and /api/test/advance
-	Desktop   bool   // only answer to localhost, and allow /api/quit
-	Quit      func() // called by /api/quit
+	NoaaURL      string // https://services.swpc.noaa.gov
+	PskURL       string // https://retrieve.pskreporter.info/query
+	QrzURL       string // https://xmldata.qrz.com/xml/current/
+	PotaURL      string // https://api.pota.app/spot/activator
+	UpdateURL    string // GitHub's latest-release API for Band Watch
+	UpdateAssets string // where release files may come from (tests only; default Band Watch's GitHub releases)
+	TestHooks    bool   // /api/test/reset and /api/test/advance
+	Desktop      bool   // only answer to localhost, and allow /api/quit
+	Quit         func() // called by /api/quit
 }
 
 func defaultConfig() Config {
 	return Config{
-		NoaaURL: "https://services.swpc.noaa.gov",
-		PskURL:  "https://retrieve.pskreporter.info/query",
-		QrzURL:  "https://xmldata.qrz.com/xml/current/",
-		PotaURL: "https://api.pota.app/spot/activator",
+		NoaaURL:   "https://services.swpc.noaa.gov",
+		PskURL:    "https://retrieve.pskreporter.info/query",
+		QrzURL:    "https://xmldata.qrz.com/xml/current/",
+		PotaURL:   "https://api.pota.app/spot/activator",
+		UpdateURL: releasesAPI,
 	}
 }
 
@@ -152,6 +155,10 @@ type Server struct {
 	qrz    *QRZ
 	client *http.Client
 	sdr    *sdrBridge
+	// runInstaller starts a downloaded update (tests replace it).
+	runInstaller func(path string) error
+	// updatesAllowed: installing updates only happens in the desktop app on Windows.
+	updatesAllowed bool
 }
 
 func NewServer(cfg Config) *Server {
@@ -161,7 +168,8 @@ func NewServer(cfg Config) *Server {
 	}
 	clock := &Clock{}
 	client := &http.Client{Timeout: 30 * time.Second}
-	return &Server{cfg: cfg, static: static, clock: clock, cache: newCache(clock), qrz: newQRZ(cfg.QrzURL, clock, client), client: client, sdr: newSdrBridge()}
+	return &Server{cfg: cfg, static: static, clock: clock, cache: newCache(clock), qrz: newQRZ(cfg.QrzURL, clock, client), client: client, sdr: newSdrBridge(),
+		runInstaller: startInstaller, updatesAllowed: cfg.Desktop && runtime.GOOS == "windows"}
 }
 
 func (s *Server) ResetAll() {
@@ -221,6 +229,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.clock.Advance(time.Duration(ms) * time.Millisecond)
 			sendJSON(w, 200, map[string]any{"ok": true}, nil)
 			return
+		case p == "/api/update/install":
+			s.handleUpdateInstall(w, r)
+			return
 		case s.cfg.Desktop && p == "/api/quit":
 			// JSON only, so another web site can't post it without the browser asking first.
 			if !strings.HasPrefix(strings.ToLower(r.Header.Get("Content-Type")), "application/json") {
@@ -247,6 +258,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/solar":
 		data, err = s.getSolar()
+	case p == "/api/update":
+		s.handleUpdateCheck(w)
+		return
 	case p == "/api/xota":
 		data, err = s.getXota()
 	case p == "/api/sun":

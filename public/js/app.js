@@ -35,7 +35,7 @@ function start() {
   setupModes();
   setupSun();
   // The Windows app says so in /healthz; it shows a Quit button in Settings.
-  getJson("/healthz").then((h) => { app.desktop = Boolean(h.desktop); }).catch(() => {});
+  getJson("/healthz").then((h) => { app.desktop = Boolean(h.desktop); updateNudge(); }).catch(() => {});
 
   tickClock();
   setInterval(tickClock, 1000);

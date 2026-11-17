@@ -119,6 +119,14 @@ Uninstall
   BandWatch.exe doesn't need Node.js. Keep Node.js only if Smart App Control
   blocks BandWatch.exe on this PC (see above).
 
+Updating
+  Band Watch looks for a new version once a day. Settings > About this build
+  shows it, with an Install update button: Band Watch downloads the new
+  installer from its GitHub page, checks it, and installs it over your copy,
+  then opens again. Or run a newer BandWatch-Setup.exe yourself: it asks
+  "Update Band Watch from ... to ...?" and updates in place. You never need
+  to uninstall first.
+
 Build date and version
   Settings > About this build shows the version, when it was built (UTC),
   whether it's running as BandWatch.exe or with Node.js, when the server

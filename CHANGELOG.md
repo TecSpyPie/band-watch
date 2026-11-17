@@ -1,5 +1,13 @@
 # What's new
 
+## 1.12.2 (17 Nov 2026)
+- **Updates from inside Band Watch:** Settings > About this build says when a newer version is out. In the
+  Windows app, **Install update** downloads it from GitHub, checks it against the release's checksums, and
+  installs it over your copy, then Band Watch reopens. It checks once a day and tells you.
+- **The installer updates in place:** if Band Watch is already installed it asks one question, "Update Band
+  Watch from 1.12.1 to 1.12.2?", and goes over the old copy. A copy in the old AppData folder moves to
+  C:\BandWatch by itself, so there's no need to uninstall first.
+
 ## 1.12.1 (17 Nov 2026)
 - SOTA spots removed. SOTA's API terms don't allow AI-written software without their approval, and the address
   Band Watch used had been retired. POTA activators stay, now checked every two minutes.

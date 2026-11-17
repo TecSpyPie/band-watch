@@ -95,3 +95,30 @@ func TestRemovesFolderLeftWithOnlyTheLog(t *testing.T) {
 		t.Error("removed a folder with other files in it")
 	}
 }
+
+func TestSuggestedDest(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	old := filepath.Join(localAppData(), "BandWatch")
+	def := filepath.Join(t.TempDir(), "BandWatch")
+	if got := suggestedDest("", def); got != def {
+		t.Errorf("new install: %s", got)
+	}
+	if got := suggestedDest(old, def); got != def {
+		t.Errorf("old AppData copy should move to %s, got %s", def, got)
+	}
+	elsewhere := filepath.Join(t.TempDir(), "Radio", "BandWatch")
+	if got := suggestedDest(elsewhere, def); got != elsewhere {
+		t.Errorf("a folder the user chose stays: %s", got)
+	}
+}
+
+func TestInstalledVersion(t *testing.T) {
+	dir := t.TempDir()
+	if got := installedVersion(dir); got != "the version you have" {
+		t.Error(got)
+	}
+	os.WriteFile(filepath.Join(dir, "BUILD-INFO.txt"), []byte("Band Watch by M3vrv\r\nVersion 1.12.1\r\nBuilt 2026-11-17T03:38:45Z\r\n"), 0o644)
+	if got := installedVersion(dir); got != "1.12.1" {
+		t.Error(got)
+	}
+}
