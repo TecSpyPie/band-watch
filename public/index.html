@@ -35,6 +35,7 @@
     </div>
     <button type="button" class="qbtn" id="qrzBtn" aria-haspopup="dialog">Log in to QRZ</button>
     <button type="button" class="lbtn" id="modesBtn" aria-haspopup="dialog" aria-controls="modesBox">Modes: all</button>
+    <button type="button" class="lbtn" id="rpBtn" aria-haspopup="dialog">Radio panel</button>
     <button type="button" class="lbtn rigbtn" id="rigBtn" aria-pressed="false">Connect radio</button>
     <button type="button" class="lbtn" id="optBtn" aria-haspopup="dialog">Settings</button>
     <div class="clock" id="clock" aria-label="UTC time"></div>
@@ -244,7 +245,7 @@
     <p class="small muted" id="dxNote" role="status"></p>
   </section>
 
-  <section class="panel" id="secPlan" aria-labelledby="plTitle">
+  <section class="panel" id="secCall" aria-labelledby="plTitle">
     <div class="phead">
       <h2 id="plTitle">Best time to call</h2>
       <span class="small muted">Which band, and when, to reach a place</span>
@@ -407,6 +408,34 @@
 
   <div class="toast" id="toast" role="alert"></div>
   <div class="hovercard" id="hovercard" role="tooltip" hidden></div>
+
+  <dialog id="rpDlg" class="rpdlg" aria-labelledby="rpTitle">
+    <div class="rp">
+      <div class="rptop">
+        <h2 id="rpTitle"><span class="rpbrand">BAND WATCH</span> <span class="rpsub">by M3VRV</span></h2>
+        <span class="rpled" id="rpRig">Radio off</span>
+        <button type="button" class="rpclose" id="rpClose" aria-label="Close the radio panel">✕</button>
+      </div>
+      <div class="rpmain">
+        <div class="rplcd">
+          <div class="rplcdtop"><span class="rptag" id="rpMode">USB</span><span class="rptag" id="rpRx">Not listening</span></div>
+          <button type="button" class="rpfreq" id="rpFreq" title="Click to type a frequency">14.200.00</button><span class="rpunit">MHz</span>
+          <div class="rpinfo" id="rpInfo"></div>
+          <div class="rpsm"><span class="rpslab">S</span><div class="rpmeter" id="rpMeter" aria-hidden="true"></div><span class="rps" id="rpS">–</span></div>
+          <div class="rpscale" aria-hidden="true"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span><span>+20</span><span>+40</span></div>
+        </div>
+        <div class="rpknobbox">
+          <div class="rpknob" id="rpKnob" tabindex="0" role="slider" aria-label="Tuning knob: turn it, scroll, or use the arrow keys"><span class="rpmark" id="rpKnobMark"></span></div>
+          <div class="rpkrow"><button type="button" id="rpDown" aria-label="Tune down">◀</button>
+            <button type="button" id="rpStepBtn" title="Tuning step: click to change">Step <b id="rpStep">1 kHz</b></button>
+            <button type="button" id="rpUp" aria-label="Tune up">▶</button></div>
+        </div>
+      </div>
+      <div class="rprow"><div class="rpbtns" id="rpModes" role="group" aria-label="Mode"></div>
+        <button type="button" class="rplisten" id="rpListen">Listen</button></div>
+      <div class="rpbtns rpbands" id="rpBands" role="group" aria-label="Band (metres)"></div>
+    </div>
+  </dialog>
 
   <dialog id="modesBox" class="modesbox" aria-labelledby="modesTitle">
     <div class="qchead"><h2 id="modesTitle">Modes to show</h2><button type="button" class="ghost x" id="modesClose" aria-label="Close">×</button></div>
@@ -742,6 +771,7 @@
 <script src="/js/logmap.js?v=1.13.0"></script>
 <script src="/js/dx.js?v=1.13.0"></script>
 <script src="/js/planner.js?v=1.13.0"></script>
+<script src="/js/radiopanel.js?v=1.13.0"></script>
 <script src="/js/wanted.js?v=1.13.0"></script>
 <script src="/js/decoders.js?v=1.13.0"></script>
 <script src="/js/sun.js?v=1.13.0"></script>

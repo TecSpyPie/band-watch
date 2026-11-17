@@ -15,7 +15,7 @@ const PLAN_PLACES = [
   ["Australia (west)", -31.9, 115.9], ["New Zealand", -36.8, 174.8], ["South Africa", -26.2, 28.0], ["Kenya", -1.3, 36.8],
   ["Nigeria", 6.5, 3.4], ["Egypt", 30.0, 31.2], ["Antarctica (McMurdo)", -77.8, 166.7],
 ];
-const PLAN_BANDS = [["160", 1.85], ["80", 3.6], ["60", 5.36], ["40", 7.1], ["30", 10.12], ["20", 14.1], ["17", 18.1], ["15", 21.1], ["12", 24.9], ["10", 28.5]];
+const PLANNER_BANDS = [["160", 1.85], ["80", 3.6], ["60", 5.36], ["40", 7.1], ["30", 10.12], ["20", 14.1], ["17", 18.1], ["15", 21.1], ["12", 24.9], ["10", 28.5]];
 const planner = { place: "Japan", grid: "" };
 
 function loadPlanner() {
@@ -61,20 +61,21 @@ function planPath(from, to, t, sfi, kp) {
   const hops = Math.max(1, Math.ceil(d / 3500));
   const L = d / hops;
   const ssn = Math.max(0, Math.min(250, (sfi - 64) / 0.73));
-  const day = 5.5 + 0.045 * ssn, night = 2.5 + 0.015 * ssn;
+  const day = 5.5 + 0.045 * ssn, night = 3 + 0.02 * ssn;
   const M = 1.1 + (2.2 * Math.min(L, 3500)) / 3500;
   let muf = Infinity, sunMax = 0, highLat = false;
   for (let h = 0; h < hops; h++) {
     const cp = gcPoint(from, to, (h + 0.5) / hops);
     const s = Math.sin(sunElevation(cp.lat, cp.lon, t) * RAD);
-    const k = Math.max(0, Math.min(1, (s + 0.1) / 1.1)) ** 0.6;
+    const k = Math.max(0, Math.min(1, (s + 0.05) / 0.4)) ** 0.5; // the F2 layer is near its daytime level once the sun is ~15 degrees up
     muf = Math.min(muf, (night + (day - night) * k) * M);
     sunMax = Math.max(sunMax, s);
     if (Math.abs(cp.lat) > 55) highLat = true;
   }
-  const luf = 1.2 + 6 * Math.max(0, sunMax) ** 0.75 * (0.8 + ssn / 300) * Math.min(1, d / 2500) ** 0.5;
+  // Daytime D-layer absorption: worse with more hops through it and with more sunspots.
+  const luf = 1.2 + (6 + 3 * hops) * Math.max(0, sunMax) ** 0.5 * (0.8 + ssn / 300) * Math.min(1, d / 2500) ** 0.5;
   const storm = kp >= 5 && highLat ? 0.6 : kp >= 4 && highLat ? 0.8 : 1;
-  return PLAN_BANDS.map(([b, f]) => {
+  return PLANNER_BANDS.map(([b, f]) => {
     let s;
     if (f > muf) s = Math.max(0, 1 - (f - muf) / (0.15 * muf)) * 0.3;
     else if (f < luf) s = Math.max(0, f / luf) ** 2 * 0.4;
@@ -95,6 +96,17 @@ function planHeardNow(to) {
   return heard;
 }
 
+/** Runs of true hours in a day, as [start, end) pairs; a run over midnight is one run (e.g. [20, 6]). */
+function planRuns(good) {
+  const runs = [];
+  const start = good.findIndex((g, h) => g && !good[(h + 23) % 24]);
+  for (let k = 0, h = start; k < 24; k++, h = (h + 1) % 24) {
+    if (good[h] && !good[(h + 23) % 24]) runs.push([h, h]);
+    if (good[h]) runs[runs.length - 1][1] = (h + 1) % 24;
+  }
+  return runs;
+}
+
 function renderPlanner() {
   const tb = $("plRows");
   if (!tb) return;
@@ -113,7 +125,7 @@ function renderPlanner() {
   const km = Math.round(distanceKm(from.lat, from.lon, to.lat, to.lon));
 
   $("plHead").innerHTML = `<th scope="col">Band</th>${Array.from({ length: 24 }, (_, h) => `<th scope="col"${h === hourNow ? ' class="now"' : ""}>${String(h).padStart(2, "0")}</th>`).join("")}`;
-  tb.innerHTML = PLAN_BANDS.map(([b], i) => `<tr><th scope="row">${b} m</th>${grid.map((row, h) => {
+  tb.innerHTML = PLANNER_BANDS.map(([b], i) => `<tr><th scope="row">${b} m</th>${grid.map((row, h) => {
     const lv = planLevel(row[i].s);
     const live = h === hourNow && heard[b] ? `<span class="pllive" title="${heard[b]} spot${heard[b] === 1 ? "" : "s"} near ${esc(to.name)} on ${b} m right now">●</span>` : "";
     return `<td class="pl${lv}${h === hourNow ? " now" : ""}" title="${b} m at ${String(h).padStart(2, "0")}:00 UTC: ${lv}">${live}</td>`;
@@ -121,19 +133,16 @@ function renderPlanner() {
 
   // Plain-English summary: the best bands now, and each good band's best hours.
   const nowRow = grid[hourNow].filter((x) => x.s >= 0.4).sort((a, b) => b.s - a.s);
-  const spans = PLAN_BANDS.map(([b], i) => {
-    const hrs = grid.map((row, h) => (row[i].s >= 0.7 ? h : -1)).filter((h) => h >= 0);
-    if (!hrs.length) return null;
-    const first = hrs[0], last = hrs[hrs.length - 1];
-    const wraps = hrs.length < 24 && first === 0 && last === 23;
-    const start = wraps ? hrs.find((h, k) => k > 0 && h !== hrs[k - 1] + 1) : first;
-    const end = wraps ? hrs[hrs.indexOf(start) - 1] : last;
-    return hrs.length === 24 ? `${b} m all day` : `${b} m ${String(start).padStart(2, "0")}:00–${String((end + 1) % 24).padStart(2, "0")}:00`;
+  const spans = PLANNER_BANDS.map(([b], i) => {
+    const good = grid.map((row) => row[i].s >= 0.7);
+    if (!good.some(Boolean)) return null;
+    if (good.every(Boolean)) return `${b} m all day`;
+    return `${b} m ${planRuns(good).map(([a, z]) => `${String(a).padStart(2, "0")}–${String(z).padStart(2, "0")}`).join(" and ")}`;
   }).filter(Boolean);
   const heardBands = Object.keys(heard).sort((a, b) => Number(b) - Number(a));
   $("plSummary").innerHTML = `<b>${esc(to.name)}</b>, ${kmText(km)} away. ` +
     (nowRow.length ? `Best now: <b>${nowRow.slice(0, 3).map((x) => `${x.b} m`).join(", ")}</b>. ` : "Nothing looks likely right now. ") +
-    (spans.length ? `Best times today (UTC): ${spans.join("; ")}.` : "No band looks good today on this path.") +
+    (spans.length ? `Best times today (UTC hours): ${spans.join("; ")}.` : "No band looks good today on this path.") +
     (heardBands.length ? ` <span class="pllivenote">● Heard near there right now on ${heardBands.map((b) => `${b} m`).join(", ")}.</span>` : "");
   $("plNote").textContent = `A rough guide from today's solar flux (${Math.round(sfi)}${app.solar ? "" : ", assumed"}) and where the sun is along the path. ` +
     "Real conditions vary from day to day: the dots show what's actually being heard now.";
