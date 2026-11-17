@@ -244,6 +244,21 @@
     <p class="small muted" id="dxNote" role="status"></p>
   </section>
 
+  <section class="panel" id="secPlan" aria-labelledby="plTitle">
+    <div class="phead">
+      <h2 id="plTitle">Best time to call</h2>
+      <span class="small muted">Which band, and when, to reach a place</span>
+    </div>
+    <div class="xtctl">
+      <label class="small" for="plPlace">Place</label> <select id="plPlace"></select>
+      <label class="small" for="plGrid">or grid square</label> <input id="plGrid" maxlength="6" size="7" spellcheck="false" autocomplete="off" placeholder="PM95">
+    </div>
+    <p class="small" id="plSummary" role="status"></p>
+    <div class="plwrap"><table class="pltab"><thead><tr id="plHead"></tr></thead><tbody id="plRows"></tbody></table></div>
+    <p class="small muted"><span class="plkey plgood"></span> good <span class="plkey plfair"></span> possible <span class="plkey plpoor"></span> unlikely · Hours are UTC; the outlined column is now.</p>
+    <p class="small muted" id="plNote"></p>
+  </section>
+
   <section class="panel" id="secWanted" aria-labelledby="wnTitle">
     <div class="phead">
       <h2 id="wnTitle">Wanted alerts</h2>
@@ -726,6 +741,7 @@
 <script src="/js/logbook.js?v=1.13.0"></script>
 <script src="/js/logmap.js?v=1.13.0"></script>
 <script src="/js/dx.js?v=1.13.0"></script>
+<script src="/js/planner.js?v=1.13.0"></script>
 <script src="/js/wanted.js?v=1.13.0"></script>
 <script src="/js/decoders.js?v=1.13.0"></script>
 <script src="/js/sun.js?v=1.13.0"></script>

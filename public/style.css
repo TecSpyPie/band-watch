@@ -325,6 +325,19 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .dxrow{grid-template-columns:minmax(80px,auto) auto auto 1fr}
 .dxrow .xtwhere,.dxrow .xttime{grid-column:1 / -1}
 .dxmark{fill:#c2410c;stroke:var(--surface);stroke-width:.5}
+.plwrap{overflow-x:auto}
+.pltab{border-collapse:separate;border-spacing:2px;font-size:.75rem;width:100%;min-width:560px}
+.pltab th{font-weight:500;color:var(--muted);padding:0 2px;text-align:center}
+.pltab tbody th{text-align:right;white-space:nowrap;padding-right:6px}
+.pltab td{height:18px;border-radius:3px;text-align:center;font-size:.625rem;line-height:1}
+.pltab td.plgood,.plkey.plgood{background:#2e9e5b}
+.pltab td.plfair,.plkey.plfair{background:#e3b341}
+.pltab td.plpoor,.plkey.plpoor{background:var(--grid)}
+.pltab .now{outline:2px solid var(--text);outline-offset:-1px}
+.pltab thead th.now{outline:none;color:var(--text);font-weight:700}
+.pllive{color:#fff;text-shadow:0 0 2px #000}
+.pllivenote{color:var(--cool)}
+.plkey{display:inline-block;width:12px;height:10px;border-radius:2px;vertical-align:middle;margin:0 2px 0 6px}
 @media (max-width:600px){.xtrow{grid-template-columns:auto 1fr}.xtrow .xttune,.xtrow .xtref{grid-column:2}.dxrow{grid-template-columns:auto 1fr}.dxrow .xttune,.dxrow .xtref{grid-column:auto}}
 /* Logbook */
 .linkbtn{background:none;border:0;padding:0 2px;color:var(--cool);font:inherit;text-decoration:underline;cursor:pointer}

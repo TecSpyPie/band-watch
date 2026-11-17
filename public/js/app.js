@@ -17,6 +17,7 @@ function start() {
   setupWanted();
   setupXota();
   setupDx();
+  setupPlanner();
   setupDecoders();
   const savedGrid = load("bw-grid");
   if (savedGrid && gridToLatLon(savedGrid)) $("grid").value = savedGrid;

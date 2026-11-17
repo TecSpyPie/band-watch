@@ -248,6 +248,7 @@ function render() {
   renderScopeChips();
   drawMap();
   renderSpotList();
+  if (typeof renderPlanner === "function") renderPlanner();
   drawScope();
   renderActivity();
   renderModesButton();
