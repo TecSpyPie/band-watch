@@ -1,5 +1,12 @@
 # What's new
 
+## 1.16.0 (17 Nov 2026)
+- **Own windows, for more than one screen:** the Bands table, Map, Band scope, Listen, ATS Mini, Decoder, POTA,
+  Wanted, Logbook and Band activity each have a small **⧉** button. Press it and that part moves into a window of its
+  own that you can drag onto another screen. It keeps working there (radio, sound, waterfall, decoding) and matches
+  your theme. Band Watch remembers where you put each window. Press **Back to the main window**, **Bring it back**, or
+  just close the window to put it back.
+
 ## 1.15.0 (17 Nov 2026)
 - **ATS Mini panel:** when your radio make is ATS Mini, a new panel shows a **live picture of the radio's own
   screen**, about every 1½ seconds, with buttons for Band, Tune, Push, Mode and Volume, Connect, **Choose port** and

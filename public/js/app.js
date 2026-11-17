@@ -12,6 +12,7 @@ function start() {
   setupOptions();
   setupListen();
   setupRig();
+  setupWindows();
   setupLog();
   setupWanted();
   setupXota();

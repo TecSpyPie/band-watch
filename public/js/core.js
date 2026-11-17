@@ -40,7 +40,14 @@ const RAD = Math.PI / 180;
 
 /* ===================== Small helpers ===================== */
 
-const $ = (id) => document.getElementById(id);
+/** Documents of parts of the page moved into their own windows (windows.js): $ finds elements there too. */
+const popDocs = new Set();
+const $ = (id) => {
+  const el = document.getElementById(id);
+  if (el || !popDocs.size) return el;
+  for (const d of popDocs) { const e = d.getElementById(id); if (e) return e; }
+  return null;
+};
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const ago = (m) => (m < 1 ? "just now" : `${m} min ago`);
 const kmText = (d) => `${d.toLocaleString()} km`;

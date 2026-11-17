@@ -29,6 +29,7 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook
 - **Wanted alerts:** callsigns, prefixes and grid squares you need, and new grid squares not in your log
 - UK band plan, sunspots and space weather, world clock, band monitor alerts
+- **More than one screen:** put the scope, map, Listen, the ATS Mini panel and other parts in their own windows
 - QRZ.com lookups (sign in with your own QRZ account; your password goes only to QRZ.com and is never stored)
 
 ## Screenshots

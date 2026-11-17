@@ -379,3 +379,9 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .atsbtns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .atspanel .phead{justify-content:flex-start;gap:10px;flex-wrap:wrap}
 .atsview-set label{display:inline-flex;align-items:center;gap:6px;margin-right:10px}
+
+/* Own windows */
+.popbtn{float:right;font-size:.8em;padding:1px 6px;margin:2px 0 0 6px;position:relative;z-index:1}
+.popwin .popbtn{display:none}
+.pophold{border:1px dashed var(--line);border-radius:8px;padding:8px 10px;margin:8px 0}
+.popbtn.inrow{float:none;margin:0 0 0 6px}

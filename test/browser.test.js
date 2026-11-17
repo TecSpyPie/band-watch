@@ -2716,3 +2716,41 @@ test("ATS Mini panel: shows the radio's screen, its buttons work, and a drawn sc
   assert.equal(await page.isVisible("#secAts"), false);
   assert.deepEqual(errors, []);
 });
+
+test("own windows: the band scope and the ATS Mini panel move into their own windows, keep working, and come back", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ATS);
+  await page.addInitScript(() => localStorage.setItem("bw-rig", JSON.stringify({ kind: "atsmini", baud: 115200, autoConnect: false })));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  // The scope
+  const [scopeWin] = await Promise.all([page.waitForEvent("popup"), page.click("#secScope .popbtn")]);
+  await scopeWin.waitForSelector("#secScope #scope");
+  assert.equal(await page.$("#secScope"), null, "moved out of the main window");
+  assert.match(await page.textContent(".pophold"), /Band scope is in its own window/);
+  assert.equal(await scopeWin.title(), "Band scope · Band Watch");
+  assert.notEqual(await scopeWin.evaluate(() => getComputedStyle(document.querySelector("#scopeBands button")).borderRadius), "0px", "styled like the main window");
+  // Still driven by the main window: clicking a band chip changes the band
+  await scopeWin.click("#scopeBands button:nth-child(2)");
+  await page.waitForFunction(() => document.querySelector(".pophold") && typeof $("scope") === "object" && $("scope") !== null);
+  // Same theme
+  await page.evaluate(() => { document.documentElement.dataset.theme = "night"; });
+  await scopeWin.waitForFunction(() => document.documentElement.dataset.theme === "night");
+  // The ATS Mini panel: connect and watch its screen in the other window
+  const [atsWin] = await Promise.all([page.waitForEvent("popup"), page.click("#secAts .popbtn")]);
+  await atsWin.waitForSelector("#atsScreen");
+  await atsWin.click("#atsConnect");
+  await page.waitForFunction(() => rig.connected && rig.ats.shots >= 1, null, { timeout: 15000 });
+  await atsWin.waitForFunction(() => /Live picture/.test(document.getElementById("atsScreenMsg").textContent));
+  if (process.env.WIN_SHOT) { await scopeWin.setViewportSize({ width: 900, height: 620 }); await new Promise((r) => setTimeout(r, 800)); await scopeWin.screenshot({ path: "/tmp/win-scope.png" }); await page.screenshot({ path: "/tmp/win-main.png" }); }
+  await page.evaluate(() => tuneTo(7150, "lsb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.band === 20 && window.__radio.hz === 7150000, null, { timeout: 10000 });
+  // Back: by the button in the main window, and by closing the other window
+  await page.click(".pophold button:nth-of-type(2)");
+  await page.waitForSelector("#secScope #scope");
+  await atsWin.close();
+  await page.waitForSelector("#secAts #atsScreen");
+  assert.equal(await page.$(".pophold"), null);
+  assert.ok(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-windows"))).secAts, "remembers where the window was");
+  assert.deepEqual(errors, []);
+});

@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.16.0", "Own windows: press ⧉ on the scope, map, Listen, ATS Mini and other parts to put them on another screen"],
   ["1.15.0", "ATS Mini panel: a live picture of the radio's screen with buttons, and each radio make keeps to its own USB port"],
   ["1.14.0", "ATS Mini support: pick it in Settings > Radio control and Band Watch changes its band and mode and tunes it for you"],
   ["1.13.1", "rtl_tcp comes with the Windows app, so Listen with your RTL-SDR works straight away (rtl-sdr's GPL licence is in C:\\BandWatch\\COPYING-rtl-sdr.txt)"],
