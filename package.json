@@ -1,6 +1,6 @@
 {
   "name": "band-watch",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "private": true,
   "license": "MIT",
   "description": "Band Watch by M3vrv: live HF band conditions from PSK Reporter spots and NOAA solar data",

@@ -1,5 +1,17 @@
 # What's new
 
+## 1.17.0 (17 Nov 2026)
+- **Malahit DSP2 support:** pick **Malahit** in Settings > Radio control, press Connect radio and choose its
+  **Malahit CAT** port. Band Watch tunes it from 10 kHz to 2 GHz (HF, and VHF/UHF like 2 m FM) when you click a spot,
+  the scope or the band plan, and follows its dial. Works with the DSP1 and DSP3 too. Windows may need the Malahit
+  USB CAT driver from malahiteam.com.
+- **Using an ATS Mini:**
+  1. On the ATS Mini (firmware 2.34 or later): **Settings > USB Port > Ad hoc**.
+  2. Plug it into your PC with its USB cable.
+  3. In Band Watch: **Settings > Radio control > Radio make > ATS Mini**, then **Connect radio** and pick its port.
+  4. The **ATS Mini** panel shows a live picture of the radio's screen with buttons for band, tune, mode, volume and
+     light. Press **⧉** on it to put it on another screen.
+
 ## 1.16.0 (17 Nov 2026)
 - **Own windows, for more than one screen:** the Bands table, Map, Band scope, Listen, ATS Mini, Decoder, POTA,
   Wanted, Logbook and Band activity each have a small **⧉** button. Press it and that part moves into a window of its

@@ -2754,3 +2754,28 @@ test("own windows: the band scope and the ATS Mini panel move into their own win
   assert.ok(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-windows"))).secAts, "remembers where the window was");
   assert.deepEqual(errors, []);
 });
+
+test("radio control: Malahit DSP2 (Kenwood TS-480 commands): tunes HF and VHF/UHF, no data mode, follows its dial", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  // Like the Kenwood, but a receiver: no DA (data mode) command, and it answers ID with the TS-480's 020
+  await page.addInitScript(FAKE_KENWOOD.replace('if (cmd === "ID") answer("ID023;");', 'if (cmd === "ID") answer("ID020;"); else if (/^DA/.test(cmd)) { radio.da = true; answer("?;"); }'));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "malahit");
+  assert.match(await page.textContent("#optRigBaudHint"), /Malahit CAT/);
+  assert.equal(await page.isVisible("#optRigData"), false, "no data mode on a receiver");
+  await page.click("#optRigConnect");
+  await page.waitForFunction(() => rig.connected && rig.hz === 7074000);
+  await page.waitForFunction(() => /Malahit/.test(document.getElementById("rigBtn").title));
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => tuneTo(14074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 14074000 && window.__radio.mode === "2");
+  await page.evaluate(() => tuneTo(145500, "fm", { quiet: true })); // 2 m FM: beyond the HF radios' range
+  await page.waitForFunction(() => window.__radio.hz === 145500000 && window.__radio.mode === "4");
+  assert.equal(await page.evaluate(() => window.__radio.da || false), false, "never sends data-mode commands");
+  await new Promise((r) => setTimeout(r, 1600));
+  await page.evaluate(() => { window.__radio.hz = 9650000; window.__radio.mode = "5"; });
+  await page.waitForFunction(() => listen.kHz === 9650 && listen.mode === "am", null, { timeout: 5000 });
+  assert.deepEqual(errors, []);
+});

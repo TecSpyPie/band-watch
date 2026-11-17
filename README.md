@@ -24,6 +24,7 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **ATS Mini:** the SI4732 pocket receiver (firmware 2.34 or later, Settings > USB Port > Ad hoc) works the same way:
   Band Watch changes its band and mode and tunes it, shows its signal strength and SNR, and has a panel with a
   live picture of the radio's screen and its buttons
+- **Malahit DSP2:** tuned over its Malahit CAT USB port (Kenwood TS-480 commands), 10 kHz to 2 GHz
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
 - **POTA:** live park activators on a list, the map and the scope, with alerts
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook

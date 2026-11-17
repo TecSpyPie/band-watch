@@ -9,6 +9,8 @@ const RIG_KINDS = {
   kenwood: { name: "Kenwood", bauds: [4800, 9600, 19200, 38400, 57600, 115200], baud: 115200 },
   icom: { name: "Icom", bauds: [4800, 9600, 19200, 38400, 57600, 115200], baud: 115200 },
   atsmini: { name: "ATS Mini", bauds: [115200, 9600], baud: 115200 },
+  // Malahit DSP2 (and DSP1/3): its "Malahit CAT" USB port speaks the Kenwood TS-480 command set.
+  malahit: { name: "Malahit", bauds: [115200, 57600, 38400, 19200, 9600], baud: 115200 },
 };
 const RIG_DEFAULTS = { kind: "yaesu", baud: 4800, civ: "94", follow: true, read: true, dataMode: true, autoConnect: true };
 const RIG_MIN_HZ = 30000;
@@ -67,6 +69,7 @@ function rigSupported() {
 }
 
 const rigKind = () => RIG_KINDS[rig.kind] || RIG_KINDS.yaesu;
+const rigKenwoodLike = () => rig.kind === "kenwood" || rig.kind === "malahit";
 
 function loadRig() {
   try {
@@ -120,11 +123,12 @@ function civFreqHz(bytes) {
 /** The commands that set a frequency (Hz) and mode on the radio: a string (Yaesu, Kenwood) or bytes (Icom). */
 function rigCommands(hz, mode, kHz) {
   hz = Math.round(hz);
-  if (!(hz >= RIG_MIN_HZ && hz <= RIG_MAX_HZ)) return "";
+  const [lo, hi] = rig.kind === "malahit" ? [10000, 2000000000] : [RIG_MIN_HZ, RIG_MAX_HZ]; // the Malahit: 10 kHz to 2 GHz
+  if (!(hz >= lo && hz <= hi)) return "";
   const ssb = mode === "usb" || mode === "lsb";
   const digital = rig.dataMode && ssb && rigIsDigital(kHz);
-  if (rig.kind === "kenwood") {
-    const da = rig.dataMode && ssb ? (digital ? "DA1;" : "DA0;") : "";
+  if (rigKenwoodLike()) {
+    const da = rig.kind === "kenwood" && rig.dataMode && ssb ? (digital ? "DA1;" : "DA0;") : "";
     return `FA${String(hz).padStart(11, "0")};MD${KW_MODE_FOR[mode] || "2"};${da}`;
   }
   if (rig.kind === "icom") {
@@ -140,6 +144,7 @@ function rigCommands(hz, mode, kHz) {
 /** Ask the radio for its frequency and mode. */
 function rigPollCommands(first = false) {
   if (rig.kind === "atsmini") return "";
+  if (rig.kind === "malahit") return "FA;MD;"; // a receiver: no data mode
   if (rig.kind === "kenwood") return `${first ? "ID;" : ""}FA;MD;${rig.dataMode ? "DA;" : ""}`;
   if (rig.kind === "icom") return [...civFrame(0x03), ...civFrame(0x04), ...(rig.dataMode ? civFrame(0x1a, 0x06) : [])];
   return `${first ? "ID;" : ""}FA;MD0;`;
@@ -344,7 +349,7 @@ function rigFeed(value) {
     while ((i = rig.buf.indexOf(";")) >= 0) {
       const ans = rig.buf.slice(0, i).trim();
       rig.buf = rig.buf.slice(i + 1);
-      if (rig.kind === "kenwood") rigKenwoodAnswer(ans); else rigYaesuAnswer(ans);
+      if (rigKenwoodLike()) rigKenwoodAnswer(ans); else rigYaesuAnswer(ans);
     }
     if (rig.buf.length > 200) rig.buf = "";
   }
@@ -482,6 +487,7 @@ function fmtRigHz(hz) {
 const RIG_BAUD_HINTS = {
   yaesu: "Must match the radio's CAT RATE menu (menu 031 on the FT-991A). 4800 is the FT-991A's factory setting.",
   kenwood: "Must match the radio's USB baud rate menu. The TS-590SG, TS-890 and TS-990 come set to 115200.",
+  malahit: "Any of these works over the Malahit's own USB port. Pick its \"Malahit CAT\" port when the browser asks (Windows may need the Malahit USB CAT driver from malahiteam.com).",
   icom: "Must match the radio's CI-V USB Baud Rate menu. On the IC-7300 and IC-705 \"Auto\" works with any of these.",
   atsmini: "115200 is right for the ATS Mini. On the radio, set Settings > USB Port to Ad hoc (firmware 2.34 or later).",
 };
@@ -497,6 +503,7 @@ function renderRigBauds() {
 
 function rigLabel() {
   if (rig.kind === "atsmini") return "ATS Mini";
+  if (rig.kind === "malahit") return "Malahit";
   return rig.model || (rig.kind === "icom" ? "Icom radio" : rig.kind === "kenwood" ? "Kenwood radio" : "Yaesu radio");
 }
 
@@ -530,7 +537,7 @@ function renderRig() {
   }
   if ($("optRigCivRow")) $("optRigCivRow").hidden = rig.kind !== "icom";
   if ($("optRigCivLabel")) $("optRigCivLabel").hidden = rig.kind !== "icom";
-  if ($("optRigData")) $("optRigData").closest(".chkrow").hidden = rig.kind === "atsmini";
+  if ($("optRigData")) $("optRigData").closest(".chkrow").hidden = rig.kind === "atsmini" || rig.kind === "malahit";
   if ($("optRigDataLabel")) $("optRigDataLabel").textContent = rig.kind === "icom" ? "Use USB-D (data mode) on FT8, FT4, WSPR and other digital frequencies"
     : "Use DATA-USB on FT8, FT4, WSPR and other digital frequencies";
   for (const [id, k] of [["optRigFollow", "follow"], ["optRigRead", "read"], ["optRigData", "dataMode"], ["optRigAuto", "autoConnect"]]) if ($(id)) $(id).checked = rig[k];
