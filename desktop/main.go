@@ -54,6 +54,7 @@ func main() {
 	cfg.NoaaURL = env("BW_NOAA_URL", cfg.NoaaURL)
 	cfg.PskURL = env("BW_PSK_URL", cfg.PskURL)
 	cfg.QrzURL = env("BW_QRZ_URL", cfg.QrzURL)
+	cfg.QrzLogURL = env("BW_QRZLOG_URL", cfg.QrzLogURL)
 	cfg.PotaURL = env("BW_POTA_URL", cfg.PotaURL)
 	cfg.UpdateURL = env("BW_UPDATE_URL", cfg.UpdateURL)
 	cfg.UpdateAssets = os.Getenv("BW_UPDATE_ASSETS")

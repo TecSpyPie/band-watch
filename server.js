@@ -9,6 +9,8 @@
 //   POST /api/qrz/login        <- { username, password }   (sets an HttpOnly session cookie)
 //   POST /api/qrz/logout
 //   GET  /api/qrz/lookup?call=G4ABC
+//   POST /api/qrz/logbook      <- { key, action: "status"|"insert", adif } -> { ok, result, reason, duplicate, auth, logid, count, info }
+//                                 (QRZ Logbook API; the key comes from the browser each time and is never stored)
 //   GET  /api/sdr                         -> { available }   (RTL-SDR bridge; on this PC only)
 //   GET  /api/sdr/stream?addr=host:port   -> raw I/Q bytes from rtl_tcp (header X-SDR-Session)
 //   POST /api/sdr/cmd                     <- { session, cmd, value }  (an rtl_tcp command)
@@ -401,7 +403,11 @@ async function handleQrz(req, res, url) {
       return sendJson(res, 200, { loggedIn: false }, { "Set-Cookie": sessionCookie(req, "", 0) });
     }
     if (route === "GET /api/qrz/lookup") return sendJson(res, 200, await qrz.lookup(sid, url.searchParams.get("call")));
-    if (/^\/api\/qrz\/(login|logout)$/.test(url.pathname)) return sendJson(res, 405, { error: "method not allowed" });
+    if (route === "POST /api/qrz/logbook") {
+      const body = await readJson(req, 8192);
+      return sendJson(res, 200, await qrz.logbook(body.key, body.action, body.adif, clientIp(req)));
+    }
+    if (/^\/api\/qrz\/(login|logout|logbook)$/.test(url.pathname)) return sendJson(res, 405, { error: "method not allowed" });
     return sendJson(res, 404, { error: "not found" });
   } catch (err) {
     if (err instanceof qrz.QrzError) return sendJson(res, err.status, { error: err.message });

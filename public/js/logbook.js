@@ -1,5 +1,6 @@
 /* Logbook: contacts kept in this browser, logged by hand or with one click from a decode, a POTA
-   activator or a callsign lookup. Exports and imports ADIF for LoTW, eQSL, QRZ and other loggers. */
+   activator or a callsign lookup. Exports and imports ADIF for LoTW, eQSL, QRZ and other loggers,
+   and sends contacts straight to the user's QRZ logbook. */
 "use strict";
 
 const LOG_KEY = "bw-log";
@@ -92,8 +93,9 @@ function logSubmit(e) {
     name: $("lgName").value.trim().slice(0, 60), qth: $("lgQth").value.trim().slice(0, 60),
     ref: $("lgRef").value.trim().toUpperCase().slice(0, 24), note: $("lgNote").value.trim().slice(0, 200),
   };
-  if (log.editing) log.qsos = log.qsos.map((x) => (x.id === log.editing ? q : x));
+  if (log.editing) log.qsos = log.qsos.map((x) => (x.id === log.editing ? (x.qrz ? { ...q, qrz: x.qrz } : q) : x));
   else log.qsos.unshift(q);
+  const isNew = !log.editing;
   log.qsos.sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
   saveLog();
   msg.textContent = `${log.editing ? "Updated" : "Logged"} ${call} on ${q.band || `${kHz} kHz`} ${q.mode}.`;
@@ -105,6 +107,7 @@ function logSubmit(e) {
   renderLog();
   if (typeof renderXota === "function") renderXota();
   if (typeof checkWanted === "function") checkWanted();
+  if (isNew && qrzlog.auto && qrzlog.key) qrzSend([q], { quiet: true });
 }
 
 function logEdit(id) {
@@ -140,7 +143,7 @@ function renderLog() {
   const rows = s ? log.qsos.filter((q) => [q.call, q.grid, q.ref, q.name, q.qth, q.band, q.mode].some((v) => String(v || "").toUpperCase().includes(s))) : log.qsos;
   tb.innerHTML = rows.slice(0, 100).map((q) => `<tr>
       <td>${q.date.slice(0, 4)}-${q.date.slice(4, 6)}-${q.date.slice(6)} ${q.time.slice(0, 2)}:${q.time.slice(2)}</td>
-      <td>${callLink(q.call)}</td><td>${esc(q.band || "")}</td><td>${Number(q.kHz).toLocaleString()}</td><td>${esc(q.mode)}</td>
+      <td>${callLink(q.call)}${q.qrz ? ' <span class="qrzsent" title="Sent to your QRZ logbook">QRZ ✓</span>' : ""}</td><td>${esc(q.band || "")}</td><td>${Number(q.kHz).toLocaleString()}</td><td>${esc(q.mode)}</td>
       <td>${esc(q.rstS || "")}${q.rstR ? ` / ${esc(q.rstR)}` : ""}</td><td>${esc(q.grid || "")}</td>
       <td>${esc([q.name, q.ref, q.note].filter(Boolean).join(" · "))}</td>
       <td class="lgact"><button type="button" class="linkbtn" data-edit="${esc(q.id)}">Edit</button>
@@ -148,6 +151,7 @@ function renderLog() {
     </tr>`).join("") || `<tr><td colspan="9" class="muted small">${log.qsos.length ? "No contacts match." : "No contacts logged yet. Click Log on a decode or an activator, or fill in the form."}</td></tr>`;
   const calls = new Set(log.qsos.map((q) => baseCall(q.call)));
   const grids = new Set(log.qsos.map((q) => String(q.grid || "").slice(0, 4)).filter(Boolean));
+  renderQrzLog();
   $("lgCount").textContent = log.qsos.length
     ? `${log.qsos.length} contact${log.qsos.length === 1 ? "" : "s"}, ${calls.size} station${calls.size === 1 ? "" : "s"}, ${grids.size} grid square${grids.size === 1 ? "" : "s"}${rows.length < log.qsos.length ? ` (${rows.length} shown)` : ""}`
     : "";
@@ -161,8 +165,15 @@ const adifField = (name, value) => {
 };
 
 function toAdif(qsos) {
-  const head = `Band Watch by M3vrv logbook export\n${adifField("ADIF_VER", "3.1.4")}${adifField("PROGRAMID", "Band Watch")}${adifField("PROGRAMVERSION", (document.querySelector('script[src*="app.js?v="]')?.src.match(/v=([\d.]+)/) || [])[1] || "")}${adifField("CREATED_TIMESTAMP", `${utcDate()} ${utcTime()}00`)}<EOH>\n`;
-  const recs = qsos.map((q) => {
+  return adifHeader() + qsos.map(adifRecord).join("\n") + "\n";
+}
+
+function adifHeader() {
+  return `Band Watch by M3vrv logbook export\n${adifField("ADIF_VER", "3.1.4")}${adifField("PROGRAMID", "Band Watch")}${adifField("PROGRAMVERSION", (document.querySelector('script[src*="app.js?v="]')?.src.match(/v=([\d.]+)/) || [])[1] || "")}${adifField("CREATED_TIMESTAMP", `${utcDate()} ${utcTime()}00`)}<EOH>\n`;
+}
+
+/** One contact as an ADIF record, ending <EOR>. */
+function adifRecord(q) {
     const parent = ADIF_SUBMODE[q.mode];
     const sota = /^[A-Z0-9]{1,4}\/[A-Z]{2}-\d{3}$/.test(q.ref || "");
     return [
@@ -176,8 +187,6 @@ function toAdif(qsos) {
       adifField("COMMENT", q.note), adifField("STATION_CALLSIGN", app.myCall || ""), adifField("MY_GRIDSQUARE", ($("grid") && $("grid").value) || ""),
       "<EOR>",
     ].join("");
-  });
-  return head + recs.join("\n") + "\n";
 }
 
 /** Read an ADIF (.adi) file into contacts. Lengths are in bytes, as ADIF says. */
@@ -248,6 +257,130 @@ async function logImport(file) {
   if (typeof renderXota === "function") renderXota();
 }
 
+/* ---------- Sending contacts to the QRZ Logbook ---------- */
+// The QRZ Logbook API key is kept in this browser and sent with each request through Band Watch's
+// server (QRZ doesn't let web pages call it directly). QRZ needs a subscription for its Logbook API.
+
+const QRZLOG_STORE = "bw-qrzlog";
+const qrzlog = { key: "", auto: false, busy: false, book: "" };
+
+function loadQrzLog() {
+  try {
+    const v = JSON.parse(load(QRZLOG_STORE) || "{}");
+    if (typeof v.key === "string") qrzlog.key = v.key;
+    qrzlog.auto = v.auto === true;
+    if (typeof v.book === "string") qrzlog.book = v.book;
+  } catch { /* none yet */ }
+}
+
+function saveQrzLog() {
+  store(QRZLOG_STORE, { key: qrzlog.key, auto: qrzlog.auto, book: qrzlog.book });
+}
+
+async function qrzLogCall(action, adif) {
+  const res = await fetch("/api/qrz/logbook", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key: qrzlog.key, action, adif }),
+  });
+  let body = {};
+  try { body = await res.json(); } catch { /* not JSON */ }
+  if (!res.ok) throw new Error(body.error || `Band Watch's server answered ${res.status}.`);
+  return body;
+}
+
+const qrzAuthText = "QRZ didn't accept that API key. Copy it again from your QRZ logbook's Settings page. QRZ's Logbook API also needs a QRZ subscription.";
+
+/** Check the key with QRZ and show which logbook it belongs to. */
+async function qrzCheckKey() {
+  const msg = $("qlMsg");
+  const key = $("qlKey").value.trim().toUpperCase();
+  if (!key) { msg.textContent = "Paste your QRZ Logbook API key first."; return; }
+  qrzlog.key = key;
+  saveQrzLog();
+  msg.textContent = "Checking with QRZ…";
+  try {
+    const r = await qrzLogCall("status");
+    if (r.ok) {
+      const i = r.info || {};
+      qrzlog.book = i.BOOK_NAME || i.CALLSIGN || i.OWNER || "";
+      saveQrzLog();
+      msg.textContent = `QRZ accepted the key${qrzlog.book ? ` for the logbook ${qrzlog.book}` : ""}${i.COUNT ? ` (${Number(i.COUNT).toLocaleString()} contacts in it)` : ""}.`;
+    } else {
+      msg.textContent = r.auth ? qrzAuthText : `QRZ said: ${r.reason || r.result}.`;
+    }
+  } catch (e) {
+    msg.textContent = e.message;
+  }
+  renderQrzLog();
+}
+
+/** Send contacts to QRZ one at a time. Each one sent is marked, so it's never sent twice. */
+async function qrzSend(list, { quiet = false } = {}) {
+  const msg = $("lgMsg");
+  if (!qrzlog.key) { msg.textContent = "Add your QRZ Logbook API key first (Send to QRZ settings, below)."; $("qlBox").open = true; return; }
+  if (qrzlog.busy) return;
+  const todo = list.filter((q) => !q.qrz);
+  if (!todo.length) { if (!quiet) msg.textContent = "Every contact is already in your QRZ logbook."; return; }
+  qrzlog.busy = true;
+  renderQrzLog();
+  let sent = 0, dupes = 0, failed = 0, lastReason = "";
+  try {
+    for (const q of todo) {
+      if (!quiet) msg.textContent = `Sending to QRZ: ${sent + dupes + failed + 1} of ${todo.length}…`;
+      let r;
+      try {
+        r = await qrzLogCall("insert", adifRecord(q));
+      } catch (e) {
+        failed++; lastReason = e.message;
+        if (/could not be reached|Too many/.test(e.message)) break;
+        continue;
+      }
+      if (r.ok) { q.qrz = r.logid || "ok"; sent++; }
+      else if (r.duplicate) { q.qrz = "dup"; dupes++; }
+      else if (r.auth) { failed++; lastReason = qrzAuthText; break; }
+      else { failed++; lastReason = `QRZ said: ${r.reason || r.result}`; }
+      saveLog();
+    }
+  } finally {
+    qrzlog.busy = false;
+    saveLog();
+    renderLog();
+  }
+  const parts = [];
+  if (sent) parts.push(`Sent ${sent} contact${sent === 1 ? "" : "s"} to your QRZ logbook`);
+  if (dupes) parts.push(`${dupes} ${dupes === 1 ? "was" : "were"} already there`);
+  if (failed) parts.push(`${failed} couldn't be sent. ${lastReason}`);
+  const text = parts.join("; ").replace(/([^.])$/, "$1.");
+  if (!quiet || failed) msg.textContent = text;
+  else if (sent) msg.textContent += " Sent to QRZ.";
+  if (failed && typeof showToast === "function" && quiet) showToast("QRZ Logbook", text);
+}
+
+function renderQrzLog() {
+  if (!$("qlKey")) return;
+  const unsent = log.qsos.filter((q) => !q.qrz).length;
+  const btn = $("lgQrz");
+  btn.textContent = qrzlog.busy ? "Sending to QRZ…" : unsent && qrzlog.key ? `Send ${unsent} to QRZ` : "Send to QRZ";
+  btn.disabled = qrzlog.busy;
+  if (document.activeElement !== $("qlKey")) $("qlKey").value = qrzlog.key;
+  $("qlAuto").checked = qrzlog.auto;
+}
+
+function setupQrzLog() {
+  loadQrzLog();
+  $("lgQrz").addEventListener("click", () => qrzSend(log.qsos));
+  $("qlCheck").addEventListener("click", qrzCheckKey);
+  $("qlKey").addEventListener("change", () => { qrzlog.key = $("qlKey").value.trim().toUpperCase(); qrzlog.book = ""; saveQrzLog(); renderQrzLog(); });
+  $("qlAuto").addEventListener("change", () => { qrzlog.auto = $("qlAuto").checked; saveQrzLog(); });
+  $("qlForget").addEventListener("click", () => {
+    qrzlog.key = ""; qrzlog.book = ""; qrzlog.auto = false; saveQrzLog();
+    $("qlKey").value = "";
+    $("qlMsg").textContent = "Band Watch has forgotten your QRZ Logbook key.";
+    renderQrzLog();
+  });
+}
+
 function setupLog() {
   loadLog();
   $("lgMode").innerHTML = LOG_MODES.map((m) => `<option>${m}</option>`).join("");
@@ -259,6 +392,7 @@ function setupLog() {
   $("lgExport").addEventListener("click", logExport);
   $("lgImportBtn").addEventListener("click", () => $("lgImport").click());
   $("lgImport").addEventListener("change", () => { logImport($("lgImport").files[0]); $("lgImport").value = ""; });
+  setupQrzLog();
   $("lgNow").addEventListener("click", () => { $("lgKHz").value = listen.kHz; $("lgMode").value = logModeFromListen(); });
   $("lgRows").addEventListener("click", (e) => {
     const ed = e.target.closest("[data-edit]");

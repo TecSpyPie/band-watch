@@ -301,7 +301,7 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .proflist{list-style:none;margin:0 0 8px;padding:0}
 .proflist li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
 .proflist button{font:500 .8125rem Barlow,sans-serif;padding:3px 10px;border-radius:4px;cursor:pointer}
-.lsgrid [hidden],.optrow [hidden]{display:none}
+.lsgrid [hidden],.optrow [hidden],.optgrid [hidden]{display:none}
 .optabout{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:6px 0 10px;font-size:.875rem}
 .optabout dt{color:var(--muted)}
 .optabout dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -338,6 +338,11 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .lgtab th,.lgtab td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
 .lgtab td:nth-child(8){white-space:normal;min-width:120px}
 .lgact{display:flex;gap:6px}
+.qlbox{margin:6px 0 10px;font-size:.875rem}
+.qlbox summary{cursor:pointer;color:var(--muted)}
+.qlrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.qlrow input{flex:1;min-width:180px}
+.qrzsent{font-size:.6875rem;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 3px;margin-left:4px}
 /* Wanted alerts */
 .wngrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 16px}
 .wngrid label{display:flex;flex-direction:column;gap:3px;font-size:.875rem}

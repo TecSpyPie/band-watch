@@ -17,11 +17,12 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - Best band now, a bands table and a map of who hears whom, from live PSK Reporter spots
 - Band scope: live spectrum and waterfall from your RTL-SDR, or drawn from spots
 - Listen: public WebSDR/KiwiSDR receivers, or your own RTL-SDR (Blog V4, V3 or others) through rtl_tcp
-- **Radio control:** tunes your Yaesu FT-991A (also FT-710, FTDX10, FTDX101) over USB when you click a spot,
-  the scope or a decoder, and follows the radio's dial (Chrome or Edge on the PC the radio is plugged into)
+- **Radio control:** tunes your Yaesu (FT-991A, FT-710, FTDX10, FTDX101), Icom (IC-7300, IC-705, IC-7610,
+  IC-9700 and other CI-V radios) or Kenwood (TS-590, TS-890, TS-990, TS-480, TS-2000) over USB when you click
+  a spot, the scope or a decoder, and follows the radio's dial (Chrome or Edge on the PC the radio is plugged into)
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
 - **POTA:** live park activators on a list, the map and the scope, with alerts
-- **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL, QRZ and Club Log
+- **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook
 - **Wanted alerts:** callsigns, prefixes and grid squares you need, and new grid squares not in your log
 - UK band plan, sunspots and space weather, world clock, band monitor alerts
 - QRZ.com lookups (sign in with your own QRZ account; your password goes only to QRZ.com and is never stored)

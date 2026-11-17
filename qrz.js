@@ -151,10 +151,82 @@ async function lookup(sid, rawCall) {
   return data;
 }
 
+/* ---------- QRZ Logbook: send contacts to the user's own QRZ logbook ---------- */
+// The browser keeps the user's QRZ Logbook API key and sends it with each request; it is passed
+// straight to QRZ and never stored or logged here. QRZ's API needs a QRZ subscription to insert.
+
+const QRZ_LOG_URL = process.env.BW_QRZLOG_URL || "https://logbook.qrz.com/api";
+const LOG_WINDOW = 60e3;
+const LOG_MAX = 120; // requests per address per minute
+const logCalls = new Map(); // ip -> [timestamps]
+
+function tooManyLogCalls(ip) {
+  const now = clock.now();
+  const list = (logCalls.get(ip) || []).filter((t) => now - t < LOG_WINDOW);
+  list.push(now);
+  logCalls.set(ip, list);
+  if (logCalls.size > 5000) logCalls.delete(logCalls.keys().next().value);
+  return list.length > LOG_MAX;
+}
+
+/** Ask QRZ about a logbook key (STATUS) or add one ADIF record to it (INSERT). */
+async function logbook(rawKey, rawAction, rawAdif, ip) {
+  const key = String(rawKey || "").trim().toUpperCase();
+  const action = String(rawAction || "").trim().toUpperCase();
+  const adif = String(rawAdif || "");
+  if (!/^[A-Z0-9-]{8,64}$/.test(key)) throw new QrzError(400, "That doesn’t look like a QRZ Logbook API key. It looks like ABCD-1234-EF56-7890.");
+  if (action !== "STATUS" && action !== "INSERT") throw new QrzError(400, "Unknown logbook action.");
+  if (action === "INSERT" && (!adif || adif.length > 4000 || !/<call:\d+>/i.test(adif) || !/<eor>/i.test(adif))) {
+    throw new QrzError(400, "That contact couldn’t be read.");
+  }
+  if (tooManyLogCalls(ip)) throw new QrzError(429, "Too many QRZ Logbook requests. Wait a minute and try again.");
+  const form = new URLSearchParams({ KEY: key, ACTION: action });
+  if (action === "INSERT") form.set("ADIF", adif);
+  let text;
+  try {
+    const res = await fetch(QRZ_LOG_URL, {
+      method: "POST",
+      headers: { "User-Agent": AGENT, "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+      signal: AbortSignal.timeout(20e3),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    text = (await res.text()).slice(0, 20000);
+  } catch {
+    throw new QrzError(502, "QRZ Logbook could not be reached. Try again in a minute.");
+  }
+  return parseLogbookReply(text);
+}
+
+/** QRZ answers name=value pairs joined with &: RESULT, REASON, COUNT, LOGID (or LOGIDS) and, for STATUS, the book's details. */
+function parseLogbookReply(text) {
+  const p = new URLSearchParams(String(text).trim());
+  const result = (p.get("RESULT") || "").toUpperCase();
+  const reason = (p.get("REASON") || "").slice(0, 300);
+  const info = {};
+  let n = 0;
+  for (const [k, v] of p) {
+    if (n >= 30 || /^(RESULT|REASON|KEY)$/i.test(k) || !/^[A-Z_]{1,40}$/i.test(k)) continue;
+    info[k.toUpperCase()] = v.slice(0, 200);
+    n++;
+  }
+  return {
+    ok: result === "OK" || result === "REPLACE",
+    result: result || "FAIL",
+    reason: reason || (result ? "" : "QRZ gave an answer Band Watch didn’t understand."),
+    duplicate: /duplicate/i.test(reason),
+    auth: result === "AUTH" || /invalid api key|access key|not authorized|no such key/i.test(reason),
+    logid: p.get("LOGID") || p.get("LOGIDS") || null,
+    count: p.has("COUNT") ? Number(p.get("COUNT")) : null,
+    info,
+  };
+}
+
 function reset() {
   sessions.clear();
   lookups.clear();
   attempts.clear();
+  logCalls.clear();
 }
 
-module.exports = { login, logout, status, lookup, reset, QrzError };
+module.exports = { login, logout, status, lookup, logbook, reset, QrzError };

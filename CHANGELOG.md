@@ -1,5 +1,14 @@
 # What's new
 
+## 1.13.0
+- **Icom and Kenwood radio control:** Settings > Radio control has a new **Radio make** choice. Icom radios
+  (IC-7300, IC-705, IC-7610, IC-9700 and other CI-V radios) and Kenwood radios (TS-590, TS-890, TS-990,
+  TS-480, TS-2000) are tuned and followed just like the Yaesu radios, with USB-D / DATA-USB on digital
+  frequencies. If an Icom's CI-V address was changed in its menu, Band Watch picks it up from the radio.
+- **Send to QRZ:** the logbook sends your contacts straight into your QRZ.com logbook, using the API key from
+  QRZ's logbook settings (QRZ needs a subscription for this). Each contact is sent once and marked "QRZ ✓",
+  and you can have new contacts sent as soon as you log them.
+
 ## 1.12.3 (17 Nov 2026)
 - **Its own window:** on Windows, Band Watch now opens in an app window of its own, with no address bar or
   tabs and its own button on the taskbar, instead of a tab in your browser. It uses Microsoft Edge (which

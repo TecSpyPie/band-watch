@@ -42,6 +42,7 @@ type Config struct {
 	NoaaURL      string // https://services.swpc.noaa.gov
 	PskURL       string // https://retrieve.pskreporter.info/query
 	QrzURL       string // https://xmldata.qrz.com/xml/current/
+	QrzLogURL    string // https://logbook.qrz.com/api
 	PotaURL      string // https://api.pota.app/spot/activator
 	UpdateURL    string // GitHub's latest-release API for Band Watch
 	UpdateAssets string // where release files may come from (tests only; default Band Watch's GitHub releases)
@@ -55,6 +56,7 @@ func defaultConfig() Config {
 		NoaaURL:   "https://services.swpc.noaa.gov",
 		PskURL:    "https://retrieve.pskreporter.info/query",
 		QrzURL:    "https://xmldata.qrz.com/xml/current/",
+		QrzLogURL: "https://logbook.qrz.com/api",
 		PotaURL:   "https://api.pota.app/spot/activator",
 		UpdateURL: releasesAPI,
 	}
@@ -153,6 +155,7 @@ type Server struct {
 	clock  *Clock
 	cache  *Cache
 	qrz    *QRZ
+	qrzlog *QRZLog
 	client *http.Client
 	sdr    *sdrBridge
 	// runInstaller starts a downloaded update (tests replace it).
@@ -168,13 +171,14 @@ func NewServer(cfg Config) *Server {
 	}
 	clock := &Clock{}
 	client := &http.Client{Timeout: 30 * time.Second}
-	return &Server{cfg: cfg, static: static, clock: clock, cache: newCache(clock), qrz: newQRZ(cfg.QrzURL, clock, client), client: client, sdr: newSdrBridge(),
+	return &Server{cfg: cfg, static: static, clock: clock, cache: newCache(clock), qrz: newQRZ(cfg.QrzURL, clock, client), qrzlog: newQRZLog(cfg.QrzLogURL, clock, client), client: client, sdr: newSdrBridge(),
 		runInstaller: startInstaller, updatesAllowed: cfg.Desktop && runtime.GOOS == "windows"}
 }
 
 func (s *Server) ResetAll() {
 	s.cache.Clear()
 	s.qrz.Reset()
+	s.qrzlog.Reset()
 	s.clock.Reset()
 }
 
@@ -449,8 +453,17 @@ func (s *Server) handleQRZ(w http.ResponseWriter, r *http.Request) {
 			sendJSON(w, 200, data, nil)
 			return
 		}
+	case "POST /api/qrz/logbook":
+		var body map[string]any
+		if body, err = readJSON(r, 8192); err == nil {
+			var data map[string]any
+			if data, err = s.qrzlog.Logbook(asString(body["key"]), asString(body["action"]), asString(body["adif"]), clientIP(r)); err == nil {
+				sendJSON(w, 200, data, nil)
+				return
+			}
+		}
 	default:
-		if r.URL.Path == "/api/qrz/login" || r.URL.Path == "/api/qrz/logout" {
+		if r.URL.Path == "/api/qrz/login" || r.URL.Path == "/api/qrz/logout" || r.URL.Path == "/api/qrz/logbook" {
 			sendJSON(w, 405, errJSON("method not allowed"), nil)
 		} else {
 			sendJSON(w, 404, errJSON("not found"), nil)

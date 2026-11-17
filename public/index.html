@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.12.3">
-<link rel="stylesheet" href="/listen.css?v=1.12.3">
+<link rel="stylesheet" href="/style.css?v=1.13.0">
+<link rel="stylesheet" href="/listen.css?v=1.13.0">
 </head>
 <body>
 <div class="wrap">
@@ -278,14 +278,29 @@
       <button type="button" class="tune" id="lgExport">Export ADIF</button>
       <button type="button" class="lbtn" id="lgImportBtn">Import ADIF</button>
       <input type="file" id="lgImport" accept=".adi,.adif,text/plain" hidden>
+      <button type="button" class="tune" id="lgQrz">Send to QRZ</button>
     </div>
+    <details class="qlbox" id="qlBox">
+      <summary>Send to QRZ settings</summary>
+      <p class="small muted">Band Watch can put your contacts straight into your QRZ.com logbook. On QRZ, open
+        <b>Logbook</b>, then <b>Settings</b>, and copy the <b>API Access Key</b>. QRZ's Logbook API needs a QRZ subscription.
+        The key is kept in this browser and only ever sent to QRZ.</p>
+      <div class="qlrow">
+        <label for="qlKey">QRZ Logbook API key</label>
+        <input id="qlKey" type="password" autocomplete="off" spellcheck="false" maxlength="64" placeholder="ABCD-1234-EF56-7890">
+        <button type="button" class="lbtn" id="qlCheck">Check key</button>
+        <button type="button" class="linkbtn" id="qlForget">Forget key</button>
+      </div>
+      <div class="chkrow"><label><input type="checkbox" id="qlAuto"> Send each new contact to QRZ as soon as I log it</label></div>
+      <p class="small" id="qlMsg" role="status"></p>
+    </details>
     <div class="lgwrap">
       <table class="lgtab">
         <thead><tr><th>UTC</th><th>Call</th><th>Band</th><th>kHz</th><th>Mode</th><th>RST</th><th>Grid</th><th>Notes</th><th><span class="sr-only">Actions</span></th></tr></thead>
         <tbody id="lgRows"></tbody>
       </table>
     </div>
-    <p class="small muted">Your log is kept in this browser on this device. Export it now and then as a backup, and to upload to LoTW, eQSL, QRZ Logbook or Club Log.</p>
+    <p class="small muted">Your log is kept in this browser on this device. Export it now and then as a backup, and to upload to LoTW, eQSL or Club Log. <b>Send to QRZ</b> puts it in your QRZ logbook.</p>
   </section>
 
   <section class="panel" id="secPlan" aria-labelledby="planTitle">
@@ -454,24 +469,29 @@
       </div>
       <p class="small muted" id="optBgMsg" role="status"></p>
 
-      <h3 class="opth">Radio control (Yaesu FT-991A)</h3>
-      <p class="small muted">Plug your FT-991A into this PC with its USB cable (install Yaesu's CP210x USB driver first).
+      <h3 class="opth">Radio control (Yaesu, Icom, Kenwood)</h3>
+      <p class="small muted">Plug your radio into this PC with its USB cable and install the maker's USB driver first
+        (Yaesu and Icom use the Silicon Labs CP210x driver; Kenwood has its own virtual COM port driver).
         Band Watch then tunes the radio when you click a spot, the band scope, the band plan or a decoder's Tune button,
-        and follows the radio when you turn its dial. Pick the <b>Enhanced COM Port</b> when the browser asks.
+        and follows the radio when you turn its dial. On a Yaesu, pick the <b>Enhanced COM Port</b> when the browser asks.
         Close other programs that use the radio's CAT port (WSJT-X, a logger) first, or use their rig sharing.
-        Needs Chrome or Edge. Works with other Yaesu radios that use the same commands (FT-710, FTDX10, FTDX101).</p>
+        Needs Chrome or Edge.</p>
       <div class="optgrid">
+        <label for="optRigKind">Radio make</label>
+        <div><select id="optRigKind">
+          <option value="yaesu">Yaesu: FT-991A, FT-710, FTDX10, FTDX101</option>
+          <option value="icom">Icom: IC-7300, IC-705, IC-7610, IC-9700 and other CI-V radios</option>
+          <option value="kenwood">Kenwood: TS-590, TS-890, TS-990, TS-480, TS-2000</option>
+        </select></div>
+        <label for="optRigCiv" id="optRigCivLabel" hidden>Icom model</label>
+        <div id="optRigCivRow" hidden><select id="optRigCiv"></select>
+          <span class="small muted">The radio's CI-V address. If you changed it in the radio's menu, Band Watch follows the radio when it answers.</span></div>
         <label for="optRigBaud">Baud rate</label>
-        <div><select id="optRigBaud">
-          <option value="4800">4800 (the FT-991A's factory setting)</option>
-          <option value="9600">9600</option>
-          <option value="19200">19200</option>
-          <option value="38400">38400</option>
-        </select> <span class="small muted">Must match the radio's menu 031 CAT RATE.</span></div>
+        <div><select id="optRigBaud"></select> <span class="small muted" id="optRigBaudHint"></span></div>
       </div>
       <div class="chkrow"><label><input type="checkbox" id="optRigFollow"> Tune the radio when I click in Band Watch</label></div>
       <div class="chkrow"><label><input type="checkbox" id="optRigRead"> Follow the radio when I turn its dial</label></div>
-      <div class="chkrow"><label><input type="checkbox" id="optRigData"> Use DATA-USB on FT8, FT4, WSPR and other digital frequencies</label></div>
+      <div class="chkrow"><label><input type="checkbox" id="optRigData"> <span id="optRigDataLabel">Use DATA-USB on FT8, FT4, WSPR and other digital frequencies</span></label></div>
       <div class="chkrow"><label><input type="checkbox" id="optRigAuto"> Connect to the radio automatically when Band Watch opens</label></div>
       <div class="optrow"><button type="button" class="tune" id="optRigConnect">Connect radio</button></div>
       <p class="small muted" id="optRigMsg" role="status"></p>
@@ -651,30 +671,30 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.12.3"></script>
-<script src="/js/bandplan.js?v=1.12.3"></script>
-<script src="/js/core.js?v=1.12.3"></script>
-<script src="/js/modes.js?v=1.12.3"></script>
-<script src="/js/map.js?v=1.12.3"></script>
-<script src="/js/scope.js?v=1.12.3"></script>
-<script src="/js/monitor.js?v=1.12.3"></script>
-<script src="/js/lookup.js?v=1.12.3"></script>
-<script src="/js/worldclock.js?v=1.12.3"></script>
-<script src="/js/locator.js?v=1.12.3"></script>
-<script src="/js/activity.js?v=1.12.3"></script>
-<script src="/js/qrz.js?v=1.12.3"></script>
-<script src="/js/hovercard.js?v=1.12.3"></script>
-<script src="/js/station.js?v=1.12.3"></script>
-<script src="/js/sdr-dsp.js?v=1.12.3"></script>
-<script src="/js/sdr.js?v=1.12.3"></script>
-<script src="/js/listen.js?v=1.12.3"></script>
-<script src="/js/rig.js?v=1.12.3"></script>
-<script src="/js/xota.js?v=1.12.3"></script>
-<script src="/js/logbook.js?v=1.12.3"></script>
-<script src="/js/wanted.js?v=1.12.3"></script>
-<script src="/js/decoders.js?v=1.12.3"></script>
-<script src="/js/sun.js?v=1.12.3"></script>
-<script src="/js/options.js?v=1.12.3"></script>
-<script src="/js/app.js?v=1.12.3"></script>
+<script src="/js/install.js?v=1.13.0"></script>
+<script src="/js/bandplan.js?v=1.13.0"></script>
+<script src="/js/core.js?v=1.13.0"></script>
+<script src="/js/modes.js?v=1.13.0"></script>
+<script src="/js/map.js?v=1.13.0"></script>
+<script src="/js/scope.js?v=1.13.0"></script>
+<script src="/js/monitor.js?v=1.13.0"></script>
+<script src="/js/lookup.js?v=1.13.0"></script>
+<script src="/js/worldclock.js?v=1.13.0"></script>
+<script src="/js/locator.js?v=1.13.0"></script>
+<script src="/js/activity.js?v=1.13.0"></script>
+<script src="/js/qrz.js?v=1.13.0"></script>
+<script src="/js/hovercard.js?v=1.13.0"></script>
+<script src="/js/station.js?v=1.13.0"></script>
+<script src="/js/sdr-dsp.js?v=1.13.0"></script>
+<script src="/js/sdr.js?v=1.13.0"></script>
+<script src="/js/listen.js?v=1.13.0"></script>
+<script src="/js/rig.js?v=1.13.0"></script>
+<script src="/js/xota.js?v=1.13.0"></script>
+<script src="/js/logbook.js?v=1.13.0"></script>
+<script src="/js/wanted.js?v=1.13.0"></script>
+<script src="/js/decoders.js?v=1.13.0"></script>
+<script src="/js/sun.js?v=1.13.0"></script>
+<script src="/js/options.js?v=1.13.0"></script>
+<script src="/js/app.js?v=1.13.0"></script>
 </body>
 </html>

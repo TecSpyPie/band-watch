@@ -46,7 +46,15 @@ const SUN = {
 /** The fake PSK Reporter, NOAA and QRZ the server talks to during these tests. */
 const XOTA = require("./fixtures/xota.js");
 
-function upstreamHandler(kind, url) {
+function upstreamHandler(kind, url, body) {
+  if (kind === "qrzlog") {
+    const f = new URLSearchParams(body);
+    (feed.qrzLog ||= []).push(Object.fromEntries(f));
+    if (f.get("KEY") !== "ABCD-1234-EF56-7890") return "RESULT=AUTH&REASON=invalid api key";
+    if (f.get("ACTION") === "STATUS") return "RESULT=OK&BOOK_NAME=M3VRV&COUNT=12";
+    if (/<CALL:6>G0DUPE/.test(f.get("ADIF"))) return "RESULT=FAIL&REASON=Unable to add QSO to database: duplicate";
+    return `RESULT=OK&LOGID=${1000 + feed.qrzLog.length}&COUNT=1`;
+  }
   if (kind === "update") return { tag_name: feed.latestTag || "v99.1.0", html_url: "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0", assets: [] };
   if (kind === "pota") return feed.potaDown ? { status: 503 } : (feed.pota ? feed.pota() : XOTA.potaRows());
   if (kind === "qrz") {
@@ -77,7 +85,7 @@ function upstreamHandler(kind, url) {
 
 let srv, upstream, base, browser;
 test.before(async () => {
-  upstream = await startUpstream((kind, url) => upstreamHandler(kind, url));
+  upstream = await startUpstream((kind, url, body) => upstreamHandler(kind, url, body));
   srv = await startServer(upstream.base);
   base = srv.base;
   if (chromium) browser = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome" });
@@ -1988,11 +1996,179 @@ test("radio control: Band Watch tunes a Yaesu FT-991A over USB, and follows its 
   await page.evaluate(() => tuneTo(18100, "usb", { quiet: true }));
   await new Promise((r) => setTimeout(r, 300));
   assert.notEqual(await page.evaluate(() => window.__radio.hz), 18100000, "doesn't tune the radio when switched off");
-  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-rig"))), { baud: 38400, follow: false, read: true, dataMode: true, autoConnect: true });
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-rig"))), { kind: "yaesu", baud: 38400, civ: "94", follow: false, read: true, dataMode: true, autoConnect: true });
 
   // Disconnect; next time it reconnects by itself to the port chosen before
   await page.click("#rigBtn");
   await page.waitForFunction(() => !rig.connected && document.getElementById("rigBtn").textContent === "Connect radio");
+  assert.deepEqual(errors, []);
+});
+
+/* A pretend Kenwood TS-590SG: FA with 11 digits, MD, DA (data mode), ID. */
+const FAKE_KENWOOD = `(() => {
+  const radio = window.__radio = { hz: 7074000, mode: "2", data: "1", sent: [], opened: null };
+  let push = null;
+  const answer = (s) => push && push(new TextEncoder().encode(s));
+  let pending = "";
+  const port = {
+    readable: null, writable: null,
+    async open(opts) {
+      radio.opened = opts;
+      this.readable = new ReadableStream({ start(c) { push = (b) => c.enqueue(b); } });
+      this.writable = new WritableStream({ write(chunk) {
+        pending += new TextDecoder().decode(chunk);
+        let i;
+        while ((i = pending.indexOf(";")) >= 0) {
+          const cmd = pending.slice(0, i); pending = pending.slice(i + 1);
+          radio.sent.push(cmd);
+          if (cmd === "ID") answer("ID023;");
+          else if (cmd === "FA") answer("FA" + String(radio.hz).padStart(11, "0") + ";");
+          else if (cmd === "MD") answer("MD" + radio.mode + ";");
+          else if (cmd === "DA") answer("DA" + radio.data + ";");
+          else if (/^FA\\d{11}$/.test(cmd)) radio.hz = Number(cmd.slice(2));
+          else if (/^MD\\d$/.test(cmd)) radio.mode = cmd[2];
+          else if (/^DA[01]$/.test(cmd)) radio.data = cmd[2];
+          else answer("?;");
+        }
+      } });
+    },
+    async close() { this.readable = null; this.writable = null; },
+  };
+  Object.defineProperty(navigator, "serial", { value: {
+    async getPorts() { return []; },
+    async requestPort() { return port; },
+    addEventListener() {},
+  } });
+})();`;
+
+/* A pretend Icom IC-7300 at CI-V address __ADDR__: binary CI-V frames, echoes our own frames like a real CI-V bus. */
+const FAKE_ICOM = `(() => {
+  const ADDR = 0x__ADDR__;
+  const radio = window.__radio = { hz: 14074000, mode: 1, data: 1, frames: [], opened: null };
+  let push = null;
+  const send = (bytes) => push && push(Uint8Array.from(bytes));
+  const bcd = (hz) => { const o = []; for (let i = 0; i < 5; i++) o.push((Math.floor(hz / 10 ** (2 * i + 1)) % 10) << 4 | Math.floor(hz / 10 ** (2 * i)) % 10); return o; };
+  const unbcd = (b) => { let hz = 0; for (let i = b.length - 1; i >= 0; i--) hz = hz * 100 + (b[i] >> 4) * 10 + (b[i] & 15); return hz; };
+  const reply = (...body) => send([0xFE, 0xFE, 0xE0, ADDR, ...body, 0xFD]);
+  radio.turnDial = (hz) => { radio.hz = hz; send([0xFE, 0xFE, 0x00, ADDR, 0x00, ...bcd(hz), 0xFD]); };
+  let buf = [];
+  const port = {
+    readable: null, writable: null,
+    async open(opts) {
+      radio.opened = opts;
+      this.readable = new ReadableStream({ start(c) { push = (b) => c.enqueue(b); } });
+      this.writable = new WritableStream({ write(chunk) {
+        buf.push(...chunk);
+        let end;
+        while ((end = buf.indexOf(0xFD)) >= 0) {
+          const f = buf.slice(0, end + 1); buf = buf.slice(end + 1);
+          send(f); // the echo
+          if (f[0] !== 0xFE || f[1] !== 0xFE || f[2] !== ADDR || f[3] !== 0xE0) continue; // not for this radio
+          const body = f.slice(4, -1);
+          radio.frames.push(body);
+          const [cmd] = body;
+          if (cmd === 0x03) reply(0x03, ...bcd(radio.hz));
+          else if (cmd === 0x04) reply(0x04, radio.mode, 0x01);
+          else if (cmd === 0x1A && body[1] === 0x06 && body.length === 2) reply(0x1A, 0x06, radio.data, radio.data);
+          else if (cmd === 0x05) { radio.hz = unbcd(body.slice(1, 6)); reply(0xFB); }
+          else if (cmd === 0x06) { radio.mode = body[1]; radio.data = 0; reply(0xFB); }
+          else if (cmd === 0x1A && body[1] === 0x06) { radio.data = body[2]; reply(0xFB); }
+          else reply(0xFA);
+        }
+      } });
+    },
+    async close() { this.readable = null; this.writable = null; },
+  };
+  Object.defineProperty(navigator, "serial", { value: {
+    async getPorts() { return []; },
+    async requestPort() { return port; },
+    addEventListener() {},
+  } });
+})();`;
+
+test("radio control: Kenwood TS-590SG, frequency, mode and data mode", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_KENWOOD);
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "kenwood");
+  assert.equal(await page.inputValue("#optRigBaud"), "115200");
+  assert.match(await page.textContent("#optRigBaudHint"), /TS-590SG/);
+  assert.equal(await page.isVisible("#optRigCiv"), false, "no CI-V address for a Kenwood");
+  await page.click("#optRigConnect");
+  await page.waitForFunction(() => rig.connected && rig.hz === 7074000 && rig.modeName === "DATA-USB");
+  assert.deepEqual(await page.evaluate(() => window.__radio.opened), { baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", flowControl: "none" });
+  await page.waitForFunction(() => /TS-590SG/.test(document.getElementById("optRigMsg").textContent));
+  await page.waitForFunction(() => listen.kHz === 7074 && listen.mode === "usb");
+  await page.keyboard.press("Escape");
+  // SSB: data off; FT8: data on; CW
+  await page.evaluate(() => tuneTo(14200, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 14200000 && window.__radio.mode === "2" && window.__radio.data === "0");
+  assert.ok(await page.evaluate(() => window.__radio.sent.includes("FA00014200000")));
+  await page.evaluate(() => tuneTo(21074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 21074000 && window.__radio.data === "1");
+  await page.evaluate(() => tuneTo(10116, "cw", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 10116000 && window.__radio.mode === "3");
+  // Turning the dial
+  await new Promise((r) => setTimeout(r, 1600));
+  await page.evaluate(() => { window.__radio.hz = 3573000; window.__radio.mode = "2"; window.__radio.data = "1"; });
+  await page.waitForFunction(() => listen.kHz === 3573 && /3\.573\.000 DATA-USB/.test(document.getElementById("rigBtn").textContent), null, { timeout: 5000 });
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-rig"))).kind, "kenwood");
+  assert.deepEqual(errors, []);
+});
+
+test("radio control: Icom IC-7300 over CI-V: frequency, mode, data mode and its dial", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ICOM.replace("__ADDR__", "94"));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "icom");
+  assert.equal(await page.isVisible("#optRigCiv"), true);
+  assert.equal(await page.inputValue("#optRigCiv"), "94");
+  await page.click("#optRigConnect");
+  await page.waitForFunction(() => rig.connected && rig.hz === 14074000 && rig.modeName === "USB-D");
+  assert.equal(await page.evaluate(() => window.__radio.opened.baudRate), 115200);
+  await page.waitForFunction(() => /IC-7300/.test(document.getElementById("optRigMsg").textContent));
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => listen.kHz === 14074 && listen.mode === "usb");
+  // SSB on 40 m: frequency, USB, data off. FT8 on 15 m: data on. AM on 80 m.
+  await page.evaluate(() => tuneTo(7150.5, "lsb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 7150500 && window.__radio.mode === 0 && window.__radio.data === 0);
+  await page.evaluate(() => tuneTo(21074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 21074000 && window.__radio.mode === 1 && window.__radio.data === 1);
+  await page.evaluate(() => tuneTo(3800, "am", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 3800000 && window.__radio.mode === 2);
+  // The radio's own transceive message when its dial turns
+  await new Promise((r) => setTimeout(r, 1600));
+  await page.evaluate(() => window.__radio.turnDial(28074000));
+  await page.waitForFunction(() => listen.kHz === 28074, null, { timeout: 5000 });
+  // A frequency in the GHz digit range encodes correctly
+  assert.deepEqual(await page.evaluate(() => civFreqBytes(1296200000)), [0x00, 0x00, 0x20, 0x96, 0x12]);
+  assert.equal(await page.evaluate(() => civFreqHz([0x00, 0x00, 0x20, 0x96, 0x12])), 1296200000);
+  assert.deepEqual(errors, []);
+});
+
+test("radio control: an Icom on another CI-V address is found from its transceive messages", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ICOM.replace("__ADDR__", "A4"));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "icom"); // still set to the IC-7300's 94h
+  await page.click("#optRigConnect");
+  await page.waitForFunction(() => rig.connected);
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(await page.evaluate(() => rig.hz), 0, "the radio ignores frames for 94h");
+  await page.evaluate(() => window.__radio.turnDial(7074000));
+  await page.waitForFunction(() => rig.civ === "A4" && rig.hz === 7074000);
+  await page.waitForFunction(() => /IC-705/.test(document.getElementById("optRigMsg").textContent));
+  assert.equal(await page.inputValue("#optRigCiv"), "A4");
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-rig"))).civ, "A4");
+  // From now on the polls go to A4 and the radio answers
+  await page.evaluate(() => { window.__radio.hz = 10136000; });
+  await page.waitForFunction(() => rig.hz === 10136000, null, { timeout: 5000 });
   assert.deepEqual(errors, []);
 });
 
@@ -2055,6 +2231,60 @@ test("parks on the air: says so when the feed is down", { skip }, async (t) => {
   const { page } = await openPage(t, { potaDown: true });
   await page.waitForFunction(() => /Couldn't load POTA spots/.test(document.getElementById("xtNote").textContent));
   assert.equal(await page.locator("#xtList .xtrow").count(), 0);
+});
+
+test("logbook: Send to QRZ checks the key, sends each contact once, and can send new ones as they're logged", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.fill("#mycall", "M3VRV");
+  await page.press("#mycall", "Enter");
+  await page.evaluate(() => {
+    log.qsos = [
+      { id: "a", call: "G4ABC", date: "20261117", time: "1015", kHz: 14200, band: "20m", mode: "SSB", rstS: "59", rstR: "57", grid: "IO93", name: "", qth: "", ref: "", note: "" },
+      { id: "b", call: "G0DUPE", date: "20261117", time: "0942", kHz: 7074, band: "40m", mode: "FT8", rstS: "-10", rstR: "-12", grid: "", name: "", qth: "", ref: "", note: "" },
+    ];
+    saveLog(); renderLog();
+  });
+  // Without a key it opens the settings
+  await page.click("#lgQrz");
+  assert.match(await page.textContent("#lgMsg"), /Add your QRZ Logbook API key first/);
+  assert.equal(await page.evaluate(() => $("qlBox").open), true);
+  // A wrong key, then the right one
+  await page.fill("#qlKey", "WXYZ-0000-0000-0000");
+  await page.click("#qlCheck");
+  await page.waitForFunction(() => /didn't accept that API key/.test($("qlMsg").textContent));
+  await page.fill("#qlKey", "abcd-1234-ef56-7890");
+  await page.click("#qlCheck");
+  await page.waitForFunction(() => /QRZ accepted the key for the logbook M3VRV \(12 contacts in it\)/.test($("qlMsg").textContent));
+  assert.equal(await page.textContent("#lgQrz"), "Send 2 to QRZ");
+  // Send: one goes in, one was already there
+  await page.click("#lgQrz");
+  await page.waitForFunction(() => /Sent 1 contact to your QRZ logbook; 1 was already there\./.test($("lgMsg").textContent));
+  const sent = feed.qrzLog.filter((x) => x.ACTION === "INSERT");
+  assert.equal(sent.length, 2);
+  assert.match(sent[0].ADIF, /^<CALL:5>G4ABC .*<STATION_CALLSIGN:5>M3VRV .*<EOR>$/);
+  assert.equal(await page.locator("#lgRows .qrzsent").count(), 2);
+  assert.equal(await page.textContent("#lgQrz"), "Send to QRZ");
+  // Pressing it again sends nothing
+  await page.click("#lgQrz");
+  assert.match(await page.textContent("#lgMsg"), /already in your QRZ logbook/);
+  assert.equal((feed.qrzLog.filter((x) => x.ACTION === "INSERT")).length, 2);
+  // Send new contacts as they're logged; editing one doesn't send it again
+  await page.check("#qlAuto");
+  await page.fill("#lgCall", "JA1ZZZ");
+  await page.fill("#lgKHz", "21074");
+  await page.click("#lgSave");
+  await page.waitForFunction(() => /Logged JA1ZZZ .* Sent to QRZ\./.test($("lgMsg").textContent));
+  await page.evaluate(() => logEdit("a"));
+  await page.fill("#lgName", "Ann");
+  await page.click("#lgSave");
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal((feed.qrzLog.filter((x) => x.ACTION === "INSERT")).length, 3);
+  assert.ok(await page.evaluate(() => log.qsos.find((q) => q.id === "a").qrz), "an edited contact stays marked as sent");
+  // The key is kept in this browser and can be forgotten
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-qrzlog"))), { key: "ABCD-1234-EF56-7890", auto: true, book: "M3VRV" });
+  await page.click("#qlForget");
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-qrzlog"))), { key: "", auto: false, book: "" });
+  assert.deepEqual(errors, []);
 });
 
 test("logbook: log from a decode and an activator, edit, delete and undo, ADIF export and import", { skip }, async (t) => {

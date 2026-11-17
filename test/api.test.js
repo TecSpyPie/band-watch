@@ -46,7 +46,24 @@ const SUN = {
 
 const XOTA = require("./fixtures/xota.js");
 
-function handle(kind, url) {
+/* A pretend QRZ Logbook API: form posts, name=value answers. */
+const QRZLOG_KEY = "ABCD-1234-EF56-7890";
+const qrzLogPosts = [];
+function qrzLogMock(body, req) {
+  if (up.qrzLogDown) return { status: 503 };
+  const f = new URLSearchParams(body);
+  qrzLogPosts.push({ form: Object.fromEntries(f), type: req.headers["content-type"], agent: req.headers["user-agent"], method: req.method });
+  if (f.get("KEY") !== QRZLOG_KEY) return "RESULT=FAIL&REASON=invalid api key " + f.get("KEY");
+  if (f.get("ACTION") === "STATUS") return "RESULT=OK&DATA=&BOOKID=123&BOOK_NAME=M3VRV&OWNER=M3VRV&COUNT=42";
+  if (f.get("ACTION") === "INSERT") {
+    if (/<call:6>G0DUPE/i.test(f.get("ADIF"))) return "RESULT=FAIL&REASON=Unable to add QSO to database: duplicate&EXTENDED=";
+    return "RESULT=OK&LOGID=130877825&COUNT=1";
+  }
+  return "RESULT=FAIL&REASON=bad action";
+}
+
+function handle(kind, url, body, req) {
+  if (kind === "qrzlog") return qrzLogMock(body, req);
   if (kind === "qrz") return qrzMock(url.searchParams);
   if (kind === "pota") return up.potaDown ? { status: 503 } : XOTA.potaRows();
   if (kind === "sota") return up.sotaDown ? new Error("down") : XOTA.sotaRows();
@@ -376,6 +393,54 @@ test("QRZ logout ends the session and clears the cookie", async () => {
   assert.match(out.headers["set-cookie"][0], /^bw_qrz=; .*Max-Age=0/);
   assert.equal((await get("/api/qrz/lookup?call=G4ABC", { headers: { Cookie: cookie } })).status, 401);
   assert.equal((await get("/api/qrz/status", { headers: { Cookie: "bw_qrz=forged" } })).body, '{"loggedIn":false}');
+});
+
+const logbook = (body) => get("/api/qrz/logbook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+const ADIF1 = "<CALL:5>G4ABC<QSO_DATE:8>20261117<TIME_ON:4>1015<BAND:3>20m<MODE:3>SSB<EOR>";
+
+test("QRZ Logbook: checks a key and sends a contact, passing the key straight to QRZ", async () => {
+  qrzLogPosts.length = 0;
+  const st = await logbook({ key: QRZLOG_KEY.toLowerCase(), action: "status" });
+  assert.equal(st.status, 200);
+  const s = JSON.parse(st.body);
+  assert.equal(s.ok, true);
+  assert.equal(s.info.BOOK_NAME, "M3VRV");
+  assert.equal(s.info.COUNT, "42");
+  const r = JSON.parse((await logbook({ key: QRZLOG_KEY, action: "insert", adif: ADIF1 })).body);
+  assert.deepEqual(r, { ok: true, result: "OK", reason: "", duplicate: false, auth: false, logid: "130877825", count: 1, info: { LOGID: "130877825", COUNT: "1" } });
+  assert.equal(qrzLogPosts.length, 2);
+  assert.deepEqual(qrzLogPosts[1].form, { KEY: QRZLOG_KEY, ACTION: "INSERT", ADIF: ADIF1 });
+  assert.equal(qrzLogPosts[1].method, "POST");
+  assert.match(qrzLogPosts[1].type, /^application\/x-www-form-urlencoded/);
+  assert.equal(qrzLogPosts[1].agent, "BandWatch-M3VRV-1.2");
+});
+
+test("QRZ Logbook: duplicates, wrong keys, bad input and QRZ being down", async () => {
+  const dup = JSON.parse((await logbook({ key: QRZLOG_KEY, action: "insert", adif: "<CALL:6>G0DUPE<EOR>" })).body);
+  assert.equal(dup.ok, false);
+  assert.equal(dup.duplicate, true);
+  const bad = JSON.parse((await logbook({ key: "WXYZ-0000-0000-0000", action: "status" })).body);
+  assert.equal(bad.ok, false);
+  assert.equal(bad.auth, true);
+  assert.equal((await logbook({ key: "short", action: "status" })).status, 400);
+  assert.equal((await logbook({ key: "ABCD-1234<x>", action: "status" })).status, 400);
+  assert.equal((await logbook({ key: QRZLOG_KEY, action: "delete" })).status, 400, "only status and insert");
+  assert.equal((await logbook({ key: QRZLOG_KEY, action: "insert", adif: "no record" })).status, 400);
+  assert.equal((await logbook({ key: QRZLOG_KEY, action: "insert", adif: "<CALL:5>G4ABC" + "x".repeat(5000) + "<EOR>" })).status, 400, "too long for one contact");
+  assert.equal((await logbook({ key: QRZLOG_KEY, action: "insert", adif: "<CALL:5>G4ABC" + "x".repeat(9000) + "<EOR>" })).status, 413);
+  const form = await get("/api/qrz/logbook", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "key=x" });
+  assert.equal(form.status, 415);
+  assert.equal((await get("/api/qrz/logbook")).status, 405);
+  up.qrzLogDown = true;
+  const down = await logbook({ key: QRZLOG_KEY, action: "status" });
+  assert.equal(down.status, 502);
+  assert.match(JSON.parse(down.body).error, /QRZ Logbook could not be reached/);
+});
+
+test("QRZ Logbook is rate limited per address", async () => {
+  let last;
+  for (let i = 0; i < 121; i++) last = await logbook({ key: QRZLOG_KEY, action: "status" });
+  assert.equal(last.status, 429);
 });
 
 test("QRZ being unreachable gives a friendly 502", async () => {
