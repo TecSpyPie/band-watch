@@ -28,14 +28,24 @@ jobs:
         with:
           go-version-file: desktop/go.mod
           cache: false
+      - name: Tools for the Windows icon and version details
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q llvm zip
+          for t in llvm-rc llvm-cvtres; do
+            command -v $t >/dev/null || sudo ln -sf "$(ls /usr/lib/llvm-*/bin/$t | sort -V | tail -1)" /usr/local/bin/$t
+          done
       - name: Server, API, radio and FT8 tests
         run: npm test
       - name: Go server and installer tests
         run: |
           sh desktop/build.sh test
           (cd desktop && go test ./...)
-          (cd desktop/setup && go test ./...)
           BW_SERVER=go node --test test/api.test.js
+          # the installer's tests check the real payload, so build the Windows files first
+          sh desktop/build.sh
+          sh desktop/build-setup.sh
+          (cd desktop/setup && go test ./...)
 
   plan:
     needs: test
