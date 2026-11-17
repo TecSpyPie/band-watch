@@ -1,0 +1,8 @@
+node_modules/
+desktop/build/
+desktop/public/
+desktop/setup/payload.zip
+*.syso
+dist/
+build-info.json
+.env

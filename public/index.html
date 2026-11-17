@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Band Watch by M3vrv</title>
+<meta name="description" content="Band Watch by M3vrv: live HF band conditions for radio amateurs, from PSK Reporter spots and NOAA solar data.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0b7285">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Band Watch">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css?v=1.11.1">
+<link rel="stylesheet" href="/listen.css?v=1.11.1">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Band Watch <span class="by">by M3vrv</span></h1>
+    <div class="ctl">
+      <label for="grid">Your locator</label>
+      <input id="grid" maxlength="6" value="IO93" aria-describedby="gerr" autocomplete="off" spellcheck="false">
+      <button type="button" class="lbtn" id="locBtn" aria-haspopup="dialog">Options</button>
+      <span id="gerr" role="status"></span>
+    </div>
+    <div class="ctl">
+      <label for="mycall">Your callsign</label>
+      <input id="mycall" class="mycall" maxlength="14" placeholder="e.g. M3VRV" aria-describedby="cerr" autocomplete="off" spellcheck="false">
+      <span id="cerr" role="status"></span>
+    </div>
+    <button type="button" class="qbtn" id="qrzBtn" aria-haspopup="dialog">Log in to QRZ</button>
+    <button type="button" class="lbtn" id="modesBtn" aria-haspopup="dialog" aria-controls="modesBox">Modes: all</button>
+    <button type="button" class="lbtn" id="optBtn" aria-haspopup="dialog">Settings</button>
+    <div class="clock" id="clock" aria-label="UTC time"></div>
+  </header>
+
+  <div class="banner" id="banner" role="status">Loading live data…</div>
+  <section class="hero" aria-live="polite" id="hero"></section>
+
+  <section class="panel" id="secClock" aria-labelledby="wcTitle">
+    <div class="phead">
+      <h2 id="wcTitle">World clock</h2>
+      <div class="wctl">
+        <label class="small muted"><input type="checkbox" id="wcAuto"> Busiest areas</label>
+        <label class="sr-only" for="wcAdd">Add a city</label>
+        <select id="wcAdd"></select>
+      </div>
+    </div>
+    <div class="wc" id="wclock"></div>
+  </section>
+
+  <div class="cols">
+    <section>
+      <div id="secLookup">
+      <h2>Callsign lookup</h2>
+      <form class="lk" id="lk">
+        <label for="call" class="sr-only">Callsign</label>
+        <input id="call" maxlength="14" placeholder="Callsign, e.g. G4ABC" autocomplete="off">
+        <button type="submit">Look up</button>
+      </form>
+      <p id="lkout" role="status"></p>
+      </div>
+
+      <div id="secSolar">
+      <h2>Solar conditions</h2>
+      <div class="solar" id="solar"></div>
+      </div>
+
+      <div id="secBands">
+      <h2>Bands from your location</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Band</th><th>Activity, last 30 min</th><th>Spots</th><th>Farthest</th><th>Status</th></tr></thead>
+          <tbody id="bands"></tbody>
+        </table>
+      </div>
+      </div>
+
+      <div id="secMonitor">
+      <h2 style="margin-top:24px">Active band monitor</h2>
+      <p class="mhelp">Pick the bands to watch. The page checks every minute and alerts you when a watched band opens.</p>
+      <div class="chips" id="chips" role="group" aria-label="Bands to watch"></div>
+      <div class="mctl">
+        <label><input type="checkbox" id="mSnd"> Beep when a band opens</label>
+        <label><input type="checkbox" id="mNote"> Desktop notification</label>
+      </div>
+      <ul class="mon" id="mon"></ul>
+      <ol class="log" id="mlog" aria-label="Recent band changes"></ol>
+      </div>
+    </section>
+
+    <section>
+      <div id="secMap">
+      <h2 id="mapTitle">Map</h2>
+      <svg class="map" id="map" viewBox="0 0 360 180" role="img" aria-label="World map with day and night shading and recent spots"></svg>
+      </div>
+
+      <div id="secScope">
+      <h2 id="scopeTitle" style="margin-top:18px">Band scope</h2>
+      <div class="chips" id="scopeBands" role="group" aria-label="Band shown on the scope" style="margin-bottom:8px"></div>
+      <div class="chips" id="scopeSpan" role="group" aria-label="Scope span" style="margin-bottom:8px"></div>
+      <div class="scopesrc"><div class="chips" id="scopeSrc" role="group" aria-label="What the scope shows"></div>
+        <span class="small muted" id="scopeLiveMsg" role="status"></span>
+        <button type="button" class="tune" id="scopeLiveGo" hidden>Start live scope</button></div>
+      <div class="scopebox" id="scopebox"><canvas id="scope" tabindex="0" role="img"></canvas><div class="cur" id="cur"></div><div class="sel" id="scopeSel"></div></div>
+      <p class="read" id="scopeRead" aria-live="polite"></p>
+      <p id="scopeNote" class="foot" style="margin:2px 0 0"></p>
+      <ul class="spots" id="spots"></ul>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel listen" id="secListen" aria-labelledby="lsTitle">
+    <div class="phead lshead" id="lsHead">
+      <h2 id="lsTitle">Listen</h2>
+      <span class="small muted lshint">Tune a public web receiver. Click the scope, the band plan or a frequency in Band activity to tune it there.</span>
+      <button type="button" class="lbtn" id="lsPop" aria-pressed="false" title="Move the Listen panel into a window you can drag and resize">Pop out</button>
+    </div>
+    <div class="lsgrid">
+      <label>Band <select id="lsBand"></select></label>
+      <label>Frequency, kHz <input id="lsFreq" type="number" step="0.1" min="100" max="60000" inputmode="decimal"></label>
+      <label>Mode <select id="lsMode"></select></label>
+      <label class="grow">Receiver <select id="lsRx"></select></label>
+      <label class="grow" id="lsKiwiRow" hidden>KiwiSDR address <input id="lsKiwi" type="url" placeholder="http://kiwi.example.org:8073" autocomplete="off"></label>
+      <label class="grow" id="lsWebsdrRow" hidden>WebSDR address <input id="lsWebsdr" type="url" placeholder="http://websdr.example.org:8901" autocomplete="off"></label>
+    </div>
+    <div class="tuner" role="group" aria-label="Tuning">
+      <button type="button" class="tbtn" id="lsDown" aria-label="Tune down">−</button>
+      <label class="sr-only" for="lsStep">Tuning step</label>
+      <select id="lsStep" title="Tuning step">
+        <option value="0.01">10 Hz</option><option value="0.1">100 Hz</option><option value="0.5">500 Hz</option>
+        <option value="1">1 kHz</option><option value="5">5 kHz</option><option value="10">10 kHz</option>
+      </select>
+      <button type="button" class="tbtn" id="lsUp" aria-label="Tune up">+</button>
+      <input type="range" id="lsSlider" aria-label="Tuning dial" step="0.01">
+    </div>
+    <div class="tuner stations">
+      <button type="button" class="tbtn wide" id="lsPrev" title="Previous station heard on this band">◀ Station</button>
+      <label class="sr-only" for="lsStations">Stations heard on this band</label>
+      <select id="lsStations"></select>
+      <button type="button" class="tbtn wide" id="lsNext" title="Next station heard on this band">Station ▶</button>
+    </div>
+    <div class="chips" id="lsPresets" role="group" aria-label="Activity centres on this band"></div>
+    <div class="lsbar">
+      <button type="button" id="lsGo">Listen</button>
+      <button type="button" class="ghost" id="lsStop" hidden>Stop</button>
+      <span id="lsWhere" class="small"></span>
+    </div>
+    <div id="lsEmbedRow"><label class="small muted lsembed"><input type="checkbox" id="lsEmbed"> Play inside Band Watch</label> <span class="small muted" id="lsEmbedNote"></span></div>
+    <div id="lsRtl" class="rtl" hidden>
+      <div class="row">
+        <label class="grow">rtl_tcp address <input id="rtlAddr" type="text" placeholder="127.0.0.1:1234" autocomplete="off" spellcheck="false"></label>
+        <label>RF gain <select id="rtlGain"></select></label>
+        <label>PPM <input id="rtlPpm" type="number" step="1" min="-200" max="200" inputmode="numeric"></label>
+        <label id="rtlWidthRow">Filter <select id="rtlWidth"></select></label>
+        <label>Volume <input id="rtlVol" type="range" min="0" max="100"></label>
+        <label class="rtlchk"><input type="checkbox" id="rtlBias"> Bias tee</label>
+      </div>
+      <p class="small muted">Plug in the dongle and start <b>rtl_tcp</b> from the RTL-SDR Blog drivers (they support the Blog V4), for example
+        <code>rtl_tcp -a 127.0.0.1</code>. Band Watch connects to it when you press Listen. The V4 tunes 500 kHz to 1,766 MHz;
+        below 28.8 MHz it switches in its built-in HF upconverter by itself. Only tick Bias tee if an active antenna or preamp needs power from the dongle.</p>
+      <div id="rtlScope" class="rtlscope" hidden>
+        <canvas id="rtlSpec" aria-label="Spectrum around the tuned frequency: click to tune"></canvas>
+        <canvas id="rtlFall" aria-label="Waterfall: click to tune"></canvas>
+        <span class="small" id="rtlMeter" aria-live="off"></span>
+      </div>
+      <p class="small" id="rtlStatus" role="status"></p>
+    </div>
+    <p class="err" id="lsErr" role="status"></p>
+    <iframe id="lsFrame" class="rxframe" title="Web receiver" allow="autoplay" referrerpolicy="origin" hidden></iframe>
+    <p class="small muted lsmore">Find more receivers: <a href="http://rx.linkfanel.net/" target="_blank" rel="noopener noreferrer">KiwiSDR map</a> ·
+      <a href="http://websdr.org/" target="_blank" rel="noopener noreferrer">WebSDR list</a>. Most digital modes (FT8, WSPR and so on) sound like tones; decode them with WSJT-X or fldigi.</p>
+  </section>
+
+  <div class="lsdock" id="lsDock">The Listen panel is in its own window. <button type="button" class="lbtn" id="lsDockBtn">Put it back here</button></div>
+
+  <section class="panel" id="secDecode" aria-labelledby="dcTitle">
+    <div class="phead">
+      <h2 id="dcTitle">FT8 / FT4 decoder</h2>
+      <span class="small muted">Decodes what your receiver hears, like WSJT-X. Your PC clock must be right to within a second.</span>
+      <button type="button" class="lbtn" id="dcWindow" title="Open the decodes in their own window">Results window</button>
+    </div>
+    <div class="dcrow">
+      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option></select></label>
+      <label class="grow">Audio from <select id="dcSrc"><option value="rtl">My RTL-SDR (Listen panel)</option><option value="mic">This computer's sound input (a radio, or a virtual cable)</option></select></label>
+      <label class="grow" id="dcDevRow" hidden>Sound input <select id="dcDev"><option value="">Default input</option></select></label>
+    </div>
+    <div class="dcrow">
+      <button type="button" id="dcStart">Start decoding</button>
+      <button type="button" class="ghost" id="dcTune" hidden></button>
+      <label class="small dcchk"><input type="checkbox" id="dcCqOnly"> CQ only</label>
+      <button type="button" class="ghost" id="dcClear">Clear</button>
+      <span class="small muted" id="dcCount"></span>
+    </div>
+    <div class="dcbar" aria-hidden="true"><div id="dcProg"></div></div>
+    <p class="small" id="dcStatus" role="status"></p>
+    <div class="dcwrap">
+      <table class="dctab">
+        <thead><tr><th>UTC</th><th>dB</th><th>DT</th><th>Freq</th><th>Message</th></tr></thead>
+        <tbody id="dcRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="secPlan" aria-labelledby="planTitle">
+    <div class="phead">
+      <h2 id="planTitle">UK band plan</h2>
+      <span class="small muted">RSGB / IARU Region 1. Ticks above the bar are live spots. Click a segment to listen there.</span>
+    </div>
+    <div class="chips" id="planBands" role="group" aria-label="Band"></div>
+    <div class="planchart" id="planChart"></div>
+    <p class="small" id="planNote"></p>
+    <div class="legend small" id="planLegend"></div>
+    <div class="scroll">
+      <table class="plan">
+        <thead><tr><th>kHz</th><th class="num">Max bandwidth</th><th>Type</th><th>Use</th><th class="num">Spots</th></tr></thead>
+        <tbody id="planRows"></tbody>
+      </table>
+    </div>
+    <p class="small muted">From the RSGB band plan, which follows the IARU Region 1 plan. Licence conditions (power, Foundation and Intermediate limits) are in your Ofcom licence; check
+      <a href="https://rsgb.org/main/operating/band-plans/" target="_blank" rel="noopener noreferrer">rsgb.org band plans</a> before transmitting.</p>
+  </section>
+
+  <section class="panel" id="secSun" aria-labelledby="sunTitle">
+    <div class="phead">
+      <h2 id="sunTitle">Sunspots</h2>
+      <button type="button" class="lbtn" id="sunPhoto">Show NASA's latest picture</button>
+    </div>
+    <div class="sungrid">
+      <div class="sundisc" id="sunDisc"></div>
+      <div class="sunfacts" id="sunFacts"></div>
+    </div>
+    <div class="scroll">
+      <table class="plan">
+        <thead><tr><th>Region</th><th>Location</th><th class="num">Area</th><th class="num">Spots</th><th>Class</th><th>Magnetic</th><th class="num">Flare chance C/M/X %</th><th class="num">Flares today</th></tr></thead>
+        <tbody id="sunRows"></tbody>
+      </table>
+    </div>
+    <p class="small muted" id="sunNote"></p>
+  </section>
+
+  <section class="panel" id="secActivity" aria-labelledby="actTitle">
+    <div class="phead">
+      <h2 id="actTitle">Band activity</h2>
+      <span class="muted" id="actCount" role="status"></span>
+    </div>
+    <p class="mysum" id="mySummary" role="status" hidden></p>
+    <div class="chips" id="actBands" role="group" aria-label="Filter by band"></div>
+    <div class="filters">
+      <button type="button" class="lbtn" id="actModes">Modes: all</button>
+      <label>Path <select id="actDir">
+        <option value="all">Both ways</option>
+        <option value="heard in your grid">Heard in your grid</option>
+        <option value="hears your grid">Hears your grid</option>
+      </select></label>
+      <label><input type="checkbox" id="actMine"> Only my callsign</label>
+      <label class="grow"><span class="sr-only">Search callsigns</span><input id="actQ" type="search" placeholder="Search callsign, e.g. JA or K1" autocomplete="off"></label>
+    </div>
+    <div class="scroll actbox">
+      <table class="act">
+        <thead><tr><th>UTC</th><th>Callsign</th><th>Band</th><th>kHz</th><th>Mode</th><th>SNR</th><th>Distance</th><th>Path</th><th>Local station</th></tr></thead>
+        <tbody id="actRows"></tbody>
+      </table>
+    </div>
+    <button type="button" class="more" id="actMore" hidden>Show more</button>
+    <p class="muted small">Rest the pointer on a callsign to see who it is; click it for its station window. Ctrl-click opens QRZ.com. Click a frequency to tune the receiver there. New spots since the last refresh are highlighted; spots with your callsign are marked “you”.</p>
+  </section>
+
+  <div class="toast" id="toast" role="alert"></div>
+  <div class="hovercard" id="hovercard" role="tooltip" hidden></div>
+
+  <dialog id="modesBox" class="modesbox" aria-labelledby="modesTitle">
+    <div class="qchead"><h2 id="modesTitle">Modes to show</h2><button type="button" class="ghost x" id="modesClose" aria-label="Close">×</button></div>
+    <p class="small muted">Spots in modes you untick are hidden everywhere: best band, bands table, map, scope, band plan and activity.</p>
+    <div class="chips">
+      <button type="button" id="modesAll">All</button><button type="button" id="modesData">Data only</button>
+      <button type="button" id="modesFt8">FT8 and FT4</button><button type="button" id="modesCw">CW</button>
+      <button type="button" id="modesVoice">Voice</button><button type="button" id="modesNone">None</button>
+    </div>
+    <div id="modesList" class="modeslist"></div>
+    <p class="small muted" id="modesSum"></p>
+  </dialog>
+
+  <dialog id="qrzLogin" aria-labelledby="qlTitle">
+    <form id="qlForm" method="dialog">
+      <h2 id="qlTitle">Log in to QRZ</h2>
+      <div id="qlOut">
+        <p class="muted small">Signing in lets you see callsign details here. Your password goes straight to QRZ.com to sign in and isn’t stored.</p>
+        <label>QRZ username <input id="qlUser" autocomplete="username" maxlength="64" required></label>
+        <label>Password <input id="qlPass" type="password" autocomplete="current-password" maxlength="128" required></label>
+      </div>
+      <div id="qlIn" hidden><p>Signed in to QRZ as <b id="qlWho"></b>.</p><p class="muted small" id="qlSub"></p></div>
+      <p class="err" id="qlErr" role="alert"></p>
+      <div class="dbtns">
+        <button type="button" class="ghost" id="qlClose">Close</button>
+        <button type="button" class="ghost" id="qlLogout" hidden>Log out</button>
+        <button type="submit" id="qlSubmit">Log in</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="optDlg" class="wide" aria-labelledby="optTitle">
+    <form id="optForm" method="dialog">
+      <h2 id="optTitle">Settings</h2>
+      <p class="muted small">Changes apply straight away and are saved in this browser.</p>
+      <div class="optgrid">
+        <label for="optTheme">Colours</label>
+        <select id="optTheme">
+          <option value="system">Match my device</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="contrast">High contrast</option>
+          <option value="night">Night (red, keeps night vision)</option>
+        </select>
+        <span>Accent colour</span>
+        <div class="swatches" id="optAccent" role="group" aria-label="Accent colour"></div>
+        <label for="optText">Text size</label>
+        <div><input type="range" id="optText" min="80" max="160" step="10"><span class="optval" id="optTextVal"></span></div>
+        <label for="optZoom">Display scale</label>
+        <div><input type="range" id="optZoom" min="60" max="200" step="10"><span class="optval" id="optZoomVal"></span></div>
+        <label for="optWidth">Page width</label>
+        <select id="optWidth">
+          <option value="1100px">Standard (1100 px)</option>
+          <option value="1500px">Wide (1500 px)</option>
+          <option value="100%">Fill the screen</option>
+          <option value="820px">Narrow (820 px)</option>
+        </select>
+        <label for="optCols">Layout</label>
+        <select id="optCols">
+          <option value="auto">Automatic for the screen</option>
+          <option value="one">One column</option>
+          <option value="two">Two columns</option>
+        </select>
+        <label for="optDensity">Spacing</label>
+        <select id="optDensity">
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+        </select>
+        <label for="optScopeRes">Scope resolution</label>
+        <select id="optScopeRes">
+          <option value="low">Low (fastest)</option>
+          <option value="normal">Normal</option>
+          <option value="high">High (sharpest)</option>
+        </select>
+        <label for="optScopeH">Scope height</label>
+        <select id="optScopeH">
+          <option value="200px">Short</option>
+          <option value="280px">Normal</option>
+          <option value="400px">Tall</option>
+        </select>
+      </div>
+      <span class="small muted">Show these sections</span>
+      <div class="secs" id="optSecs"></div>
+
+      <h3 class="opth">Background</h3>
+      <div class="swatches bgsw" id="optBgPresets" role="group" aria-label="Background presets"></div>
+      <div class="optrow">
+        <label class="filebtn">Choose a picture from this computer <input type="file" id="optBgFile" accept="image/*"></label>
+        <button type="button" class="ghost" id="optBgNone">Remove background</button>
+      </div>
+      <div class="optrow">
+        <label class="grow">Or a picture's web address <input id="optBgUrl" type="url" placeholder="https://…" autocomplete="off"></label>
+        <button type="button" class="ghost" id="optBgUrlSet">Use it</button>
+      </div>
+      <div class="optgrid">
+        <label for="optDim">Fade the picture</label>
+        <div><input type="range" id="optDim" min="0" max="90" step="5"><span class="optval" id="optDimVal"></span></div>
+      </div>
+      <p class="small muted" id="optBgMsg" role="status"></p>
+
+      <h3 class="opth">RTL-SDR receiver</h3>
+      <p class="small muted">For listening with your own dongle (RTL-SDR Blog V4 or any RTL-SDR) through rtl_tcp: choose
+        "My RTL-SDR" as the receiver in Listen. Works in Band Watch on your own PC.</p>
+      <div class="optrow">
+        <label class="grow">rtl_tcp address <input id="optRtlAddr" type="text" placeholder="127.0.0.1:1234" autocomplete="off" spellcheck="false"></label>
+        <button type="button" id="optRtlTest">Test connection</button>
+      </div>
+      <div class="optgrid">
+        <label for="optRtlDev">Dongle number (if you have more than one)</label>
+        <input id="optRtlDev" type="number" min="0" max="9" step="1" inputmode="numeric">
+        <label for="optRtlAuto2">Start rtl_tcp for me</label>
+        <div class="chkrow"><input type="checkbox" id="optRtlAuto2"> <span class="small muted">When you press Listen, on this PC</span></div>
+        <label for="optRtlExe">rtl_tcp.exe location</label>
+        <input id="optRtlExe" type="text" placeholder="e.g. C:\SDR\rtl_tcp.exe (empty: next to Band Watch or on the PATH)" autocomplete="off" spellcheck="false">
+        <label for="optRtlReconnect">Reconnect if the connection drops</label>
+        <div class="chkrow"><input type="checkbox" id="optRtlReconnect"> <span class="small muted">Up to 5 tries</span></div>
+      </div>
+      <div class="optrow">
+        <button type="button" class="ghost" id="optRtlLaunch">Start rtl_tcp now</button>
+        <button type="button" class="ghost" id="optRtlKill">Stop rtl_tcp</button>
+      </div>
+      <pre class="small rtlproc" id="optRtlProc"></pre>
+      <div class="optgrid">
+        <label for="optRtlDongle">Dongle</label>
+        <div><select id="optRtlDongle">
+          <option value="v4">RTL-SDR Blog V4</option>
+          <option value="v3">RTL-SDR Blog V3</option>
+          <option value="other">Other RTL-SDR</option>
+        </select> <span class="small muted" id="optRtlDongleNote"></span></div>
+        <label for="optRtlRate">Sample rate</label>
+        <select id="optRtlRate">
+          <option value="960000">0.96 MS/s: 480 kHz waterfall, lightest on the PC</option>
+          <option value="1920000">1.92 MS/s: 960 kHz waterfall</option>
+          <option value="2400000">2.4 MS/s: 1.2 MHz waterfall (the V4's most)</option>
+        </select>
+        <label for="optRtlWSsb">Filter width: SSB</label>
+        <select id="optRtlWSsb"></select>
+        <label for="optRtlWCw">Filter width: CW</label>
+        <select id="optRtlWCw"></select>
+        <label for="optRtlWAm">Filter width: AM</label>
+        <select id="optRtlWAm"></select>
+        <label for="optRtlWFm">Filter width: FM</label>
+        <select id="optRtlWFm"></select>
+        <label for="optRtlSql">Squelch</label>
+        <div><input type="range" id="optRtlSql" min="-101" max="0" step="1"><span class="optval" id="optRtlSqlVal"></span></div>
+        <label for="optRtlAgcSpd">Audio AGC speed</label>
+        <select id="optRtlAgcSpd"><option value="fast">Fast</option><option value="normal">Normal</option><option value="slow">Slow</option></select>
+        <label for="optRtlDeemph">Broadcast FM de-emphasis</label>
+        <select id="optRtlDeemph"><option value="50">50 µs (UK and Europe)</option><option value="75">75 µs (Americas)</option></select>
+      </div>
+      <div class="optgrid">
+        <label for="optRtlGain">RF gain</label>
+        <select id="optRtlGain"></select>
+        <label for="optRtlPpm">Frequency correction, PPM</label>
+        <input id="optRtlPpm" type="number" step="1" min="-200" max="200" inputmode="numeric">
+        <label for="optRtlAgc">RTL2832 digital AGC</label>
+        <div class="chkrow"><input type="checkbox" id="optRtlAgc"> <span class="small muted">Lifts weak signals; can overload on strong ones</span></div>
+        <label for="optRtlAudioAgc">Automatic audio level</label>
+        <div class="chkrow"><input type="checkbox" id="optRtlAudioAgc"> <span class="small muted">For SSB, CW and AM</span></div>
+        <label for="optRtlBias">Bias tee (4.5 V on the antenna socket)</label>
+        <div class="chkrow"><input type="checkbox" id="optRtlBias"> <span class="small muted">Only for an active antenna or preamp</span></div>
+        <label for="optRtlAuto">Waterfall follows the noise floor</label>
+        <div class="chkrow"><input type="checkbox" id="optRtlAuto"></div>
+        <label for="optRtlRange">Waterfall range</label>
+        <div><input type="range" id="optRtlRange" min="30" max="100" step="5"><span class="optval" id="optRtlRangeVal"></span></div>
+        <label for="optRtlSpeed">Waterfall speed</label>
+        <select id="optRtlSpeed"><option value="slow">Slow</option><option value="normal">Normal</option><option value="fast">Fast</option></select>
+      </div>
+      <div class="optrow"><button type="button" class="ghost" id="optRtlReset">Reset receiver settings</button></div>
+      <p class="small muted" id="optRtlMsg" role="status"></p>
+
+      <h3 class="opth">Profiles</h3>
+      <p class="small muted">A profile keeps your display settings, background, locator, callsign, watched bands, clocks, receiver and RTL-SDR settings. Load one to switch everything at once.</p>
+      <div class="optrow">
+        <label class="grow">Profile name <input id="profName" maxlength="40" placeholder="e.g. Home, Portable, Contest" autocomplete="off"></label>
+        <button type="button" id="profSave">Save current settings</button>
+      </div>
+      <ul class="proflist" id="profList"></ul>
+      <div class="optrow">
+        <button type="button" class="ghost" id="profExport">Save to a file</button>
+        <label class="filebtn ghost">Load from a file <input type="file" id="profImport" accept="application/json,.json"></label>
+      </div>
+      <p class="small muted" id="profMsg" role="status"></p>
+
+      <h3 class="opth">Install Band Watch</h3>
+      <p class="small muted" id="optInstMsg">Put Band Watch on your Windows PC as an app. On phones and tablets, just open band-watch.ample.run in the browser.</p>
+      <div class="optrow">
+        <button type="button" id="optInstall" hidden>Install on this device</button>
+        <a class="lbtn optlink" id="optInstallPage" href="/install?for=windows">How to install on Windows…</a>
+      </div>
+
+      <h3 class="opth">About this build</h3>
+      <dl class="optabout" id="optAbout"><dt>Version</dt><dd id="abVer">…</dd></dl>
+      <details class="small">
+        <summary>What's new in each version</summary>
+        <ul class="abhist" id="abHist"></ul>
+      </details>
+
+      <div id="optQuitRow" hidden>
+        <h3 class="opth">Band Watch app</h3>
+        <button type="button" class="ghost" id="optQuit">Quit Band Watch</button>
+      </div>
+      <div class="dbtns">
+        <button type="button" class="ghost" id="optReset">Reset to defaults</button>
+        <button type="submit" id="optDone">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="locDlg" aria-labelledby="locTitle">
+    <form id="locForm" method="dialog">
+      <h2 id="locTitle">Your locator</h2>
+      <p class="muted small">Band Watch fetches spots for your grid square and measures distances from your locator.
+      A 6-character locator such as IO93fa pins you down to about 5 km, so distances and the map are more accurate than with the 4-character square.</p>
+      <label>Locator <input id="locIn" maxlength="6" autocomplete="off" spellcheck="false" aria-describedby="locInfo"></label>
+      <p class="small muted" id="locInfo" role="status"></p>
+      <div class="locbtns">
+        <button type="button" class="ghost" id="locQrz">Use my QRZ locator</button>
+        <button type="button" class="ghost" id="locGeo">Use this device’s location</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="locAuto"> Set my locator from QRZ automatically when I log in</label>
+      <p class="err" id="locErr" role="alert"></p>
+      <div class="dbtns">
+        <button type="button" class="ghost" id="locClose">Cancel</button>
+        <button type="submit" id="locSave">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="station" class="station" aria-labelledby="qcTitle">
+    <div class="qc">
+      <div class="qchead">
+        <div><h2 id="qcTitle"></h2><p class="small muted" id="stSub"></p></div>
+        <button type="button" class="ghost x" id="qcClose" aria-label="Close">×</button>
+      </div>
+      <div class="stgrid">
+        <section class="sttime" aria-labelledby="stTimeH">
+          <h3 id="stTimeH">Transmitting station time</h3>
+          <div class="stclock" id="stTime" aria-live="off">--:--:--</div>
+          <div class="small muted" id="stDate"></div>
+          <div class="small" id="stSun"></div>
+          <div class="small muted" id="stTzNote"></div>
+        </section>
+        <section aria-labelledby="stMapH">
+          <h3 id="stMapH">Location</h3>
+          <div class="stmap" id="stMap" role="img"></div>
+          <p class="small" id="stPath"></p>
+        </section>
+        <section aria-labelledby="stListenH">
+          <h3 id="stListenH">Listen</h3>
+          <p class="small muted" id="stListenNote"></p>
+          <div class="locbtns" id="stListen"></div>
+        </section>
+        <section aria-labelledby="stSpotsH">
+          <h3 id="stSpotsH">Recent spots</h3>
+          <ul class="spots" id="stSpots"></ul>
+        </section>
+        <section class="stwide" aria-labelledby="stQrzH">
+          <h3 id="stQrzH">QRZ</h3>
+          <div id="qcBody"></div>
+        </section>
+      </div>
+      <div class="dbtns" id="stFoot"></div>
+    </div>
+  </dialog>
+
+  <p class="foot"><b>Band Watch by M3vrv.</b> Spots come from <a href="https://pskreporter.info" target="_blank" rel="noopener noreferrer">PSK Reporter</a>:
+  stations in your grid square heard by others, and stations heard in your grid square, over the last 30 minutes.
+  Solar numbers come from <a href="https://www.swpc.noaa.gov" target="_blank" rel="noopener noreferrer">NOAA SWPC</a>.
+  Sunspot regions, X-rays, solar wind and NOAA scales also come from NOAA SWPC.
+  Status is judged from spot counts: Open means 15 or more stations, Marginal means 5 to 14, Closed means fewer.
+  The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
+  Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
+</div>
+<script src="/js/install.js?v=1.11.1"></script>
+<script src="/js/bandplan.js?v=1.11.1"></script>
+<script src="/js/core.js?v=1.11.1"></script>
+<script src="/js/modes.js?v=1.11.1"></script>
+<script src="/js/map.js?v=1.11.1"></script>
+<script src="/js/scope.js?v=1.11.1"></script>
+<script src="/js/monitor.js?v=1.11.1"></script>
+<script src="/js/lookup.js?v=1.11.1"></script>
+<script src="/js/worldclock.js?v=1.11.1"></script>
+<script src="/js/locator.js?v=1.11.1"></script>
+<script src="/js/activity.js?v=1.11.1"></script>
+<script src="/js/qrz.js?v=1.11.1"></script>
+<script src="/js/hovercard.js?v=1.11.1"></script>
+<script src="/js/station.js?v=1.11.1"></script>
+<script src="/js/sdr-dsp.js?v=1.11.1"></script>
+<script src="/js/sdr.js?v=1.11.1"></script>
+<script src="/js/listen.js?v=1.11.1"></script>
+<script src="/js/decoders.js?v=1.11.1"></script>
+<script src="/js/sun.js?v=1.11.1"></script>
+<script src="/js/options.js?v=1.11.1"></script>
+<script src="/js/app.js?v=1.11.1"></script>
+</body>
+</html>

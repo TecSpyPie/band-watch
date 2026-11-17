@@ -1,0 +1,62 @@
+/* Band Watch by M3vrv: Listen panel tuning controls and its pop-out window */
+/* Listen: tuning controls */
+.tuner{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 8px}
+.tuner select{font-size:.875rem}
+.tbtn{font:600 1rem Barlow,sans-serif;min-width:34px;height:30px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--text);cursor:pointer}
+.tbtn.wide{font-size:.8125rem;padding:0 10px}
+.tbtn:hover{border-color:var(--cool)}
+#lsSlider{flex:1;min-width:160px;accent-color:var(--warm)}
+.tuner.stations select{flex:1;min-width:180px}
+/* Listen: popped out into a window that can be dragged and resized */
+.listen.floating{position:fixed;z-index:25;margin:0;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 16px 48px rgba(0,0,0,.35);padding:10px 12px;width:560px;height:620px;min-width:320px;min-height:260px;max-width:100vw;max-height:100vh;resize:both;overflow:auto}
+.listen.floating .lshead{cursor:move;user-select:none;touch-action:none;margin:-10px -12px 8px;padding:8px 12px;border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;background:var(--surface)}
+.listen.floating .lshint,.listen.floating .lsmore{display:none}
+.listen.floating .rxframe{flex:1 1 auto;height:auto;min-height:180px}
+.listen.floating.dragging{opacity:.92}
+.listen.floating.dragging .rxframe{pointer-events:none}
+.lsdock{display:none;border:2px dashed var(--line);border-radius:8px;padding:14px;margin:0 0 26px;color:var(--muted);font-size:.875rem}
+.lsdock.on{display:block}
+a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6px 12px}
+/* RTL-SDR receiver */
+.rtl .row{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:6px 0}
+.rtl .row label{display:flex;flex-direction:column;gap:3px;font-size:.875rem}
+.rtl .row .grow{flex:1 1 180px}
+.rtl .rtlchk{flex-direction:row!important;align-items:center;gap:6px!important}
+.rtl #rtlPpm{width:5.5em}
+.rtl code{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.rtlscope{position:relative;margin:8px 0 4px}
+.rtlscope canvas{display:block;width:100%;cursor:crosshair;border:1px solid var(--line)}
+#rtlSpec{height:90px;border-radius:6px 6px 0 0;border-bottom:0}
+#rtlFall{height:110px;border-radius:0 0 6px 6px}
+#rtlMeter{position:absolute;top:4px;right:8px;color:#d8f3f7;background:rgba(0,0,0,.45);padding:1px 6px;border-radius:4px}
+.optgrid .chkrow{display:flex;align-items:center;gap:8px}
+/* FT8 / FT4 decoder */
+[data-hide~="decode"] #secDecode{display:none!important}
+#secDecode .phead{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+#secDecode .phead .lbtn{margin-left:auto}
+.dcrow{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:8px 0}
+.dcrow label{display:flex;flex-direction:column;gap:3px;font-size:.875rem}
+.dcrow .grow{flex:1 1 220px}
+.dcrow .dcchk{flex-direction:row;align-items:center;gap:6px}
+.dcbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin:4px 0}
+#dcProg{height:100%;width:0;background:var(--cool);transition:width .4s linear}
+.dcwrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.dctab{width:100%;border-collapse:collapse;font:400 .875rem/1.35 ui-monospace,Consolas,monospace}
+.dctab th{position:sticky;top:0;background:var(--surface);text-align:left;font:600 .75rem Barlow,sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+.dctab td{padding:3px 8px;white-space:nowrap}
+.dctab td:nth-child(2),.dctab td:nth-child(3),.dctab td:nth-child(4){text-align:right}
+.dctab .dcmsg{width:100%}
+.dctab tr.dcnew td{border-top:1px solid var(--line)}
+.dctab tr.dccq{background:rgba(80,200,120,.10)}
+.dctab tr.dcmine{background:rgba(255,90,60,.18)}
+.dctab a.call{color:inherit;text-decoration:underline dotted}
+.rtlproc{white-space:pre-wrap;word-break:break-all;margin:0 0 8px;color:var(--muted);max-height:9em;overflow:auto}
+.rtlproc:empty{display:none}
+.dcrow label{min-width:0;max-width:100%}
+.dcrow select{max-width:100%;min-width:0}
+.dcrow .grow select{width:100%}
+.dcrow [hidden]{display:none!important}
+.dcrow button{font:500 .9375rem Barlow,sans-serif;border-radius:4px;padding:6px 16px;cursor:pointer;border:0;background:var(--cool);color:var(--bg)}
+.dcrow button.ghost{background:none;color:var(--text);border:1px solid var(--line)}
+.dcrow #dcCount{align-self:center}

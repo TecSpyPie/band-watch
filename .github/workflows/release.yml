@@ -1,0 +1,138 @@
+# Tests every push. A version tag (v1.11.1) also builds the Windows files and publishes a release.
+#
+# Code signing (SignPath Foundation, free for open source): once the project is approved, add the
+# repository secret SIGNPATH_API_TOKEN and the repository variable SIGNPATH_ORGANIZATION_ID
+# (Settings > Secrets and variables > Actions). The "Sign" steps then run by themselves.
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: desktop/go.mod
+          cache: false
+      - name: Server, API, radio and FT8 tests
+        run: npm test
+      - name: Go server and installer tests
+        run: |
+          sh desktop/build.sh test
+          (cd desktop && go test ./...)
+          (cd desktop/setup && go test ./...)
+          BW_SERVER=go node --test test/api.test.js
+
+  windows:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: desktop/go.mod
+          cache: false
+      - name: Tools for the Windows icon and version details
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q llvm zip
+          for t in llvm-rc llvm-cvtres; do
+            command -v $t >/dev/null || sudo ln -sf "$(ls /usr/lib/llvm-*/bin/$t | sort -V | tail -1)" /usr/local/bin/$t
+          done
+      - name: Version matches the tag
+        run: |
+          v=$(node -p 'require("./package.json").version')
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "package.json says $v but the tag is ${GITHUB_REF_NAME}"; exit 1; }
+      - name: Build BandWatch.exe
+        run: sh desktop/build.sh
+
+      - name: Upload BandWatch.exe for signing
+        id: exe
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandwatch-exe
+          path: desktop/build/BandWatch.exe
+      - name: Sign BandWatch.exe (SignPath)
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: band-watch
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: exe
+          github-artifact-id: ${{ steps.exe.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: desktop/build/signed
+      - name: Use the signed BandWatch.exe
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        run: cp desktop/build/signed/BandWatch.exe desktop/build/BandWatch.exe
+
+      - name: Build BandWatch-Setup.exe (with BandWatch.exe inside)
+        run: sh desktop/build-setup.sh
+
+      - name: Upload the installer for signing
+        id: setup
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandwatch-setup
+          path: desktop/build/BandWatch-Setup-*.exe
+      - name: Sign BandWatch-Setup.exe (SignPath)
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: band-watch
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: setup
+          github-artifact-id: ${{ steps.setup.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: desktop/build/signed-setup
+      - name: Use the signed installer
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        run: cp desktop/build/signed-setup/BandWatch-Setup-*.exe desktop/build/
+
+      - name: Pack the Windows download
+        run: sh tools/package-windows.sh
+      - name: Release notes
+        run: |
+          v=$(node -p 'require("./package.json").version')
+          awk -v v="$v" '/^## /{p = index($0, "## " v) == 1} p' CHANGELOG.md > notes.md
+          cat >> notes.md <<'NOTES'
+
+          ### Download
+          - **Windows:** `BandWatch-Setup.exe`: run it and answer Yes. It installs to `C:\BandWatch`
+            for you only, no administrator rights needed.
+          - **Windows with Smart App Control on:** `BandWatch-Windows.zip`, then `install.bat`.
+          - **Phone, tablet or any browser:** https://band-watch.ample.run
+
+          Check a download with `SHA256SUMS.txt`.
+          NOTES
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" --title "Band Watch ${GITHUB_REF_NAME#v}" --notes-file notes.md \
+            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/SHA256SUMS.txt \
+          || gh release upload "${GITHUB_REF_NAME}" --clobber \
+            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/SHA256SUMS.txt

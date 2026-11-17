@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decodes · Band Watch by M3vrv</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css?v=1.11.1">
+<link rel="stylesheet" href="/listen.css?v=1.11.1">
+<style>
+  body{margin:0}
+  .dw{padding:12px 16px;display:flex;flex-direction:column;height:100vh;box-sizing:border-box}
+  .dw header{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+  .dw h1{font:700 1.375rem "Barlow Condensed",sans-serif;margin:0}
+  .dw .dcwrap{flex:1;max-height:none}
+  .dw input[type=search]{min-width:160px}
+</style>
+</head>
+<body>
+<div class="dw">
+  <header>
+    <h1>Decodes</h1>
+    <span class="small muted" id="dwStatus">Waiting for Band Watch…</span>
+    <label class="small dcchk"><input type="checkbox" id="dwCq"> CQ only</label>
+    <input type="search" id="dwFind" placeholder="Find a callsign" aria-label="Find a callsign" autocomplete="off">
+    <button type="button" class="ghost" id="dwClear">Clear</button>
+  </header>
+  <div class="dcwrap">
+    <table class="dctab">
+      <thead><tr><th>UTC</th><th>Mode</th><th>dB</th><th>DT</th><th>Freq</th><th>Message</th></tr></thead>
+      <tbody id="dwRows"></tbody>
+    </table>
+  </div>
+</div>
+<script src="/js/decodes-page.js?v=1.11.1"></script>
+</body>
+</html>

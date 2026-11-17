@@ -1,0 +1,25 @@
+/* Band Watch by M3vrv: the install page */
+.inst header{align-items:baseline}
+.inst .back{color:var(--cool);font-weight:500}
+.ititle{font-size:1.75rem;margin:22px 0 4px}
+.itabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.itabs button{font:500 1rem Barlow,sans-serif;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 18px;cursor:pointer;min-height:44px}
+.itabs button[aria-selected="true"]{background:var(--cool);border-color:var(--cool);color:var(--bg)}
+.ihere{color:var(--muted);font-size:.875rem;margin:4px 0 0}
+.ipanel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 20px;margin:14px 0}
+.ipanel h3{font:700 1.25rem "Barlow Condensed",sans-serif;margin:0 0 8px}
+.ipanel h4{margin:6px 0 6px;font-size:1rem}
+.ipanel ol{padding-left:1.3em;margin:8px 0}
+.ipanel li{margin:0 0 8px}
+.ipanel a{color:var(--cool)}
+.iboth{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:24px;align-items:start}
+@media (max-width:720px){.iboth{grid-template-columns:minmax(0,1fr)}}
+.iqr{margin:0;text-align:center}
+.iqr img{width:200px;height:200px;max-width:100%;border:1px solid var(--line);border-radius:6px;background:#fff;image-rendering:pixelated}
+.iqr figcaption{color:var(--muted);font-size:.875rem;margin-top:6px}
+.ibtn{display:inline-block;font:500 1rem Barlow,sans-serif;color:var(--bg);background:var(--cool);border:0;border-radius:6px;padding:9px 18px;margin:8px 0 4px;cursor:pointer;text-decoration:none}
+.ipanel a.ibtn{color:var(--bg)}
+.ibtn[hidden]{display:none}
+.idone{border-left:3px solid var(--cool);padding:4px 10px;margin:0 0 10px}
+.ishare{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:.8rem}
+:root.onphone .offphone{display:none}

@@ -1,0 +1,558 @@
+"use strict";
+// HTTP API tests. Run against server.js by default, or the Go build with BW_SERVER=go,
+// so the web version and BandWatch.exe are held to the same behaviour.
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const http = require("http");
+const { startUpstream, startServer } = require("./helpers.js");
+
+const nowSec = () => Math.floor(Date.now() / 1000);
+const report = (o) => `<receptionReport ${Object.entries(o).map(([k, v]) => `${k}="${v}"`).join(" ")} />`;
+
+/* ---------- Fake upstream ---------- */
+
+let up = {};
+let qrzKeyValid = true;
+const qrzXml = (inner) => `<?xml version="1.0"?><QRZDatabase version="1.34">${inner}</QRZDatabase>`;
+function qrzMock(q) {
+  if (up.qrzDown) return new Error("down");
+  if (q.get("agent") !== "BandWatch-M3VRV-1.2") return { status: 400 };
+  if (q.has("username")) {
+    return q.get("username") === "m3vrv" && q.get("password") === "secret"
+      ? qrzXml("<Session><Key>KEY1</Key><Count>5</Count><SubExp>non-subscriber</SubExp></Session>")
+      : qrzXml("<Session><Error>Username/password incorrect </Error></Session>");
+  }
+  if (q.get("s") !== "KEY1" || !qrzKeyValid) return qrzXml("<Session><Error>Session Timeout</Error></Session>");
+  const call = q.get("callsign");
+  if (call === "G4ABC") {
+    return qrzXml(`<Callsign><call>G4ABC</call><fname>Ann &amp; Bob</fname><name>Smith</name><addr2>York</addr2><country>England</country>
+      <grid>IO93fx</grid><lat>53.96</lat><lon>-1.08</lon><class>Full</class><lotw>1</lotw><eqsl>0</eqsl><mqsl>1</mqsl>
+      <cqzone>14</cqzone><image>https://cdn-xml.qrz.com/x/g4abc.jpg</image><GMTOffset>0</GMTOffset><DST>Y</DST><TimeZone>Europe/London</TimeZone></Callsign><Session><Key>KEY1</Key></Session>`);
+  }
+  return qrzXml(`<Session><Key>KEY1</Key><Error>Not found: ${call}</Error></Session>`);
+}
+
+const SUN = {
+  regions: [
+    { observed_date: "2026-11-15", region: 4500, latitude: 1, longitude: 1, area: 999 },
+    { observed_date: "2026-11-16", region: 4577, latitude: -6, longitude: -27, location: "S06W27", area: 20, number_spots: 2, spot_class: "Cso", mag_class: "B", c_xray_events: 0, c_flare_probability: 15, m_flare_probability: 1, x_flare_probability: 1 },
+    { observed_date: "2026-11-16", region: 4579, latitude: 15, longitude: 45, location: "N15E45", area: 170, number_spots: 1, spot_class: "Hsx", mag_class: "A", c_xray_events: 2, m_xray_events: 0, x_xray_events: 0, c_flare_probability: 10, m_flare_probability: 1, x_flare_probability: 1, first_date: "2026-11-14T08:22:02" },
+  ],
+  ssn: [{ Obsdate: "2026-11-14T00:00:00", swpc_ssn: 70 }, { Obsdate: "2026-11-15T00:00:00", swpc_ssn: 88 }],
+  flares: [{ current_class: "B6.3", max_class: "C2.3", max_time: "2026-11-16T11:36:00Z" }],
+  scales: { 0: { R: { Scale: "0" }, S: { Scale: "0" }, G: { Scale: "1" } } },
+  wind: [{ proton_speed: 294, time_tag: "2026-11-16T13:36:00Z" }],
+};
+
+function handle(kind, url) {
+  if (kind === "qrz") return qrzMock(url.searchParams);
+  if (kind === "psk") return up.psk;
+  const p = url.pathname;
+  if (p.endsWith("f107_cm_flux.json")) return up.flux;
+  if (p.endsWith("planetary_k_index_1m.json")) return up.kp;
+  if (p.endsWith("solar_regions.json")) return up.sun.regions;
+  if (p.endsWith("swpc_observed_ssn.json")) return up.sun.ssn;
+  if (p.endsWith("xray-flares-latest.json")) return up.sun.flares;
+  if (p.endsWith("noaa-scales.json")) return up.sun.scales;
+  if (p.endsWith("solar-wind-speed.json")) return up.sun.wind;
+  return undefined;
+}
+
+let upstream, srv;
+// A download folder for the install page's Windows download (served by server.js only).
+const DL_DIR = require("fs").mkdtempSync(require("path").join(require("os").tmpdir(), "bw-dl-"));
+require("fs").writeFileSync(require("path").join(DL_DIR, "BandWatch-Windows.zip"), "PK-test-zip");
+require("fs").writeFileSync(require("path").join(DL_DIR, "secret.txt"), "no");
+process.env.BW_DOWNLOAD_DIR = DL_DIR;
+test.before(async () => {
+  upstream = await startUpstream(handle);
+  srv = await startServer(upstream.base);
+});
+test.after(async () => { await srv.stop(); await upstream.close(); });
+test.beforeEach(async () => {
+  upstream.calls.length = 0;
+  qrzKeyValid = true;
+  up = {
+    flux: [{ time_tag: "2026-11-16T20:00:00", flux: 120 }, { time_tag: "2026-11-16T17:00:00", flux: 999 }],
+    kp: [{ time_tag: "2026-11-16T08:00:00", kp_index: 2.33 }, { time_tag: "2026-11-16T08:01:00", kp_index: 3.67 }],
+    psk: `<receptionReports>
+      ${report({ receiverCallsign: "K1ABC", receiverLocator: "FN42aa", senderCallsign: "G4XYZ", senderLocator: "IO93fa", frequency: 14074500, flowStartSeconds: nowSec() - 60, mode: "FT8", sNR: -12 })}
+      ${report({ receiverCallsign: "G0AAA", receiverLocator: "IO93ab", senderCallsign: "JA1ZZZ", senderLocator: "PM95", frequency: 21075000, flowStartSeconds: nowSec() - 300, mode: "FT8", sNR: "" })}
+    </receptionReports>`,
+    sun: JSON.parse(JSON.stringify(SUN)),
+  };
+  await srv.reset();
+});
+
+const get = async (path, opts = {}) => {
+  const res = await new Promise((resolve, reject) => {
+    const req = http.request(srv.base + path, { method: opts.method || "GET", headers: opts.headers || {} }, resolve);
+    req.on("error", reject);
+    req.end(opts.body);
+  });
+  let body = "";
+  for await (const c of res) body += c;
+  return { status: res.statusCode, type: res.headers["content-type"], headers: res.headers, body };
+};
+const pskCalls = () => upstream.calls.filter((u) => u.includes("/psk"));
+
+test("GET /healthz", async () => {
+  const r = await get("/healthz");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.ok, true);
+  assert.equal(j.version, require("../package.json").version);
+});
+
+test("GET /api/solar returns the latest NOAA values, rounded", async () => {
+  const r = await get("/api/solar");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.sfi, 120);
+  assert.equal(j.kp, 4);
+  assert.equal(typeof j.at, "number");
+  assert.equal(r.headers["cache-control"], "no-store");
+});
+
+test("GET /api/spots validates the grid square", async () => {
+  for (const g of ["", "XX", "ZZ99", "1234", "IO9"]) {
+    assert.equal((await get(`/api/spots?grid=${g}`)).status, 400, `grid ${JSON.stringify(g)}`);
+  }
+  assert.equal(pskCalls().length, 0, "invalid grids never reach PSK Reporter");
+});
+
+test("GET /api/spots returns parsed spots and trims 6-char grids", async () => {
+  const r = await get("/api/spots?grid=io93fa");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.grid, "IO93");
+  assert.equal(j.spots.length, 2);
+  const k1 = j.spots.find((s) => s.c === "K1ABC");
+  assert.deepEqual({ ...k1, ts: 0 }, { c: "K1ABC", l: "G4XYZ", g: "FN42aa", lat: 42.021, lon: -71.958, fq: 14.0745, m: "FT8", snr: -12, ts: 0, dir: "hears your grid" });
+  const ja = j.spots.find((s) => s.c === "JA1ZZZ");
+  assert.equal(ja.snr, null);
+  assert.equal(ja.dir, "heard in your grid");
+  assert.deepEqual([ja.lat, ja.lon], [35.5, 139]);
+  assert.ok(pskCalls()[0].includes("callsign=IO93") && pskCalls()[0].includes("modify=grid"));
+});
+
+test("spots: newest report per path per MHz, entities decoded, unusable rows skipped", async () => {
+  const t = nowSec();
+  up.psk = `<receptionReports>${[
+    report({ senderCallsign: "DL1A", senderLocator: "JO62", receiverCallsign: "G2", receiverLocator: "IO93", frequency: 7074300, flowStartSeconds: t - 30, mode: "FT8", sNR: -3 }),
+    report({ senderCallsign: "DL1A", senderLocator: "JO62", receiverCallsign: "G2", receiverLocator: "IO93", frequency: 7075000, flowStartSeconds: t - 300, mode: "FT8", sNR: -1 }),
+    report({ senderCallsign: "DL1A", senderLocator: "JO62", receiverCallsign: "G1", receiverLocator: "IO93", frequency: 7074000, flowStartSeconds: t - 600, mode: "FT8", sNR: -20 }),
+    report({ senderCallsign: "AB&amp;C", senderLocator: "FN42", receiverLocator: "IO93", frequency: 14074000, flowStartSeconds: t, mode: "FT8" }),
+    report({ senderCallsign: "NOLOC", senderLocator: "", receiverLocator: "IO93", frequency: 14074000, flowStartSeconds: t }),
+    report({ senderCallsign: "NOFREQ", senderLocator: "FN42", receiverLocator: "IO93", frequency: "", flowStartSeconds: t }),
+    report({ senderCallsign: "NOTIME", senderLocator: "FN42", receiverLocator: "IO93", frequency: 14074000 }),
+  ].join("")}</receptionReports>`;
+  const spots = JSON.parse((await get("/api/spots?grid=IO93")).body).spots;
+  assert.deepEqual(spots.map((s) => s.c), ["DL1A", "DL1A", "AB&C"]);
+  assert.equal(spots.find((s) => s.l === "G2").snr, -3, "older report on the same path is dropped");
+});
+
+test("responses are cached and concurrent requests share one upstream call", async () => {
+  await Promise.all([get("/api/spots?grid=IO93"), get("/api/spots?grid=IO93"), get("/api/spots?grid=IO93")]);
+  await get("/api/spots?grid=IO93");
+  assert.equal(pskCalls().length, 1);
+  await get("/api/spots?grid=JO62");
+  assert.equal(pskCalls().length, 2, "a different grid is fetched separately");
+});
+
+test("serves stale data, marked stale, when a refresh fails", async () => {
+  await get("/api/spots?grid=IO93");
+  await srv.advance(6 * 60e3); // past the 5 minute cache
+  up.psk = new Error("network down");
+  const r = await get("/api/spots?grid=IO93");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.stale, true);
+  assert.equal(j.spots.length, 2);
+});
+
+test("answers 502 without leaking details when a feed is down and nothing is cached", async () => {
+  up.psk = { status: 503 };
+  const r = await get("/api/spots?grid=IO93");
+  assert.equal(r.status, 502);
+  assert.deepEqual(JSON.parse(r.body), { error: "upstream feed unavailable" });
+  up.flux = new Error("timeout");
+  assert.equal((await get("/api/solar")).status, 502);
+});
+
+test("NOAA data with no usable values is treated as a failure", async () => {
+  up.flux = [{ time_tag: "x", flux: null }];
+  assert.equal((await get("/api/solar")).status, 502);
+});
+
+test("GET /api/sun summarises sunspot regions and space weather", async () => {
+  const r = await get("/api/sun");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.date, "2026-11-16");
+  assert.deepEqual(j.regions.map((x) => x.region), [4579, 4577], "latest day only, biggest first");
+  assert.deepEqual(j.regions[0], {
+    region: 4579, lat: 15, lon: 45, location: "N15E45", area: 170, spots: 1, spotClass: "Hsx", magClass: "A",
+    flares: { c: 2, m: 0, x: 0 }, prob: { c: 10, m: 1, x: 1 }, first: "2026-11-14T08:22:02",
+  });
+  assert.equal(j.regions[1].first, null);
+  assert.equal(j.ssn, 88);
+  assert.equal(j.ssnDate, "2026-11-15");
+  assert.deepEqual(j.xray, { now: "B6.3", flare: "C2.3", flareAt: "2026-11-16T11:36:00Z" });
+  assert.deepEqual(j.scales, { R: "0", S: "0", G: "1" });
+  assert.equal(j.wind, 294);
+});
+
+test("GET /api/sun still works when the optional feeds fail, but not without regions", async () => {
+  up.sun.ssn = { status: 500 };
+  up.sun.flares = new Error("down");
+  up.sun.scales = { status: 404 };
+  up.sun.wind = "not json";
+  const j = JSON.parse((await get("/api/sun")).body);
+  assert.equal(j.regions.length, 2);
+  assert.equal(j.ssn, null);
+  assert.equal(j.xray, null);
+  assert.equal(j.scales, null);
+  assert.equal(j.wind, null);
+  await srv.reset();
+  up.sun.regions = { status: 503 };
+  assert.equal((await get("/api/sun")).status, 502);
+});
+
+/* ---------- Static files ---------- */
+
+test("serves the page and its assets with the right types", async () => {
+  const cases = [["/", "text/html"], ["/index.html", "text/html"], ["/js/app.js", "text/javascript"], ["/style.css", "text/css"], ["/favicon.svg", "image/svg+xml"]];
+  for (const [path, type] of cases) {
+    const r = await get(path);
+    assert.equal(r.status, 200, path);
+    assert.ok(r.type.startsWith(type), `${path}: ${r.type}`);
+    assert.equal(r.headers["x-content-type-options"], "nosniff");
+  }
+  assert.equal((await get("/")).headers["cache-control"], "no-cache");
+});
+
+test("install page, app manifest, icons and service worker", async () => {
+  const cases = [["/install", "text/html"], ["/install.css", "text/css"], ["/manifest.webmanifest", "application/manifest+json"],
+    ["/sw.js", "text/javascript"], ["/js/install.js", "text/javascript"], ["/js/installpage.js", "text/javascript"],
+    ["/icons/icon-192.png", "image/png"], ["/icons/icon-512.png", "image/png"], ["/icons/maskable-512.png", "image/png"],
+    ["/icons/apple-touch-icon.png", "image/png"], ["/icons/qr-install.svg", "image/svg+xml"]];
+  for (const [path, type] of cases) {
+    const r = await get(path);
+    assert.equal(r.status, 200, path);
+    assert.ok(r.type.startsWith(type), `${path}: ${r.type}`);
+  }
+  for (const p of ["/install", "/sw.js", "/manifest.webmanifest"]) assert.equal((await get(p)).headers["cache-control"], "no-cache", p);
+  const install = await get("/install");
+  assert.match(install.body, /iPhone or iPad/);
+  assert.match(install.body, /Android/);
+  assert.match(install.body, /Windows PC/);
+  const m = JSON.parse((await get("/manifest.webmanifest")).body);
+  assert.equal(m.display, "standalone");
+  assert.equal(m.start_url, "/?app=1");
+  assert.ok(m.icons.some((i) => i.sizes === "512x512" && i.purpose === "maskable"));
+  assert.ok(m.icons.some((i) => i.sizes === "192x192"));
+  const page = (await get("/")).body;
+  assert.match(page, /rel="manifest" href="\/manifest.webmanifest"/);
+  assert.match(page, /rel="apple-touch-icon"/);
+  assert.match(page, /js\/install.js/);
+});
+
+test("Windows download: offered by the web server when present, never other files", async () => {
+  const r = await get("/download/BandWatch-Windows.zip");
+  if (srv.kind === "go") {
+    assert.equal(r.status, 404); // BandWatch.exe doesn't serve its own installer
+  } else {
+    assert.equal(r.status, 200);
+    assert.equal(r.type, "application/zip");
+    assert.match(r.headers["content-disposition"], /attachment; filename="BandWatch-Windows.zip"/);
+    assert.equal(r.body, "PK-test-zip");
+    const h = await get("/download/BandWatch-Windows.zip", { method: "HEAD" });
+    assert.equal(h.status, 200);
+    assert.equal(h.body, "");
+  }
+  for (const p of ["/download/secret.txt", "/download/../server.js", "/download/%2e%2e%2fserver.js", "/download/"]) {
+    assert.equal((await get(p)).status, 404, p);
+  }
+});
+
+test("blocks path traversal, unknown paths and other methods", async () => {
+  for (const p of ["/../server.js", "/%2e%2e/server.js", "/public/../server.js", "/nope.html", "/api/nope", "/server.js", "/package.json"]) {
+    assert.equal((await get(p)).status, 404, p);
+  }
+  assert.equal((await get("/api/solar", { method: "POST" })).status, 405);
+});
+
+/* ---------- QRZ ---------- */
+
+const login = (username, password, extra = {}) => get("/api/qrz/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", ...extra },
+  body: JSON.stringify({ username, password }),
+});
+const cookieOf = (r) => (r.headers["set-cookie"] || [""])[0].split(";")[0];
+
+test("QRZ status is logged out without a session", async () => {
+  assert.deepEqual(JSON.parse((await get("/api/qrz/status")).body), { loggedIn: false });
+});
+
+test("QRZ login sets an HttpOnly cookie and never returns the key", async () => {
+  const r = await login("m3vrv", "secret");
+  assert.equal(r.status, 200);
+  assert.deepEqual(JSON.parse(r.body), { loggedIn: true, user: "M3VRV", subscriber: false, subscription: "non-subscriber" });
+  assert.ok(!r.body.includes("KEY1"), "QRZ key must stay on the server");
+  assert.match(r.headers["set-cookie"][0], /^bw_qrz=[0-9a-f]{48}; Path=\/; HttpOnly; SameSite=Strict; Max-Age=86400$/);
+  const status = await get("/api/qrz/status", { headers: { Cookie: cookieOf(r) } });
+  assert.equal(JSON.parse(status.body).user, "M3VRV");
+});
+
+test("QRZ cookie is marked Secure when served on a real host name", async () => {
+  const r = await login("m3vrv", "secret", { Host: "band-watch.ample.run" });
+  assert.match(r.headers["set-cookie"][0], /; Secure$/);
+});
+
+test("QRZ login rejects wrong passwords, bad input and non-JSON posts", async () => {
+  const bad = await login("m3vrv", "nope");
+  assert.equal(bad.status, 401);
+  assert.equal(JSON.parse(bad.body).error, "QRZ did not accept that username and password.");
+  assert.equal(bad.headers["set-cookie"], undefined);
+  assert.equal((await login("", "x")).status, 400);
+  assert.equal((await login("m3vrv", "x".repeat(200))).status, 400);
+  const form = await get("/api/qrz/login", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "username=m3vrv&password=secret" });
+  assert.equal(form.status, 415, "form posts from other sites are refused");
+  const big = await get("/api/qrz/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: "a", password: "b", pad: "x".repeat(5000) }) });
+  assert.equal(big.status, 413);
+  assert.equal((await get("/api/qrz/login")).status, 405);
+});
+
+test("QRZ login is rate limited per address", async () => {
+  const hdr = { "X-Forwarded-For": "203.0.113.9" };
+  for (let i = 0; i < 10; i++) assert.equal((await login("m3vrv", "nope", hdr)).status, 401);
+  assert.equal((await login("m3vrv", "secret", hdr)).status, 429);
+  assert.equal((await login("m3vrv", "secret", { "X-Forwarded-For": "203.0.113.10" })).status, 200, "other addresses unaffected");
+});
+
+test("QRZ lookup needs a session, returns tidy details and caches them", async () => {
+  assert.equal((await get("/api/qrz/lookup?call=G4ABC")).status, 401);
+  const cookie = cookieOf(await login("m3vrv", "secret"));
+  const r = await get("/api/qrz/lookup?call=g4abc", { headers: { Cookie: cookie } });
+  assert.equal(r.status, 200);
+  const d = JSON.parse(r.body);
+  assert.deepEqual(d, {
+    call: "G4ABC", name: "Ann & Bob Smith", nickname: null, city: "York", state: null, country: "England", grid: "IO93fx",
+    lat: 53.96, lon: -1.08, licenceClass: "Full", cqZone: "14", ituZone: null, qslManager: null, lotw: true, eqsl: false,
+    paperQsl: true, image: "https://cdn-xml.qrz.com/x/g4abc.jpg", timeZone: "Europe/London", gmtOffset: 0, dst: true,
+    limited: true, message: null,
+  });
+  const before = upstream.calls.length;
+  await get("/api/qrz/lookup?call=G4ABC", { headers: { Cookie: cookie } });
+  assert.equal(upstream.calls.length, before, "second lookup comes from cache");
+});
+
+test("QRZ lookup handles unknown calls, bad input and expired sessions", async () => {
+  const cookie = cookieOf(await login("m3vrv", "secret"));
+  const nf = await get("/api/qrz/lookup?call=ZZ9ZZZ", { headers: { Cookie: cookie } });
+  assert.equal(nf.status, 404);
+  assert.equal(JSON.parse(nf.body).error, "ZZ9ZZZ was not found on QRZ.");
+  for (const c of ["", "HELLO", "<script>", "G4ABC%20OR%201"]) {
+    assert.equal((await get(`/api/qrz/lookup?call=${c}`, { headers: { Cookie: cookie } })).status, 400, c);
+  }
+  qrzKeyValid = false;
+  const exp = await get("/api/qrz/lookup?call=M0XYZ", { headers: { Cookie: cookie } });
+  assert.equal(exp.status, 401);
+  assert.match(JSON.parse(exp.body).error, /session has ended/);
+  assert.deepEqual(JSON.parse((await get("/api/qrz/status", { headers: { Cookie: cookie } })).body), { loggedIn: false });
+});
+
+test("QRZ logout ends the session and clears the cookie", async () => {
+  const cookie = cookieOf(await login("m3vrv", "secret"));
+  const out = await get("/api/qrz/logout", { method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json" }, body: "{}" });
+  assert.equal(out.status, 200);
+  assert.match(out.headers["set-cookie"][0], /^bw_qrz=; .*Max-Age=0/);
+  assert.equal((await get("/api/qrz/lookup?call=G4ABC", { headers: { Cookie: cookie } })).status, 401);
+  assert.equal((await get("/api/qrz/status", { headers: { Cookie: "bw_qrz=forged" } })).body, '{"loggedIn":false}');
+});
+
+test("QRZ being unreachable gives a friendly 502", async () => {
+  up.qrzDown = true;
+  const r = await login("m3vrv", "secret");
+  assert.equal(r.status, 502);
+  assert.equal(JSON.parse(r.body).error, "QRZ.com could not be reached.");
+});
+
+/* ---------- RTL-SDR bridge (rtl_tcp) ---------- */
+
+/** A stand-in for rtl_tcp: sends the 12-byte header and a test pattern, records the commands it gets. */
+function startFakeRtlTcp() {
+  const net = require("net");
+  const state = { received: Buffer.alloc(0), connections: 0, closed: 0 };
+  const pattern = Buffer.alloc(200000);
+  for (let i = 0; i < pattern.length; i++) pattern[i] = (i * 7) & 0xff;
+  const header = Buffer.from([0x52, 0x54, 0x4c, 0x30, 0, 0, 0, 6, 0, 0, 0, 29]); // "RTL0", R828D, 29 gains
+  const server = net.createServer((sock) => {
+    state.connections++;
+    sock.write(Buffer.concat([header, pattern]));
+    sock.on("data", (d) => { state.received = Buffer.concat([state.received, d]); });
+    sock.on("close", () => { state.closed++; });
+    sock.on("error", () => {});
+  });
+  return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ server, state, header, pattern, port: server.address().port })));
+}
+
+const SDR = { "X-Band-Watch": "sdr" };
+const waitFor = async (fn, ms = 3000) => {
+  const t0 = Date.now();
+  while (!fn()) {
+    if (Date.now() - t0 > ms) throw new Error("timed out");
+    await new Promise((r) => setTimeout(r, 20));
+  }
+};
+
+/** Opens the stream; resolves once `want` bytes have arrived (or it ends). */
+function openStream(path, want, headers = SDR) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(srv.base + path, { headers }, (res) => {
+      const chunks = [];
+      let got = 0;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks), req, res });
+      };
+      res.on("data", (c) => { chunks.push(c); got += c.length; if (got >= want) finish(); });
+      res.on("end", finish);
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+test("RTL-SDR bridge: available, and refuses requests without its header", async () => {
+  const r = await get("/api/sdr");
+  assert.equal(r.status, 200);
+  assert.deepEqual(JSON.parse(r.body), { available: true });
+  const noHeader = await get("/api/sdr/stream?addr=127.0.0.1:1234");
+  assert.equal(noHeader.status, 403);
+  const noHeaderCmd = await get("/api/sdr/cmd", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  assert.equal(noHeaderCmd.status, 403);
+});
+
+test("RTL-SDR bridge: only this PC or a home-network address", async () => {
+  for (const addr of ["8.8.8.8:1234", "example.com:1234", "127.0.0.1:99999", "127.0.0.1", "", "1.2.3.4.5:1", "172.32.0.1:1234", "[::1]:1234", "127.0.0.1:1234/x"]) {
+    const r = await get(`/api/sdr/stream?addr=${encodeURIComponent(addr)}`, { headers: SDR });
+    assert.equal(r.status, 400, addr);
+  }
+});
+
+test("RTL-SDR bridge: says clearly when rtl_tcp isn't running", async () => {
+  const net = require("net");
+  const free = await new Promise((resolve) => { const s = net.createServer().listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => resolve(p)); }); });
+  const r = await get(`/api/sdr/stream?addr=127.0.0.1:${free}`, { headers: SDR });
+  assert.equal(r.status, 502);
+  assert.match(JSON.parse(r.body).error, /Is rtl_tcp running\?/);
+});
+
+test("RTL-SDR bridge: passes the samples through and sends commands to rtl_tcp", async () => {
+  const fake = await startFakeRtlTcp();
+  try {
+    const want = fake.header.length + fake.pattern.length;
+    const s = await openStream(`/api/sdr/stream?addr=localhost:${fake.port}`, want);
+    assert.equal(s.status, 200);
+    assert.equal(s.headers["content-type"], "application/octet-stream");
+    const id = s.headers["x-sdr-session"];
+    assert.match(id, /^[0-9a-f]{32}$/);
+    assert.ok(s.body.length >= want);
+    assert.ok(s.body.subarray(0, want).equals(Buffer.concat([fake.header, fake.pattern])), "bytes arrive unchanged");
+
+    const cmd = (body, headers = SDR) => get("/api/sdr/cmd", { method: "POST", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    assert.equal((await cmd({ session: id, cmd: 1, value: 14440000 })).status, 200); // frequency
+    assert.equal((await cmd({ session: id, cmd: 5, value: -2 })).status, 200); // ppm, negative
+    assert.equal((await cmd({ session: id, cmd: 0x0e, value: 1 })).status, 200); // bias tee on
+    await waitFor(() => fake.state.received.length >= 15);
+    assert.equal(fake.state.received.toString("hex"), "0100dc5640" + "05fffffffe" + "0e00000001");
+
+    assert.equal((await cmd({ session: id, cmd: 7, value: 1 })).status, 400); // not an allowed command
+    assert.equal((await cmd({ session: id, cmd: 9, value: 5 })).status, 400); // direct sampling is 0, 1 or 2
+    assert.equal((await cmd({ session: id, cmd: 1, value: 1.5 })).status, 400);
+    assert.equal((await cmd({ session: id, cmd: 1, value: 2 ** 33 })).status, 400);
+    assert.equal((await cmd({ session: "nope", cmd: 1, value: 1 })).status, 404);
+    assert.equal((await cmd({ session: id, cmd: 1, value: 1 }, {})).status, 403);
+
+    // Closing the page closes the connection to rtl_tcp.
+    s.req.destroy();
+    await waitFor(() => fake.state.closed === 1);
+    assert.equal((await cmd({ session: id, cmd: 1, value: 1 })).status, 404);
+  } finally {
+    fake.server.close();
+  }
+});
+
+test("RTL-SDR bridge: at most two receivers at once", async () => {
+  const fake = await startFakeRtlTcp();
+  try {
+    const a = await openStream(`/api/sdr/stream?addr=127.0.0.1:${fake.port}`, 12);
+    const b = await openStream(`/api/sdr/stream?addr=127.0.0.1:${fake.port}`, 12);
+    assert.equal(a.status, 200);
+    assert.equal(b.status, 200);
+    const c = await get(`/api/sdr/stream?addr=127.0.0.1:${fake.port}`, { headers: SDR });
+    assert.equal(c.status, 429);
+    a.req.destroy();
+    b.req.destroy();
+    await waitFor(() => fake.state.closed === 2);
+  } finally {
+    fake.server.close();
+  }
+});
+
+test("RTL-SDR: starts rtl_tcp for the user, only the real program name, and stops it", async () => {
+  const path = require("path");
+  const net = require("net");
+  const exe = path.join(__dirname, "fixtures", "rtl_tcp");
+  const post = (p, body) => get(p, { method: "POST", headers: { ...SDR, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const port = await new Promise((resolve) => { const s = net.createServer().listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => resolve(p)); }); });
+
+  assert.equal((await get("/api/sdr/launch")).status, 403, "needs the Band Watch header");
+  assert.equal((await post("/api/sdr/launch", { path: "/bin/sh", port, device: 0 })).status, 404, "only rtl_tcp");
+  assert.match(JSON.parse((await post("/api/sdr/launch", { path: "/bin/sh", port, device: 0 })).body).error, /isn't rtl_tcp/);
+  assert.equal((await post("/api/sdr/launch", { path: "/nowhere/rtl_tcp.exe", port, device: 0 })).status, 404);
+  assert.equal((await post("/api/sdr/launch", { path: exe, port: 70000, device: 0 })).status, 400);
+  assert.equal((await post("/api/sdr/launch", { path: exe, port, device: 12 })).status, 400);
+
+  const r = await post("/api/sdr/launch", { path: exe, port, device: 1 });
+  assert.equal(r.status, 200, r.body);
+  const st = JSON.parse(r.body);
+  assert.equal(st.running, true);
+  assert.deepEqual(st.args, ["-a", "127.0.0.1", "-p", String(port), "-d", "1"]);
+  // it listens, and the bridge can use it
+  let s;
+  for (let i = 0; i < 40; i++) {
+    s = await openStream(`/api/sdr/stream?addr=127.0.0.1:${port}`, 12).catch(() => null);
+    if (s && s.status === 200) break;
+    await new Promise((res) => setTimeout(res, 100));
+  }
+  assert.equal(s.status, 200);
+  assert.equal(s.body.subarray(0, 4).toString(), "RTL0");
+  s.req.destroy();
+  // asking again with the same settings doesn't start a second one
+  const again = JSON.parse((await post("/api/sdr/launch", { path: exe, port, device: 1 })).body);
+  assert.equal(again.running, true);
+  const status = JSON.parse((await get("/api/sdr/launch", { headers: SDR })).body);
+  assert.ok(status.output.some((l) => /Blog V4/.test(l)), JSON.stringify(status.output));
+  // stop
+  assert.equal((await post("/api/sdr/launch/stop", {})).status, 200);
+  for (let i = 0; i < 40 && JSON.parse((await get("/api/sdr/launch", { headers: SDR })).body).running; i++) await new Promise((res) => setTimeout(res, 50));
+  assert.equal(JSON.parse((await get("/api/sdr/launch", { headers: SDR })).body).running, false);
+});
+
+test("healthz says when this copy was built and what it runs on", async (t) => {
+  const r = await get("/healthz");
+  const h = JSON.parse(r.body);
+  assert.equal(h.version, require("../package.json").version);
+  assert.equal(typeof h.build, "object");
+  assert.equal(typeof h.build.date, "string");
+  if (h.build.date) assert.ok(!Number.isNaN(Date.parse(h.build.date)), h.build.date);
+  assert.match(h.build.server, /^(Node\.js|BandWatch\.exe)$/);
+  assert.ok(h.build.runtime);
+  assert.ok(!Number.isNaN(Date.parse(h.build.started)));
+});
