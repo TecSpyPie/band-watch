@@ -62,7 +62,22 @@ function qrzLogMock(body, req) {
   return "RESULT=FAIL&REASON=bad action";
 }
 
+const DX = {
+  spots: [
+    { spotter: "KC2GRN", dxcall: "EA1Z", freq: 28181.7, band: "10M", mode: "DIGI", comment: "FT8 -12", time: "2026-11-17T15:34:00Z", dxcc: 281, country: "Spain", continent: "EU", lotw: true, eqsl: true },
+    { spotter: "LU1VFP", dxcall: "cx2bbw", freq: 14220.0, band: "20M", mode: "SSB", comment: "", time: "2026-11-17T15:36:00Z", country: "Uruguay", continent: "SA", lotw: false },
+    { spotter: "X", dxcall: "<b>bad</b>", freq: 7000, time: "2026-11-17T15:30:00Z" },
+    { spotter: "X", dxcall: "K1ABC", freq: "not a number", time: "2026-11-17T15:30:00Z" },
+    "junk",
+  ],
+  locations: [
+    { call: "EA1Z", grid: "IN72", lat: 42.5, lon: -5.0, source: "callbook" },
+    { call: "CX2BBW", grid: "GF15", lat: -34.88, lon: -56.17, source: "dxcc" },
+  ],
+};
+
 function handle(kind, url, body, req) {
+  if (kind === "dx") { (up.dxCalls ||= []).push(url.search); return up.dxDown ? { status: 503 } : DX; }
   if (kind === "qrzlog") return qrzLogMock(body, req);
   if (kind === "qrz") return qrzMock(url.searchParams);
   if (kind === "pota") return up.potaDown ? { status: 503 } : XOTA.potaRows();
@@ -313,6 +328,28 @@ const login = (username, password, extra = {}) => get("/api/qrz/login", {
   body: JSON.stringify({ username, password }),
 });
 const cookieOf = (r) => (r.headers["set-cookie"] || [""])[0].split(";")[0];
+
+test("GET /api/dx: DX cluster spots from HamQTH, newest first, with positions, cached a minute", async () => {
+  const r = await get("/api/dx");
+  assert.equal(r.status, 200);
+  const d = JSON.parse(r.body);
+  assert.equal(d.source, "HamQTH.com");
+  assert.deepEqual(d.spots.map((x) => x.call), ["CX2BBW", "EA1Z"], "bad calls and frequencies dropped, newest first");
+  assert.deepEqual(d.spots[1], { call: "EA1Z", kHz: 28181.7, mode: "DIGI", by: "KC2GRN", note: "FT8 -12", time: "2026-11-17T15:34:00.000Z",
+    country: "Spain", cont: "EU", lotw: true, grid: "IN72", lat: 42.5, lon: -5 });
+  assert.equal(d.spots[0].lat, -34.88);
+  assert.deepEqual(up.dxCalls, ["?limit=200&include=locations"]);
+  await get("/api/dx");
+  assert.equal(up.dxCalls.length, 1, "one upstream call a minute at most");
+  await srv.advance(61000);
+  await get("/api/dx");
+  assert.equal(up.dxCalls.length, 2);
+});
+
+test("GET /api/dx: HamQTH down is a 502", async () => {
+  up.dxDown = true;
+  assert.equal((await get("/api/dx")).status, 502);
+});
 
 test("QRZ status is logged out without a session", async () => {
   assert.deepEqual(JSON.parse((await get("/api/qrz/status")).body), { loggedIn: false });

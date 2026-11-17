@@ -18,7 +18,7 @@ async function startUpstream(handle) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://upstream");
     calls.push(url.toString());
-    const kind = ["psk", "qrzlog", "qrz", "pota", "sota", "update"].find((k) => url.pathname.startsWith(`/${k}`)) || "noaa";
+    const kind = ["psk", "qrzlog", "qrz", "pota", "sota", "update", "dx"].find((k) => url.pathname.startsWith(`/${k}`)) || "noaa";
     const chunks = [];
     for await (const c of req) chunks.push(c);
     const body = Buffer.concat(chunks).toString("utf8");
@@ -65,6 +65,7 @@ async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node")
     BW_QRZ_URL: `${upstreamBase}/qrz/xml/current/`,
     BW_QRZLOG_URL: `${upstreamBase}/qrzlog/api`,
     BW_POTA_URL: `${upstreamBase}/pota/spot/activator`,
+    BW_DX_URL: `${upstreamBase}/dx/api/v2/spots`,
     BW_UPDATE_URL: `${upstreamBase}/update/releases/latest`,
   };
   const child = kind === "go"

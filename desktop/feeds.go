@@ -487,3 +487,58 @@ func (s *Server) getXota() (map[string]any, error) {
 		return map[string]any{"spots": spots, "at": s.clock.Millis(), "failed": failed}, nil
 	})
 }
+
+/* ---------- DX cluster spots (HamQTH API v2) ---------- */
+// Free, no key. HamQTH asks apps not to call more often than every 15 seconds and to tell users
+// "Data provided by HamQTH.com". One shared copy a minute.
+
+func (s *Server) getDx() (map[string]any, error) {
+	return s.cache.Get("dx", dxTTL, func() (map[string]any, error) {
+		var d struct {
+			Spots     []any `json:"spots"`
+			Locations []any `json:"locations"`
+		}
+		if err := s.fetchJSON(s.cfg.DxURL+"?limit=200&include=locations", 20*time.Second, &d); err != nil {
+			return nil, err
+		}
+		if d.Spots == nil {
+			return nil, errors.New("HamQTH returned no spots")
+		}
+		locs := map[string]map[string]any{}
+		for _, item := range d.Locations {
+			if l, ok := item.(map[string]any); ok {
+				locs[strings.ToUpper(clip(l["call"], 20))] = l
+			}
+		}
+		spots := []map[string]any{}
+		for _, item := range d.Spots {
+			r, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			call := strings.ToUpper(clip(r["dxcall"], 20))
+			k, ok := numOf(r["freq"])
+			if !ok || k <= 100 || k >= 1.3e6 || !xotaCallRe.MatchString(call) {
+				continue
+			}
+			l := locs[call]
+			var lat, lon any
+			if la, ok1 := numOf(l["lat"]); ok1 {
+				if lo, ok2 := numOf(l["lon"]); ok2 && la >= -90 && la <= 90 && lo >= -180 && lo <= 180 {
+					lat, lon = la, lo
+				}
+			}
+			lotw, _ := r["lotw"].(bool)
+			spots = append(spots, map[string]any{
+				"call": call, "kHz": k, "mode": strings.ToUpper(clip(r["mode"], 8)), "by": strings.ToUpper(clip(r["spotter"], 20)),
+				"note": clip(r["comment"], 120), "time": utcTime(r["time"]), "country": clip(r["country"], 40),
+				"cont": strings.ToUpper(clip(r["continent"], 2)), "lotw": lotw, "grid": clip(l["grid"], 8), "lat": lat, "lon": lon,
+			})
+		}
+		sort.SliceStable(spots, func(i, j int) bool { return spots[i]["time"].(string) > spots[j]["time"].(string) })
+		if len(spots) > 200 {
+			spots = spots[:200]
+		}
+		return map[string]any{"spots": spots, "at": s.clock.Millis(), "source": "HamQTH.com"}, nil
+	})
+}

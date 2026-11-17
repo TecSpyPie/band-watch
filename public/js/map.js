@@ -37,6 +37,7 @@ function drawMap() {
     }
   }
   if (typeof xotaMapSvg === "function") svg += xotaMapSvg(X, Y);
+  if (typeof dxMapSvg === "function") svg += dxMapSvg(X, Y);
   svg += `<circle cx="${X(app.home.lon)}" cy="${Y(app.home.lat)}" r="3" fill="var(--warm)" stroke="var(--surface)" stroke-width="1"/>`;
   $("map").innerHTML = svg;
   $("mapTitle").textContent = cur ? `${cur.b} m spots` : "Map";

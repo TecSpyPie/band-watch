@@ -3,6 +3,7 @@
 //   GET  /api/solar            -> { sfi, kp, at }          (NOAA SWPC, cached 15 min)
 //   GET  /api/spots?grid=IO93  -> { grid, spots[], at }    (PSK Reporter, cached 5 min per grid)
 //   GET  /api/xota             -> { spots[], at, failed[] } POTA activators (cached 2 min)
+//   GET  /api/dx               -> { spots[], at, source }   DX cluster spots from HamQTH.com (cached 1 min)
 //   GET  /api/update           -> { current, latest, newer, page, canInstall } (GitHub releases, cached 1 hour)
 //   GET  /api/sun              -> sunspot regions, sunspot number, X-rays, solar wind, NOAA scales (cached 30 min)
 //   GET  /api/qrz/status       -> { loggedIn, user, subscriber }
@@ -44,6 +45,10 @@ const PSK_QUERY = process.env.BW_PSK_URL || "https://retrieve.pskreporter.info/q
 const POTA_URL = process.env.BW_POTA_URL || "https://api.pota.app/spot/activator";
 // SOTA spots are not used: SOTA's API terms don't allow AI-written software without their approval.
 const XOTA_TTL = 2 * 60 * 1000;
+// HamQTH's DX cluster API: free, no key; it asks apps not to call more often than every 15 seconds,
+// and to tell users "Data provided by HamQTH.com". One shared copy a minute for everyone.
+const DX_URL = process.env.BW_DX_URL || "https://www.hamqth.com/api/v2/spots";
+const DX_TTL = 60 * 1000;
 const UPDATE_URL = process.env.BW_UPDATE_URL || "https://api.github.com/repos/TecSpyPie/band-watch/releases/latest";
 const UPDATE_TTL = 60 * 60 * 1000;
 const TEST_HOOKS = process.env.BW_TEST === "1";
@@ -130,6 +135,30 @@ async function getXota() {
       .sort((a, b) => (b.time > a.time ? 1 : b.time < a.time ? -1 : 0))
       .slice(0, 400);
     return { spots, at: clock.now(), failed: [] };
+  });
+}
+
+/** DX cluster spots (HamQTH API v2), with the station's position where HamQTH knows it. */
+async function getDx() {
+  return cached("dx", DX_TTL, async () => {
+    const d = await (await fetchOk(`${DX_URL}?limit=200&include=locations`, 20000)).json();
+    if (!d || !Array.isArray(d.spots)) throw new Error("HamQTH returned no spots");
+    const locs = new Map((Array.isArray(d.locations) ? d.locations : [])
+      .filter((l) => l && typeof l === "object").map((l) => [str(l.call, 20).toUpperCase(), l]));
+    const spots = d.spots.filter((r) => r && typeof r === "object").map((r) => {
+      const call = str(r.dxcall, 20).toUpperCase();
+      const l = locs.get(call) || {};
+      const lat = num(l.lat), lon = num(l.lon);
+      const ok = lat != null && lon != null && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+      return {
+        call, kHz: num(r.freq), mode: str(r.mode, 8).toUpperCase(), by: str(r.spotter, 20).toUpperCase(),
+        note: str(r.comment, 120), time: utcTime(r.time), country: str(r.country, 40), cont: str(r.continent, 2).toUpperCase(),
+        lotw: r.lotw === true, grid: str(l.grid, 8), lat: ok ? lat : null, lon: ok ? lon : null,
+      };
+    }).filter((x) => /^[A-Z0-9/]{3,20}$/.test(x.call) && x.kHz > 100 && x.kHz < 1.3e6)
+      .sort((a, b) => (b.time > a.time ? 1 : b.time < a.time ? -1 : 0))
+      .slice(0, 200);
+    return { spots, at: clock.now(), source: "HamQTH.com" };
   });
 }
 
@@ -606,6 +635,7 @@ async function handle(req, res) {
     if (url.pathname === "/api/sun") return sendJson(res, 200, await getSun());
     if (url.pathname === "/api/solar") return sendJson(res, 200, await getSolar());
     if (url.pathname === "/api/xota") return sendJson(res, 200, await getXota());
+    if (url.pathname === "/api/dx") return sendJson(res, 200, await getDx());
     if (url.pathname === "/api/update") return sendJson(res, 200, await getUpdate());
     if (url.pathname === "/api/spots") {
       const grid = String(url.searchParams.get("grid") || "").toUpperCase().slice(0, 4);

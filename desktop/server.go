@@ -32,6 +32,7 @@ var startedAt = time.Now()
 const (
 	solarTTL = 15 * time.Minute
 	xotaTTL  = 2 * time.Minute
+	dxTTL    = time.Minute
 	spotsTTL = 5 * time.Minute
 	sunTTL   = 30 * time.Minute
 	cacheMax = 200
@@ -44,6 +45,7 @@ type Config struct {
 	QrzURL       string // https://xmldata.qrz.com/xml/current/
 	QrzLogURL    string // https://logbook.qrz.com/api
 	PotaURL      string // https://api.pota.app/spot/activator
+	DxURL        string // https://www.hamqth.com/api/v2/spots
 	UpdateURL    string // GitHub's latest-release API for Band Watch
 	UpdateAssets string // where release files may come from (tests only; default Band Watch's GitHub releases)
 	TestHooks    bool   // /api/test/reset and /api/test/advance
@@ -58,6 +60,7 @@ func defaultConfig() Config {
 		QrzURL:    "https://xmldata.qrz.com/xml/current/",
 		QrzLogURL: "https://logbook.qrz.com/api",
 		PotaURL:   "https://api.pota.app/spot/activator",
+		DxURL:     "https://www.hamqth.com/api/v2/spots",
 		UpdateURL: releasesAPI,
 	}
 }
@@ -267,6 +270,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/xota":
 		data, err = s.getXota()
+	case p == "/api/dx":
+		data, err = s.getDx()
 	case p == "/api/sun":
 		data, err = s.getSun()
 	case p == "/api/spots":

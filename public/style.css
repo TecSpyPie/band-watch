@@ -322,7 +322,10 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .xtsrc.sota{background:#8b5a2b}
 .xtmark.pota{fill:#2e8b57;stroke:var(--surface);stroke-width:.5}
 .xtmark.sota{fill:#8b5a2b;stroke:var(--surface);stroke-width:.5}
-@media (max-width:600px){.xtrow{grid-template-columns:auto 1fr}.xtrow .xttune,.xtrow .xtref{grid-column:2}}
+.dxrow{grid-template-columns:minmax(80px,auto) auto auto 1fr}
+.dxrow .xtwhere,.dxrow .xttime{grid-column:1 / -1}
+.dxmark{fill:#c2410c;stroke:var(--surface);stroke-width:.5}
+@media (max-width:600px){.xtrow{grid-template-columns:auto 1fr}.xtrow .xttune,.xtrow .xtref{grid-column:2}.dxrow{grid-template-columns:auto 1fr}.dxrow .xttune,.dxrow .xtref{grid-column:auto}}
 /* Logbook */
 .linkbtn{background:none;border:0;padding:0 2px;color:var(--cool);font:inherit;text-decoration:underline;cursor:pointer}
 .worked{color:#2e8b57;font-weight:600;font-size:.8125rem}

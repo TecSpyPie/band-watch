@@ -47,6 +47,18 @@ const SUN = {
 const XOTA = require("./fixtures/xota.js");
 
 function upstreamHandler(kind, url, body) {
+  if (kind === "dx") {
+    if (feed.dxDown) return { status: 503 };
+    const t = (minAgo) => new Date(Date.now() - minAgo * 60000).toISOString().replace(/\.\d+Z$/, "Z");
+    return {
+      spots: [
+        { spotter: "G4ABC", dxcall: "VP8LP", freq: 14025.5, band: "20M", mode: "CW", comment: "up 1", time: t(2), country: "Falkland Islands", continent: "SA", lotw: true },
+        { spotter: "DL1AB", dxcall: "JA1ZZZ", freq: 21074, band: "15M", mode: "DIGI", comment: "FT8", time: t(4), country: "Japan", continent: "AS", lotw: false },
+        { spotter: "W1AW", dxcall: "ZS6A", freq: 14205, band: "20M", mode: "SSB", comment: "", time: t(6), country: "South Africa", continent: "AF", lotw: false },
+      ],
+      locations: [{ call: "VP8LP", grid: "GD18", lat: -51.7, lon: -57.9 }, { call: "JA1ZZZ", grid: "PM95", lat: 35.5, lon: 139.5 }, { call: "ZS6A", grid: "KG44", lat: -26, lon: 28 }],
+    };
+  }
   if (kind === "qrzlog") {
     const f = new URLSearchParams(body);
     (feed.qrzLog ||= []).push(Object.fromEntries(f));
@@ -2203,6 +2215,40 @@ test("radio control: reconnects by itself, and explains when the browser can't d
   await p2.evaluate(() => Object.defineProperty(navigator, "serial", { value: undefined, configurable: true }));
   await p2.evaluate(() => rigConnect(true));
   assert.match(await p2.textContent("#optRigMsg"), /needs Chrome or Edge/);
+});
+
+test("DX cluster: spots from HamQTH listed, filtered, on the map, click to tune and log, with HamQTH credited", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.waitForFunction(() => document.querySelectorAll("#dxList .dxrow").length === 3);
+  assert.match(await page.textContent("#dxList"), /VP8LP.*14,025\.5 kHz CW.*Falkland Islands/s);
+  assert.match(await page.textContent("#dxNote"), /3 of 3 spots\..*Data provided by HamQTH\.com/);
+  assert.equal(await page.getAttribute("#dxNote a", "href"), "https://www.hamqth.com/");
+  // Filters, remembered
+  await page.selectOption("#dxBand", "20");
+  assert.equal(await page.locator("#dxList .dxrow").count(), 2);
+  await page.selectOption("#dxMode", "ssb");
+  assert.equal(await page.locator("#dxList .dxrow").count(), 1);
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-dx"))), { band: "20", mode: "ssb", onMap: true });
+  // Click to tune: SSB on 20 m is USB
+  await page.click("#dxList .dxtune");
+  assert.equal(await page.inputValue("#lsFreq"), "14205");
+  assert.equal(await page.inputValue("#lsMode"), "usb");
+  // On the map for the selected band
+  await page.selectOption("#dxMode", "all");
+  await page.click('#bands tr[data-b="20"]');
+  await page.waitForFunction(() => document.querySelectorAll("#map .dxmark").length === 2);
+  await page.uncheck("#dxMap");
+  assert.equal(await page.locator("#map .dxmark").count(), 0);
+  // Log it: the form is filled in
+  await page.selectOption("#dxBand", "all");
+  await page.click('#dxList .dxrow:has-text("JA1ZZZ") .dxlog');
+  assert.deepEqual(await page.evaluate(() => ["lgCall", "lgKHz", "lgMode", "lgGrid"].map((id) => document.getElementById(id).value)), ["JA1ZZZ", "21074", "FT8", "PM95"]);
+  assert.deepEqual(errors, []);
+});
+
+test("DX cluster: says so when HamQTH can't be reached", { skip }, async (t) => {
+  const { page } = await openPage(t, { dxDown: true });
+  await page.waitForFunction(() => /Couldn't load DX spots/.test(document.getElementById("dxNote").textContent));
 });
 
 test("parks on the air: POTA activators listed, filtered, on the map and scope, click to tune", { skip }, async (t) => {

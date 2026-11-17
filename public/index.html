@@ -229,6 +229,21 @@
     <p class="small muted" id="xtNote" role="status"></p>
   </section>
 
+  <section class="panel" id="secDx" aria-labelledby="dxTitle">
+    <div class="phead">
+      <h2 id="dxTitle">DX cluster</h2>
+      <span class="small muted">Stations other hams have just heard</span>
+    </div>
+    <div class="xtctl">
+      <label class="sr-only" for="dxBand">Band</label><select id="dxBand"></select>
+      <label class="sr-only" for="dxMode">Mode</label>
+      <select id="dxMode"><option value="all">All modes</option><option value="cw">CW</option><option value="ssb">Phone</option><option value="digi">Data (FT8 and others)</option></select>
+      <label class="small"><input type="checkbox" id="dxMap"> Show on the map</label>
+    </div>
+    <ul class="xtlist" id="dxList" aria-live="polite"></ul>
+    <p class="small muted" id="dxNote" role="status"></p>
+  </section>
+
   <section class="panel" id="secWanted" aria-labelledby="wnTitle">
     <div class="phead">
       <h2 id="wnTitle">Wanted alerts</h2>
@@ -710,6 +725,7 @@
 <script src="/js/xota.js?v=1.13.0"></script>
 <script src="/js/logbook.js?v=1.13.0"></script>
 <script src="/js/logmap.js?v=1.13.0"></script>
+<script src="/js/dx.js?v=1.13.0"></script>
 <script src="/js/wanted.js?v=1.13.0"></script>
 <script src="/js/decoders.js?v=1.13.0"></script>
 <script src="/js/sun.js?v=1.13.0"></script>
