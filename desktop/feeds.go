@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -393,4 +394,128 @@ func summariseSun(got map[string]any, at int64) (map[string]any, error) {
 		out["wind"] = numOrNil(w[0]["proton_speed"])
 	}
 	return out, nil
+}
+
+/* ---------- POTA and SOTA activators ---------- */
+
+var xotaCallRe = regexp.MustCompile(`^[A-Z0-9/]{3,20}$`)
+var zoneRe = regexp.MustCompile(`([zZ]|[+-]\d\d:?\d\d)$`)
+
+// utcTime reads "2026-11-17T02:50:00" (UTC without a zone) or a time with a zone, as an ISO string.
+func utcTime(v any) string {
+	s := strings.TrimSpace(strOf(v))
+	if s == "" {
+		return ""
+	}
+	if !zoneRe.MatchString(s) {
+		s = strings.Replace(s, " ", "T", 1) + "Z"
+	}
+	for _, layout := range []string{time.RFC3339Nano, "2006-01-02T15:04Z07:00"} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t.UTC().Format("2006-01-02T15:04:05.000Z")
+		}
+	}
+	return ""
+}
+
+func clip(v any, max int) string {
+	s := strings.TrimSpace(strOf(v))
+	if len(s) > max {
+		s = s[:max]
+	}
+	return s
+}
+
+func potaSpot(r map[string]any) map[string]any {
+	lat, lon := numOrNil(r["latitude"]), numOrNil(r["longitude"])
+	if lat == nil || lon == nil {
+		lat, lon = nil, nil
+	}
+	name := clip(r["parkName"], 120)
+	if name == "" {
+		name = clip(r["name"], 120)
+	}
+	grid := clip(r["grid6"], 8)
+	if grid == "" {
+		grid = clip(r["grid4"], 8)
+	}
+	return map[string]any{
+		"src": "pota", "call": strings.ToUpper(clip(r["activator"], 20)), "kHz": numOrNil(r["frequency"]),
+		"mode": strings.ToUpper(clip(r["mode"], 12)), "ref": clip(r["reference"], 20), "name": name,
+		"loc": clip(r["locationDesc"], 40), "grid": grid, "lat": lat, "lon": lon,
+		"time": utcTime(r["spotTime"]), "by": strings.ToUpper(clip(r["spotter"], 20)), "note": clip(r["comments"], 200),
+	}
+}
+
+func sotaSpot(r map[string]any) map[string]any {
+	var kHz any
+	if mhz, ok := numOf(r["frequency"]); ok {
+		kHz = math.Round(mhz*100000) / 100
+	}
+	ref := clip(r["summitCode"], 20)
+	if a, c := clip(r["associationCode"], 10), clip(r["summitCode"], 12); a != "" && c != "" {
+		ref = a + "/" + c
+	}
+	call := clip(r["activatorCallsign"], 20)
+	if call == "" {
+		call = clip(r["callsign"], 20)
+	}
+	name := clip(r["summitDetails"], 120)
+	if name == "" {
+		name = clip(r["summitName"], 120)
+	}
+	return map[string]any{
+		"src": "sota", "call": strings.ToUpper(call), "kHz": kHz, "mode": strings.ToUpper(clip(r["mode"], 12)), "ref": ref,
+		"name": name, "loc": clip(r["associationCode"], 10), "grid": "", "lat": numOrNil(r["latitude"]), "lon": numOrNil(r["longitude"]),
+		"time": utcTime(r["timeStamp"]), "by": strings.ToUpper(clip(r["callsign"], 20)), "note": clip(r["comments"], 200),
+	}
+}
+
+func (s *Server) getXota() (map[string]any, error) {
+	return s.cache.Get("xota", xotaTTL, func() (map[string]any, error) {
+		type result struct {
+			spots []map[string]any
+			err   error
+		}
+		load := func(u string, fn func(map[string]any) map[string]any) result {
+			var rows []any
+			if err := s.fetchJSON(u, 20*time.Second, &rows); err != nil {
+				return result{err: err}
+			}
+			out := []map[string]any{}
+			for _, row := range rows {
+				if m, ok := row.(map[string]any); ok {
+					out = append(out, fn(m))
+				}
+			}
+			return result{spots: out}
+		}
+		pc, sc := make(chan result, 1), make(chan result, 1)
+		go func() { pc <- load(s.cfg.PotaURL, potaSpot) }()
+		go func() { sc <- load(s.cfg.SotaURL, sotaSpot) }()
+		pota, sota := <-pc, <-sc
+		if pota.err != nil && sota.err != nil {
+			return nil, errors.New("POTA and SOTA are both unavailable")
+		}
+		failed := []string{}
+		if pota.err != nil {
+			failed = append(failed, "pota")
+		}
+		if sota.err != nil {
+			failed = append(failed, "sota")
+		}
+		spots := []map[string]any{}
+		for _, x := range append(pota.spots, sota.spots...) {
+			k, ok := x["kHz"].(float64)
+			if !ok || k <= 100 || k >= 1.3e6 || !xotaCallRe.MatchString(x["call"].(string)) {
+				continue
+			}
+			spots = append(spots, x)
+		}
+		sort.SliceStable(spots, func(i, j int) bool { return spots[i]["time"].(string) > spots[j]["time"].(string) })
+		if len(spots) > 400 {
+			spots = spots[:400]
+		}
+		return map[string]any{"spots": spots, "at": s.clock.Millis(), "failed": failed}, nil
+	})
 }

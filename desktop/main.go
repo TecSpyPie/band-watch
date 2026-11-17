@@ -54,6 +54,8 @@ func main() {
 	cfg.NoaaURL = env("BW_NOAA_URL", cfg.NoaaURL)
 	cfg.PskURL = env("BW_PSK_URL", cfg.PskURL)
 	cfg.QrzURL = env("BW_QRZ_URL", cfg.QrzURL)
+	cfg.PotaURL = env("BW_POTA_URL", cfg.PotaURL)
+	cfg.SotaURL = env("BW_SOTA_URL", cfg.SotaURL)
 
 	if *serve {
 		cfg.TestHooks = os.Getenv("BW_TEST") == "1"

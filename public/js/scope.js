@@ -300,6 +300,9 @@ function drawScope() {
   });
   g.setLineDash([]);
 
+  // Parks and summits on the air at their frequencies
+  if (typeof xotaScopeMarks === "function") xotaScopeMarks(g, lo, hi, fx, TOP + 30, cssColor("--pota") || "#2e8b57");
+
   // Band plan strip
   for (const [type, a, b] of SEG[cur.b]) {
     const x0 = Math.max(0, fx(a)), x1 = Math.min(W, fx(b));

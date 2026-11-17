@@ -44,8 +44,12 @@ const SUN = {
   wind: [{ proton_speed: 294, time_tag: "2026-11-16T13:36:00Z" }],
 };
 
+const XOTA = require("./fixtures/xota.js");
+
 function handle(kind, url) {
   if (kind === "qrz") return qrzMock(url.searchParams);
+  if (kind === "pota") return up.potaDown ? { status: 503 } : XOTA.potaRows();
+  if (kind === "sota") return up.sotaDown ? new Error("down") : XOTA.sotaRows();
   if (kind === "psk") return up.psk;
   const p = url.pathname;
   if (p.endsWith("f107_cm_flux.json")) return up.flux;
@@ -555,4 +559,39 @@ test("healthz says when this copy was built and what it runs on", async (t) => {
   assert.match(h.build.server, /^(Node\.js|BandWatch\.exe)$/);
   assert.ok(h.build.runtime);
   assert.ok(!Number.isNaN(Date.parse(h.build.started)));
+});
+
+test("GET /api/xota: POTA and SOTA activators in one list, newest first, cached for a minute", async () => {
+  const r = await get("/api/xota");
+  assert.equal(r.status, 200);
+  const d = JSON.parse(r.body);
+  assert.deepEqual(d.failed, []);
+  assert.deepEqual(d.spots.map((x) => `${x.src} ${x.call} ${x.kHz} ${x.mode} ${x.ref}`), [
+    "pota G0ABC 14244 SSB GB-0123",
+    "sota GW0SUM 10118 CW GW/NW-001",
+    "pota N0POTA 7074 FT8 US-0001",
+  ]);
+  const p = d.spots[0];
+  assert.equal(p.name, "Peak District National Park");
+  assert.equal(p.grid, "IO93ah");
+  assert.equal(p.lat, 53.3);
+  assert.equal(p.by, "M0XYZ");
+  assert.match(p.time, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.000Z$/);
+  assert.ok(Math.abs(Date.parse(p.time) - (Date.now() - 3 * 60000)) < 120000, "spot time read as UTC");
+  assert.equal(d.spots[1].name, "Yr Wyddfa, 1085m, 10 Points");
+  assert.equal(d.spots[1].lat, null);
+  const n = upstream.calls.length;
+  await get("/api/xota");
+  assert.equal(upstream.calls.length, n, "second request from the cache");
+});
+
+test("GET /api/xota: one feed down still gives the other; both down is a 502", async () => {
+  up.potaDown = true;
+  let d = JSON.parse((await get("/api/xota")).body);
+  assert.deepEqual(d.failed, ["pota"]);
+  assert.deepEqual(d.spots.map((x) => x.call), ["GW0SUM"]);
+  await srv.reset();
+  up.sotaDown = true;
+  const r = await get("/api/xota");
+  assert.equal(r.status, 502);
 });

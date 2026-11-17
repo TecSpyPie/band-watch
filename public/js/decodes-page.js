@@ -37,6 +37,13 @@
   const ch = new BroadcastChannel("bw-decodes");
   ch.onmessage = (e) => {
     const m = e.data || {};
+    if (m.type === "cw") {
+      $("dwCw").hidden = false;
+      $("dwCw").textContent = m.text || "";
+      $("dwCw").scrollTop = $("dwCw").scrollHeight;
+      $("dwStatus").textContent = `CW: ${m.wpm} WPM on a ${m.tone} Hz tone`;
+      return;
+    }
     if (m.type === "all") rows = Array.isArray(m.rows) ? m.rows.slice() : [];
     else if (m.type === "cycle") rows = [...(m.rows || []), ...rows].slice(0, 3000);
     if (m.status) $("dwStatus").textContent = m.status;

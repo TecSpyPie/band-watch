@@ -175,6 +175,7 @@ async function refresh() {
 
   renderBanner();
   render();
+  if (typeof checkWanted === "function") checkWanted();
   if (app.spots && !app.feedError && !app.spotsStale && Date.now() - app.spotsAt < STALE_MS) monitorTick();
   else drawMonitor();
 }

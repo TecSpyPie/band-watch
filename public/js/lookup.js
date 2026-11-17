@@ -59,7 +59,9 @@ function lookupCall(e) {
   const base = baseCall(raw);
   const hit = PREFIXES.find(([re]) => re.test(base));
   out.innerHTML = `<b>${esc(raw)}</b>: ${hit ? `prefix suggests ${hit[1]}` : "country not recognised from the prefix"}. ` +
-    `<a class="call" href="https://www.qrz.com/db/${encodeURIComponent(base)}" target="_blank" rel="noopener noreferrer" data-call="${esc(base)}">View ${esc(base)} on QRZ.com</a>`;
+    `<a class="call" href="https://www.qrz.com/db/${encodeURIComponent(base)}" target="_blank" rel="noopener noreferrer" data-call="${esc(base)}">View ${esc(base)} on QRZ.com</a>` +
+    ` <button type="button" class="linkbtn" id="lkLog">Log a contact</button>${typeof workedBefore === "function" && workedBefore(raw) ? ' <span class="worked">✓ in your log</span>' : ""}`;
+  $("lkLog").onclick = () => logPrefill({ call: raw });
   openStation(base);
 }
 /* ===================== Your callsign ===================== */

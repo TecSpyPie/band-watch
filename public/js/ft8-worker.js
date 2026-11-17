@@ -3,17 +3,25 @@
  * cycle or two, and decodes each 15 s (FT8) or 7.5 s (FT4) cycle as soon as it is complete,
  * lined up with UTC as WSJT-X does (so the PC clock needs to be right to within a second). */
 "use strict";
-importScripts("/js/ft8.js?v=1.11.1");
+importScripts("/js/ft8.js?v=1.12.0", "/js/wspr.js?v=1.12.0", "/js/cw.js?v=1.12.0");
+
+// WSPR: two-minute cycles on the even minute, decoded at 12000 samples a second.
+const WSPR_PROTO = { name: "WSPR", period: 120, fs: 12000 };
 
 let st = null;
 
 function start(mode, rate) {
-  const proto = Ftx.PROTOCOLS[mode] || Ftx.FT8;
+  if (mode === "CW") {
+    st = { cw: new Cw.Decoder(), resampler: new Ftx.Resampler(rate, Cw.FS), sent: 0 };
+    postMessage({ type: "status", text: "Listening for CW. Tune the Morse to a tone between 300 and 1200 Hz (CW mode puts it near 700 Hz)." });
+    return;
+  }
+  const proto = mode === "WSPR" ? WSPR_PROTO : Ftx.PROTOCOLS[mode] || Ftx.FT8;
   st = {
     proto,
     periodMs: proto.period * 1000,
     resampler: new Ftx.Resampler(rate, proto.fs),
-    decoder: new Ftx.Decoder(proto),
+    decoder: mode === "WSPR" ? new Wspr.Decoder() : new Ftx.Decoder(proto),
     buf: new Float32Array(Math.round(proto.fs * proto.period * 2.4)), // ring of samples
     count: 0, // samples written in total
     t0: null, // UTC ms of sample number 0
@@ -22,8 +30,19 @@ function start(mode, rate) {
   postMessage({ type: "status", text: `Listening for ${proto.name}. The first decodes come at the end of the next full ${proto.period} s cycle.` });
 }
 
+function pushCw(samples) {
+  const s = st;
+  const text = s.cw.process(s.resampler.process(samples));
+  const now = Date.now();
+  if (text || now - s.sent > 1000) {
+    s.sent = now;
+    postMessage({ type: "cw", text, wpm: s.cw.wpm, tone: s.cw.tone });
+  }
+}
+
 function push(samples, at) {
   const s = st;
+  if (s.cw) return pushCw(samples);
   const out = s.resampler.process(samples);
   if (!out.length) return;
   const fs = s.proto.fs;
@@ -63,6 +82,7 @@ function decodeCycle(cycle) {
     return;
   }
   const t = Date.now();
+  if (s.proto.name === "WSPR") postMessage({ type: "status", text: "Decoding the last two minutes of WSPR…" });
   const list = s.decoder.decode(audio);
   postMessage({ type: "decodes", mode: s.proto.name, cycle, list, ms: Date.now() - t });
 }

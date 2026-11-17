@@ -29,6 +29,7 @@ function drawMap() {
         `<circle cx="${X(p.lon)}" cy="${Y(p.lat)}" r="1.6" fill="var(--cool)"/>`;
     }
   }
+  if (typeof xotaMapSvg === "function") svg += xotaMapSvg(X, Y);
   svg += `<circle cx="${X(app.home.lon)}" cy="${Y(app.home.lat)}" r="3" fill="var(--warm)" stroke="var(--surface)" stroke-width="1"/>`;
   $("map").innerHTML = svg;
   $("mapTitle").textContent = cur ? `${cur.b} m spots` : "Map";

@@ -9,7 +9,7 @@ const { spawn, execFileSync } = require("child_process");
 const ROOT = path.join(__dirname, "..");
 
 /**
- * A fake upstream. `handle(kind, url)` returns:
+ * A fake upstream (kinds: noaa, psk, qrz, pota, sota). `handle(kind, url)` returns:
  *   a string (sent as text), an object/array (sent as JSON), { status } for an HTTP error,
  *   or an Error to drop the connection.
  */
@@ -18,7 +18,7 @@ async function startUpstream(handle) {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://upstream");
     calls.push(url.toString());
-    const kind = url.pathname.startsWith("/psk") ? "psk" : url.pathname.startsWith("/qrz") ? "qrz" : "noaa";
+    const kind = ["psk", "qrz", "pota", "sota"].find((k) => url.pathname.startsWith(`/${k}`)) || "noaa";
     let out;
     try { out = handle(kind, url); } catch (e) { out = e; }
     if (out instanceof Error) { req.socket.destroy(); return; }
@@ -60,6 +60,8 @@ async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node")
     BW_NOAA_URL: `${upstreamBase}/noaa`,
     BW_PSK_URL: `${upstreamBase}/psk/query`,
     BW_QRZ_URL: `${upstreamBase}/qrz/xml/current/`,
+    BW_POTA_URL: `${upstreamBase}/pota/spot/activator`,
+    BW_SOTA_URL: `${upstreamBase}/sota/api/spots/60/all`,
   };
   const child = kind === "go"
     ? spawn(buildGo(), ["--serve"], { env, stdio: ["ignore", "inherit", "inherit"] })

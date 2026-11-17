@@ -132,6 +132,7 @@ function tuneTo(kHz, mode, { open = false, scroll = false, quiet = false } = {})
   renderPlan();
   drawScope();
   if (open || listen.open) startListening();
+  if (typeof rigTune === "function" && !rig.applying) rigTune(listen.kHz, listen.mode); // your radio follows
   if (scroll && !listen.float.on) $("secListen").scrollIntoView({ behavior: "smooth", block: "nearest" });
   if (!quiet) showToast("Tuned", `${listen.kHz.toLocaleString()} kHz ${listen.mode.toUpperCase()}${listen.open ? "" : ". Press Listen to hear it."}`);
 }

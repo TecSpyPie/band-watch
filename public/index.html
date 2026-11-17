@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.11.1">
-<link rel="stylesheet" href="/listen.css?v=1.11.1">
+<link rel="stylesheet" href="/style.css?v=1.12.0">
+<link rel="stylesheet" href="/listen.css?v=1.12.0">
 </head>
 <body>
 <div class="wrap">
@@ -35,6 +35,7 @@
     </div>
     <button type="button" class="qbtn" id="qrzBtn" aria-haspopup="dialog">Log in to QRZ</button>
     <button type="button" class="lbtn" id="modesBtn" aria-haspopup="dialog" aria-controls="modesBox">Modes: all</button>
+    <button type="button" class="lbtn rigbtn" id="rigBtn" aria-pressed="false">Connect radio</button>
     <button type="button" class="lbtn" id="optBtn" aria-haspopup="dialog">Settings</button>
     <div class="clock" id="clock" aria-label="UTC time"></div>
   </header>
@@ -181,30 +182,113 @@
 
   <section class="panel" id="secDecode" aria-labelledby="dcTitle">
     <div class="phead">
-      <h2 id="dcTitle">FT8 / FT4 decoder</h2>
+      <h2 id="dcTitle">Decoders: FT8, FT4, WSPR, CW</h2>
       <span class="small muted">Decodes what your receiver hears, like WSJT-X. Your PC clock must be right to within a second.</span>
       <button type="button" class="lbtn" id="dcWindow" title="Open the decodes in their own window">Results window</button>
     </div>
     <div class="dcrow">
-      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option></select></label>
+      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option><option value="WSPR">WSPR (2 min)</option><option value="CW">CW (Morse)</option></select></label>
       <label class="grow">Audio from <select id="dcSrc"><option value="rtl">My RTL-SDR (Listen panel)</option><option value="mic">This computer's sound input (a radio, or a virtual cable)</option></select></label>
       <label class="grow" id="dcDevRow" hidden>Sound input <select id="dcDev"><option value="">Default input</option></select></label>
     </div>
     <div class="dcrow">
       <button type="button" id="dcStart">Start decoding</button>
       <button type="button" class="ghost" id="dcTune" hidden></button>
-      <label class="small dcchk"><input type="checkbox" id="dcCqOnly"> CQ only</label>
+      <label class="small dcchk" id="dcCqRow"><input type="checkbox" id="dcCqOnly"> CQ only</label>
       <button type="button" class="ghost" id="dcClear">Clear</button>
       <span class="small muted" id="dcCount"></span>
     </div>
     <div class="dcbar" aria-hidden="true"><div id="dcProg"></div></div>
     <p class="small" id="dcStatus" role="status"></p>
-    <div class="dcwrap">
+    <div class="dccw" id="dcCw" hidden>
+      <div class="small muted" id="dcCwInfo"></div>
+      <pre class="dccwtext" id="dcCwText" aria-live="polite"></pre>
+    </div>
+    <div class="dcwrap" id="dcTable">
       <table class="dctab">
-        <thead><tr><th>UTC</th><th>dB</th><th>DT</th><th>Freq</th><th>Message</th></tr></thead>
+        <thead><tr><th>UTC</th><th>dB</th><th>DT</th><th>Freq</th><th>Message</th><th><span class="sr-only">Log</span></th></tr></thead>
         <tbody id="dcRows"></tbody>
       </table>
     </div>
+  </section>
+
+  <section class="panel" id="secXota" aria-labelledby="xtTitle">
+    <div class="phead">
+      <h2 id="xtTitle">Parks and summits on the air</h2>
+      <span class="small muted">Live POTA and SOTA activators</span>
+    </div>
+    <div class="xtctl">
+      <div class="chips" id="xtSrc" role="group" aria-label="Which programme">
+        <button type="button" data-src="both">Both</button><button type="button" data-src="pota">POTA parks</button><button type="button" data-src="sota">SOTA summits</button>
+      </div>
+      <label class="sr-only" for="xtBand">Band</label><select id="xtBand"></select>
+      <label class="sr-only" for="xtMode">Mode</label>
+      <select id="xtMode"><option value="all">All modes</option><option value="cw">CW</option><option value="ssb">Phone</option><option value="data">Data (FT8 and others)</option></select>
+      <label class="small"><input type="checkbox" id="xtAlerts"> Tell me about new activators</label>
+      <label class="small"><input type="checkbox" id="xtMap"> Show on the map</label>
+    </div>
+    <ul class="xtlist" id="xtList" aria-live="polite"></ul>
+    <p class="small muted" id="xtNote" role="status"></p>
+  </section>
+
+  <section class="panel" id="secWanted" aria-labelledby="wnTitle">
+    <div class="phead">
+      <h2 id="wnTitle">Wanted alerts</h2>
+      <span class="small muted">From the spots, your decodes and POTA/SOTA</span>
+    </div>
+    <div class="wngrid">
+      <label>Wanted callsigns and prefixes
+        <textarea id="wnCalls" rows="2" spellcheck="false" placeholder="VK* JA ZL3 VP8LP"></textarea>
+        <span class="small muted">A full callsign, or a prefix: VK or VK* for all of Australia.</span></label>
+      <label>Wanted grid squares
+        <textarea id="wnGrids" rows="2" spellcheck="false" placeholder="PM95 QF FN4*"></textarea>
+        <span class="small muted">A square (PM95) or a whole field (QF).</span></label>
+    </div>
+    <div class="chkrow"><label><input type="checkbox" id="wnNew"> Also any grid square I haven't logged yet (from decodes and activators)</label></div>
+    <div class="chkrow"><label><input type="checkbox" id="wnSound"> Play a sound</label></div>
+    <h3 class="small">Recently heard</h3>
+    <ul class="wnhits" id="wnHits" aria-live="polite"></ul>
+  </section>
+
+  <section class="panel" id="secLog" aria-labelledby="lgTitle">
+    <div class="phead">
+      <h2 id="lgTitle">Logbook</h2>
+      <span class="small muted" id="lgCount"></span>
+    </div>
+    <form class="lgform" id="lgForm" autocomplete="off">
+      <label>Callsign <input id="lgCall" maxlength="20" spellcheck="false" placeholder="G4ABC" required></label>
+      <label>kHz <input id="lgKHz" inputmode="decimal" maxlength="10"></label>
+      <label>Mode <select id="lgMode"></select></label>
+      <label>Sent <input id="lgSent" maxlength="8" placeholder="59"></label>
+      <label>Rcvd <input id="lgRcvd" maxlength="8" placeholder="59"></label>
+      <label>Grid <input id="lgGrid" maxlength="6" spellcheck="false" placeholder="IO93"></label>
+      <label>Name <input id="lgName" maxlength="60"></label>
+      <label>QTH <input id="lgQth" maxlength="60"></label>
+      <label>Park / summit <input id="lgRef" maxlength="24" spellcheck="false" placeholder="GB-0123 or G/LD-001"></label>
+      <label>Date (UTC) <input id="lgDate" type="date"></label>
+      <label>Time (UTC) <input id="lgTime" type="time"></label>
+      <label class="lgwide">Notes <input id="lgNote" maxlength="200"></label>
+      <div class="lgbtns">
+        <button type="submit" class="tune" id="lgSave">Log it</button>
+        <button type="button" class="linkbtn" id="lgNow">Use Listen's frequency</button>
+        <button type="reset" class="linkbtn">Clear</button>
+      </div>
+    </form>
+    <p class="small" id="lgMsg" role="status"></p>
+    <div class="lgtools">
+      <label class="sr-only" for="lgSearch">Search the log</label>
+      <input id="lgSearch" type="search" placeholder="Search calls, grids, parks…">
+      <button type="button" class="tune" id="lgExport">Export ADIF</button>
+      <button type="button" class="lbtn" id="lgImportBtn">Import ADIF</button>
+      <input type="file" id="lgImport" accept=".adi,.adif,text/plain" hidden>
+    </div>
+    <div class="lgwrap">
+      <table class="lgtab">
+        <thead><tr><th>UTC</th><th>Call</th><th>Band</th><th>kHz</th><th>Mode</th><th>RST</th><th>Grid</th><th>Notes</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="lgRows"></tbody>
+      </table>
+    </div>
+    <p class="small muted">Your log is kept in this browser on this device. Export it now and then as a backup, and to upload to LoTW, eQSL, QRZ Logbook or Club Log.</p>
   </section>
 
   <section class="panel" id="secPlan" aria-labelledby="planTitle">
@@ -372,6 +456,28 @@
         <div><input type="range" id="optDim" min="0" max="90" step="5"><span class="optval" id="optDimVal"></span></div>
       </div>
       <p class="small muted" id="optBgMsg" role="status"></p>
+
+      <h3 class="opth">Radio control (Yaesu FT-991A)</h3>
+      <p class="small muted">Plug your FT-991A into this PC with its USB cable (install Yaesu's CP210x USB driver first).
+        Band Watch then tunes the radio when you click a spot, the band scope, the band plan or a decoder's Tune button,
+        and follows the radio when you turn its dial. Pick the <b>Enhanced COM Port</b> when the browser asks.
+        Close other programs that use the radio's CAT port (WSJT-X, a logger) first, or use their rig sharing.
+        Needs Chrome or Edge. Works with other Yaesu radios that use the same commands (FT-710, FTDX10, FTDX101).</p>
+      <div class="optgrid">
+        <label for="optRigBaud">Baud rate</label>
+        <div><select id="optRigBaud">
+          <option value="4800">4800 (the FT-991A's factory setting)</option>
+          <option value="9600">9600</option>
+          <option value="19200">19200</option>
+          <option value="38400">38400</option>
+        </select> <span class="small muted">Must match the radio's menu 031 CAT RATE.</span></div>
+      </div>
+      <div class="chkrow"><label><input type="checkbox" id="optRigFollow"> Tune the radio when I click in Band Watch</label></div>
+      <div class="chkrow"><label><input type="checkbox" id="optRigRead"> Follow the radio when I turn its dial</label></div>
+      <div class="chkrow"><label><input type="checkbox" id="optRigData"> Use DATA-USB on FT8, FT4, WSPR and other digital frequencies</label></div>
+      <div class="chkrow"><label><input type="checkbox" id="optRigAuto"> Connect to the radio automatically when Band Watch opens</label></div>
+      <div class="optrow"><button type="button" class="tune" id="optRigConnect">Connect radio</button></div>
+      <p class="small muted" id="optRigMsg" role="status"></p>
 
       <h3 class="opth">RTL-SDR receiver</h3>
       <p class="small muted">For listening with your own dongle (RTL-SDR Blog V4 or any RTL-SDR) through rtl_tcp: choose
@@ -547,26 +653,30 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.11.1"></script>
-<script src="/js/bandplan.js?v=1.11.1"></script>
-<script src="/js/core.js?v=1.11.1"></script>
-<script src="/js/modes.js?v=1.11.1"></script>
-<script src="/js/map.js?v=1.11.1"></script>
-<script src="/js/scope.js?v=1.11.1"></script>
-<script src="/js/monitor.js?v=1.11.1"></script>
-<script src="/js/lookup.js?v=1.11.1"></script>
-<script src="/js/worldclock.js?v=1.11.1"></script>
-<script src="/js/locator.js?v=1.11.1"></script>
-<script src="/js/activity.js?v=1.11.1"></script>
-<script src="/js/qrz.js?v=1.11.1"></script>
-<script src="/js/hovercard.js?v=1.11.1"></script>
-<script src="/js/station.js?v=1.11.1"></script>
-<script src="/js/sdr-dsp.js?v=1.11.1"></script>
-<script src="/js/sdr.js?v=1.11.1"></script>
-<script src="/js/listen.js?v=1.11.1"></script>
-<script src="/js/decoders.js?v=1.11.1"></script>
-<script src="/js/sun.js?v=1.11.1"></script>
-<script src="/js/options.js?v=1.11.1"></script>
-<script src="/js/app.js?v=1.11.1"></script>
+<script src="/js/install.js?v=1.12.0"></script>
+<script src="/js/bandplan.js?v=1.12.0"></script>
+<script src="/js/core.js?v=1.12.0"></script>
+<script src="/js/modes.js?v=1.12.0"></script>
+<script src="/js/map.js?v=1.12.0"></script>
+<script src="/js/scope.js?v=1.12.0"></script>
+<script src="/js/monitor.js?v=1.12.0"></script>
+<script src="/js/lookup.js?v=1.12.0"></script>
+<script src="/js/worldclock.js?v=1.12.0"></script>
+<script src="/js/locator.js?v=1.12.0"></script>
+<script src="/js/activity.js?v=1.12.0"></script>
+<script src="/js/qrz.js?v=1.12.0"></script>
+<script src="/js/hovercard.js?v=1.12.0"></script>
+<script src="/js/station.js?v=1.12.0"></script>
+<script src="/js/sdr-dsp.js?v=1.12.0"></script>
+<script src="/js/sdr.js?v=1.12.0"></script>
+<script src="/js/listen.js?v=1.12.0"></script>
+<script src="/js/rig.js?v=1.12.0"></script>
+<script src="/js/xota.js?v=1.12.0"></script>
+<script src="/js/logbook.js?v=1.12.0"></script>
+<script src="/js/wanted.js?v=1.12.0"></script>
+<script src="/js/decoders.js?v=1.12.0"></script>
+<script src="/js/sun.js?v=1.12.0"></script>
+<script src="/js/options.js?v=1.12.0"></script>
+<script src="/js/app.js?v=1.12.0"></script>
 </body>
 </html>

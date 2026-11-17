@@ -11,6 +11,10 @@ function tickClock() {
 function start() {
   setupOptions();
   setupListen();
+  setupRig();
+  setupLog();
+  setupWanted();
+  setupXota();
   setupDecoders();
   const savedGrid = load("bw-grid");
   if (savedGrid && gridToLatLon(savedGrid)) $("grid").value = savedGrid;

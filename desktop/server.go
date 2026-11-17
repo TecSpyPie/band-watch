@@ -31,6 +31,7 @@ var startedAt = time.Now()
 
 const (
 	solarTTL = 15 * time.Minute
+	xotaTTL  = time.Minute
 	spotsTTL = 5 * time.Minute
 	sunTTL   = 30 * time.Minute
 	cacheMax = 200
@@ -41,6 +42,8 @@ type Config struct {
 	NoaaURL   string // https://services.swpc.noaa.gov
 	PskURL    string // https://retrieve.pskreporter.info/query
 	QrzURL    string // https://xmldata.qrz.com/xml/current/
+	PotaURL   string // https://api.pota.app/spot/activator
+	SotaURL   string // https://api2.sota.org.uk/api/spots/60/all
 	TestHooks bool   // /api/test/reset and /api/test/advance
 	Desktop   bool   // only answer to localhost, and allow /api/quit
 	Quit      func() // called by /api/quit
@@ -51,6 +54,8 @@ func defaultConfig() Config {
 		NoaaURL: "https://services.swpc.noaa.gov",
 		PskURL:  "https://retrieve.pskreporter.info/query",
 		QrzURL:  "https://xmldata.qrz.com/xml/current/",
+		PotaURL: "https://api.pota.app/spot/activator",
+		SotaURL: "https://api2.sota.org.uk/api/spots/60/all",
 	}
 }
 
@@ -244,6 +249,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/solar":
 		data, err = s.getSolar()
+	case p == "/api/xota":
+		data, err = s.getXota()
 	case p == "/api/sun":
 		data, err = s.getSun()
 	case p == "/api/spots":

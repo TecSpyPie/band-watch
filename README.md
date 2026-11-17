@@ -15,7 +15,12 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - Best band now, a bands table and a map of who hears whom, from live PSK Reporter spots
 - Band scope: live spectrum and waterfall from your RTL-SDR, or drawn from spots
 - Listen: public WebSDR/KiwiSDR receivers, or your own RTL-SDR (Blog V4, V3 or others) through rtl_tcp
-- FT8 and FT4 decoders with a results window
+- **Radio control:** tunes your Yaesu FT-991A (also FT-710, FTDX10, FTDX101) over USB when you click a spot,
+  the scope or a decoder, and follows the radio's dial (Chrome or Edge on the PC the radio is plugged into)
+- Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
+- **POTA and SOTA:** live park and summit activators on a list, the map and the scope, with alerts
+- **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL, QRZ and Club Log
+- **Wanted alerts:** callsigns, prefixes and grid squares you need, and new grid squares not in your log
 - UK band plan, sunspots and space weather, world clock, band monitor alerts
 - QRZ.com lookups (sign in with your own QRZ account; your password goes only to QRZ.com and is never stored)
 
@@ -29,11 +34,23 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 |---|---|
 | ![FT4 decoder decoding CQ M3VRV IO93 from the RTL-SDR](docs/images/ft4-decoder.png) | ![The separate decode results window](docs/images/decode-results.png) |
 
+| Parks and summits on the air | Logbook |
+|---|---|
+| ![POTA and SOTA activators with click to tune and one-click logging](docs/images/pota-sota.png) | ![The logbook with ADIF export and import](docs/images/logbook.png) |
+
+| Wanted alerts | WSPR decoder |
+|---|---|
+| ![Wanted callsigns, prefixes and grid squares, and what was heard](docs/images/wanted.png) | ![WSPR decodes in the decoder panel](docs/images/wspr-decoder.png) |
+
+| Your FT-991A connected |
+|---|
+| ![The header showing the radio's frequency and mode](docs/images/radio-connected.png) |
+
 | RTL-SDR settings | On a phone (dark mode) |
 |---|---|
 | ![Settings: dongle type, sample rate, filter widths, squelch](docs/images/settings-rtl-sdr.png) | <img src="docs/images/phone.png" alt="Band Watch on a phone in dark mode" width="300"> |
 
-*Screenshots use demo spots and a test signal.*
+*Screenshots use demo spots, test signals and a pretend radio.*
 
 ## Windows warnings
 

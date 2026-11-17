@@ -2,6 +2,7 @@
 // Serves the static page from ./public and these JSON endpoints:
 //   GET  /api/solar            -> { sfi, kp, at }          (NOAA SWPC, cached 15 min)
 //   GET  /api/spots?grid=IO93  -> { grid, spots[], at }    (PSK Reporter, cached 5 min per grid)
+//   GET  /api/xota             -> { spots[], at, failed[] } POTA and SOTA activators (cached 1 min)
 //   GET  /api/sun              -> sunspot regions, sunspot number, X-rays, solar wind, NOAA scales (cached 30 min)
 //   GET  /api/qrz/status       -> { loggedIn, user, subscriber }
 //   POST /api/qrz/login        <- { username, password }   (sets an HttpOnly session cookie)
@@ -37,6 +38,9 @@ const NOAA = (process.env.BW_NOAA_URL || "https://services.swpc.noaa.gov").repla
 const NOAA_FLUX = `${NOAA}/json/f107_cm_flux.json`;
 const NOAA_KP = `${NOAA}/json/planetary_k_index_1m.json`;
 const PSK_QUERY = process.env.BW_PSK_URL || "https://retrieve.pskreporter.info/query";
+const POTA_URL = process.env.BW_POTA_URL || "https://api.pota.app/spot/activator";
+const SOTA_URL = process.env.BW_SOTA_URL || "https://api2.sota.org.uk/api/spots/60/all";
+const XOTA_TTL = 60 * 1000;
 const TEST_HOOKS = process.env.BW_TEST === "1";
 // The RTL-SDR bridge connects to rtl_tcp on this PC or the local network, so it is only switched
 // on where Band Watch runs on the user's own PC (start-bandwatch.bat sets BW_SDR=1), never online.
@@ -84,6 +88,59 @@ async function cached(key, ttl, load) {
 function clearCache() {
   cache.clear();
   inflight.clear();
+}
+
+/* ---------- POTA and SOTA activators ---------- */
+
+/** "2026-11-17T02:50:00" (UTC without a zone) or with one -> ISO string, or "". */
+function utcTime(t) {
+  const s = String(t || "").trim();
+  if (!s) return "";
+  const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : `${s.replace(" ", "T")}Z`);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+const str = (v, max = 120) => String(v == null ? "" : v).trim().slice(0, max);
+
+/** One POTA spot (api.pota.app/spot/activator) in Band Watch's shape. */
+function potaSpot(r) {
+  const kHz = num(r.frequency);
+  const lat = num(r.latitude), lon = num(r.longitude);
+  return {
+    src: "pota", call: str(r.activator, 20).toUpperCase(), kHz, mode: str(r.mode, 12).toUpperCase(),
+    ref: str(r.reference, 20), name: str(r.parkName || r.name), loc: str(r.locationDesc, 40),
+    grid: str(r.grid6 || r.grid4, 8), lat: lat != null && lon != null ? lat : null, lon: lat != null && lon != null ? lon : null,
+    time: utcTime(r.spotTime), by: str(r.spotter, 20).toUpperCase(), note: str(r.comments, 200),
+  };
+}
+
+/** One SOTA spot (api2.sota.org.uk/api/spots) in Band Watch's shape. Its frequency is in MHz. */
+function sotaSpot(r) {
+  const mhz = num(r.frequency);
+  const ref = r.associationCode && r.summitCode ? `${str(r.associationCode, 10)}/${str(r.summitCode, 12)}` : str(r.summitCode, 20);
+  return {
+    src: "sota", call: str(r.activatorCallsign || r.callsign, 20).toUpperCase(), kHz: mhz != null ? Math.round(mhz * 100000) / 100 : null,
+    mode: str(r.mode, 12).toUpperCase(), ref, name: str(r.summitDetails || r.summitName), loc: str(r.associationCode, 10),
+    grid: "", lat: num(r.latitude), lon: num(r.longitude),
+    time: utcTime(r.timeStamp), by: str(r.callsign, 20).toUpperCase(), note: str(r.comments, 200),
+  };
+}
+
+async function getXota() {
+  return cached("xota", XOTA_TTL, async () => {
+    const load = async (url, fn) => {
+      const rows = await (await fetchOk(url, 20000)).json();
+      if (!Array.isArray(rows)) throw new Error("not a list");
+      return rows.filter((r) => r && typeof r === "object").map(fn);
+    };
+    const [pota, sota] = await Promise.allSettled([load(POTA_URL, potaSpot), load(SOTA_URL, sotaSpot)]);
+    if (pota.status === "rejected" && sota.status === "rejected") throw new Error("POTA and SOTA are both unavailable");
+    const failed = [pota.status === "rejected" && "pota", sota.status === "rejected" && "sota"].filter(Boolean);
+    const spots = [...(pota.value || []), ...(sota.value || [])]
+      .filter((x) => x.call && /^[A-Z0-9/]{3,20}$/.test(x.call) && x.kHz > 100 && x.kHz < 1.3e6)
+      .sort((a, b) => (b.time > a.time ? 1 : b.time < a.time ? -1 : 0))
+      .slice(0, 400);
+    return { spots, at: clock.now(), failed };
+  });
 }
 
 /* ---------- Helpers ---------- */
@@ -533,6 +590,7 @@ async function handle(req, res) {
     }
     if (url.pathname === "/api/sun") return sendJson(res, 200, await getSun());
     if (url.pathname === "/api/solar") return sendJson(res, 200, await getSolar());
+    if (url.pathname === "/api/xota") return sendJson(res, 200, await getXota());
     if (url.pathname === "/api/spots") {
       const grid = String(url.searchParams.get("grid") || "").toUpperCase().slice(0, 4);
       if (!/^[A-R]{2}\d{2}$/.test(grid)) return sendJson(res, 400, { error: "grid must look like IO93" });

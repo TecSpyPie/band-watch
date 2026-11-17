@@ -41,7 +41,7 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dcrow .dcchk{flex-direction:row;align-items:center;gap:6px}
 .dcbar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin:4px 0}
 #dcProg{height:100%;width:0;background:var(--cool);transition:width .4s linear}
-.dcwrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.dcwrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:6px;position:relative}
 .dctab{width:100%;border-collapse:collapse;font:400 .875rem/1.35 ui-monospace,Consolas,monospace}
 .dctab th{position:sticky;top:0;background:var(--surface);text-align:left;font:600 .75rem Barlow,sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
 .dctab td{padding:3px 8px;white-space:nowrap}
@@ -60,3 +60,6 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dcrow button{font:500 .9375rem Barlow,sans-serif;border-radius:4px;padding:6px 16px;cursor:pointer;border:0;background:var(--cool);color:var(--bg)}
 .dcrow button.ghost{background:none;color:var(--text);border:1px solid var(--line)}
 .dcrow #dcCount{align-self:center}
+.dccw [hidden],.dccw[hidden]{display:none!important}
+.dccwtext{font:500 1rem/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:5em;max-height:14em;overflow:auto;margin:6px 0 0}
+.dcwrap[hidden]{display:none!important}

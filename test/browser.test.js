@@ -44,7 +44,11 @@ const SUN = {
 };
 
 /** The fake PSK Reporter, NOAA and QRZ the server talks to during these tests. */
+const XOTA = require("./fixtures/xota.js");
+
 function upstreamHandler(kind, url) {
+  if (kind === "pota") return feed.potaDown ? { status: 503 } : (feed.pota ? feed.pota() : XOTA.potaRows());
+  if (kind === "sota") return feed.sotaDown ? { status: 503 } : XOTA.sotaRows();
   if (kind === "qrz") {
     const q = url.searchParams;
     const xml = (inner) => `<QRZDatabase>${inner}</QRZDatabase>`;
@@ -96,6 +100,14 @@ async function openPage(t, setup) {
 }
 
 const skip = !chromium && "Playwright is not installed";
+
+/** The elements that stick out past the right edge of the screen (outside any scrolling box). */
+const tooWide = (page) => page.evaluate(() => [...document.querySelectorAll("body *")].filter((e) => {
+  const r = e.getBoundingClientRect();
+  if (r.right <= window.innerWidth + 1 || r.width === 0) return false;
+  for (let p = e.parentElement; p; p = p.parentElement) if (["auto", "scroll", "hidden"].includes(getComputedStyle(p).overflowX)) return false;
+  return true;
+}).slice(0, 6).map((e) => `${e.tagName.toLowerCase()}${e.id ? `#${e.id}` : ""}${e.className ? `.${String(e.className).split(" ").join(".")}` : ""} (${Math.round(e.getBoundingClientRect().width)}px)`).join(", "));
 
 test("loads live data with no errors", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
@@ -211,7 +223,7 @@ test("works on a phone-sized screen in dark mode", { skip }, async (t) => {
   await page.goto(base + "/");
   await page.waitForFunction(() => document.getElementById("banner").className.includes("live"));
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  assert.ok(overflow <= 0, `page scrolls sideways by ${overflow}px`);
+  assert.ok(overflow <= 0, `page scrolls sideways by ${overflow}px: ${await tooWide(page)}`);
   const clipped = await page.$eval(".scroll", (el) => el.scrollWidth - el.clientWidth);
   assert.ok(clipped <= 0, `band table is cut off by ${clipped}px`);
   assert.equal(await page.textContent("#mapTitle"), "20 m spots", "selects the best band once data arrives");
@@ -1845,11 +1857,387 @@ test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS
   await page.click("#dcStart");
   await page.click("#lsStop");
 
-  // 6. On a phone, dark mode
+  // 6. Parks and summits, wanted alerts and the logbook
+  await page.waitForFunction(() => xota.spots.length === 3);
+  await page.fill("#wnCalls", "GW VP8LP");
+  await page.fill("#wnGrids", "PM95 QF");
+  await page.dispatchEvent("#wnCalls", "change");
+  await page.check("#wnNew");
+  await page.evaluate(() => {
+    tuneTo(14074, "usb", { quiet: true });
+    dc.rows = [{ utc: "120015", cycle: 1, mode: "FT8", snr: -14, dt: 0.2, freq: 1730, text: "CQ JA1ZZZ PM95" }, ...dc.rows];
+    checkWanted();
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    log.qsos = [
+      { id: "a", call: "GW0SUM", date: today, time: "1015", kHz: 10118, band: "30m", mode: "CW", rstS: "599", rstR: "579", grid: "", name: "Gwyn", qth: "", ref: "GW/NW-001", note: "Summit to shack" },
+      { id: "b", call: "G0ABC", date: today, time: "0942", kHz: 14244, band: "20m", mode: "SSB", rstS: "59", rstR: "57", grid: "IO93ah", name: "", qth: "Peak District National Park", ref: "GB-0123", note: "" },
+      { id: "c", call: "JA1ZZZ", date: today, time: "0731", kHz: 21075.2, band: "15m", mode: "FT8", rstS: "-10", rstR: "-14", grid: "PM95", name: "", qth: "", ref: "", note: "" },
+      { id: "d", call: "EA8XYZ", date: today, time: "0702", kHz: 28074.8, band: "10m", mode: "FT4", rstS: "-05", rstR: "+02", grid: "IL18", name: "", qth: "", ref: "", note: "" },
+    ];
+    saveLog(); renderLog(); renderXota();
+    $("toast").classList.remove("on");
+  });
+  await page.locator("#secXota").screenshot({ path: require("path").join(dir, "pota-sota.png") });
+  await page.locator("#secWanted").screenshot({ path: require("path").join(dir, "wanted.png") });
+  await page.locator("#secLog").screenshot({ path: require("path").join(dir, "logbook.png") });
+
+  // 7. WSPR decodes
+  await page.selectOption("#dcMode", "WSPR");
+  await page.evaluate(() => {
+    dc.rows = [
+      { utc: "121000", cycle: 2, mode: "WSPR", snr: -21, dt: 0.4, freq: 1462.3, text: "VK2XYZ QF56 30" },
+      { utc: "121000", cycle: 2, mode: "WSPR", snr: -12, dt: 0.1, freq: 1531.8, text: "K1ABC FN42 37" },
+      { utc: "121000", cycle: 2, mode: "WSPR", snr: -6, dt: -0.3, freq: 1590.1, text: "JA1ZZZ PM95 23" },
+    ];
+    dcSetStatus("WSPR: 3 decoded in the 12:10:00 cycle (2.1 s to decode).");
+    renderDc();
+  });
+  await page.locator("#secDecode").screenshot({ path: require("path").join(dir, "wspr-decoder.png") });
+
+  // 8. On a phone, dark mode
   const phone = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: "dark", isMobile: true, hasTouch: true })).newPage();
   t.after(() => phone.context().close());
   await phone.goto(base + "/");
   await phone.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
   await new Promise((r) => setTimeout(r, 800));
   await shot(phone, "phone.png");
+
+  // 9. Your radio connected (a pretend FT-991A)
+  const rp = await (await browser.newContext({ viewport: { width: 1280, height: 400 } })).newPage();
+  t.after(() => rp.context().close());
+  await rp.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true").replace("hz: 7074000", "hz: 14074000"));
+  await rp.goto(base + "/");
+  await rp.waitForFunction(() => rig.connected && rig.hz === 14074000);
+  await rp.locator("header").screenshot({ path: require("path").join(dir, "radio-connected.png") });
+});
+
+/* A pretend FT-991A on a pretend COM port, through Web Serial, for the radio control tests. */
+const FAKE_FT991A = `(() => {
+  const radio = window.__radio = { hz: 7074000, mode: "C", sent: [], opened: null, granted: ${"__GRANTED__"} };
+  let push = null;
+  const answer = (s) => push && push(new TextEncoder().encode(s));
+  let pending = "";
+  const port = {
+    readable: null, writable: null,
+    async open(opts) {
+      radio.opened = opts;
+      this.readable = new ReadableStream({ start(c) { push = (b) => c.enqueue(b); } });
+      this.writable = new WritableStream({ write(chunk) {
+        pending += new TextDecoder().decode(chunk);
+        let i;
+        while ((i = pending.indexOf(";")) >= 0) {
+          const cmd = pending.slice(0, i); pending = pending.slice(i + 1);
+          radio.sent.push(cmd);
+          if (cmd === "ID") answer("ID0670;");
+          else if (cmd === "FA") answer("FA" + String(radio.hz).padStart(9, "0") + ";");
+          else if (cmd === "MD0") answer("MD0" + radio.mode + ";");
+          else if (/^FA\\d{9}$/.test(cmd)) radio.hz = Number(cmd.slice(2));
+          else if (/^MD0[0-9A-E]$/.test(cmd)) radio.mode = cmd[3];
+          else answer("?;");
+        }
+      } });
+    },
+    async close() { this.readable = null; this.writable = null; },
+  };
+  radio.port = port;
+  Object.defineProperty(navigator, "serial", { value: {
+    async getPorts() { return radio.granted ? [port] : []; },
+    async requestPort() { radio.granted = true; return port; },
+    addEventListener() {},
+  } });
+})();`;
+
+test("radio control: Band Watch tunes a Yaesu FT-991A over USB, and follows its dial", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "false"));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  assert.equal(await page.textContent("#rigBtn"), "Connect radio");
+  await page.click("#rigBtn");
+  await page.waitForFunction(() => rig.connected && rig.hz === 7074000);
+  // 4800 baud, 8 data bits, 2 stop bits, no parity: the FT-991A's factory settings
+  assert.deepEqual(await page.evaluate(() => window.__radio.opened), { baudRate: 4800, dataBits: 8, stopBits: 2, parity: "none", flowControl: "none" });
+  await page.waitForFunction(() => /Radio: 7\.074\.000 DATA-USB/.test(document.getElementById("rigBtn").textContent));
+  // Band Watch followed the radio's frequency
+  await page.waitForFunction(() => listen.kHz === 7074 && listen.mode === "usb");
+
+  // Clicking in Band Watch tunes the radio: SSB on 20 m...
+  await page.evaluate(() => tuneTo(14200, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 14200000 && window.__radio.mode === "2");
+  assert.ok(await page.evaluate(() => window.__radio.sent.includes("FA014200000") && window.__radio.sent.includes("MD02")));
+  // ...FT8 goes in DATA-USB, CW in CW, AM on AM
+  await page.evaluate(() => tuneTo(21074, "usb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 21074000 && window.__radio.mode === "C");
+  await page.evaluate(() => tuneTo(10116, "cw", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 10116000 && window.__radio.mode === "3");
+  await page.evaluate(() => tuneTo(3730.5, "lsb", { quiet: true }));
+  await page.waitForFunction(() => window.__radio.hz === 3730500 && window.__radio.mode === "1");
+
+  // Turning the radio's dial moves Band Watch (after a moment, so our own tuning isn't undone)
+  await new Promise((r) => setTimeout(r, 1600));
+  await page.evaluate(() => { window.__radio.hz = 28074000; window.__radio.mode = "C"; });
+  await page.waitForFunction(() => listen.kHz === 28074 && listen.band === "10", null, { timeout: 5000 });
+
+  // Settings: baud rate (1 stop bit above 4800), and switching tuning off
+  await page.click("#optBtn");
+  await page.uncheck("#optRigFollow");
+  await page.selectOption("#optRigBaud", "38400");
+  await page.waitForFunction(() => rig.connected && window.__radio.opened.baudRate === 38400);
+  assert.equal(await page.evaluate(() => window.__radio.opened.stopBits), 1);
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => tuneTo(18100, "usb", { quiet: true }));
+  await new Promise((r) => setTimeout(r, 300));
+  assert.notEqual(await page.evaluate(() => window.__radio.hz), 18100000, "doesn't tune the radio when switched off");
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-rig"))), { baud: 38400, follow: false, read: true, dataMode: true, autoConnect: true });
+
+  // Disconnect; next time it reconnects by itself to the port chosen before
+  await page.click("#rigBtn");
+  await page.waitForFunction(() => !rig.connected && document.getElementById("rigBtn").textContent === "Connect radio");
+  assert.deepEqual(errors, []);
+});
+
+test("radio control: reconnects by itself, and explains when the browser can't do it", { skip }, async (t) => {
+  const { page } = await openPage(t);
+  await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true"));
+  await page.reload();
+  await page.waitForFunction(() => rig.connected, null, { timeout: 5000 });
+  // A browser without Web Serial (Firefox, Safari, phones)
+  const { page: p2 } = await openPage(t);
+  await p2.click("#optBtn");
+  assert.equal(await p2.evaluate(() => "serial" in navigator), true, "headless Chrome has Web Serial");
+  await p2.evaluate(() => Object.defineProperty(navigator, "serial", { value: undefined, configurable: true }));
+  await p2.evaluate(() => rigConnect(true));
+  assert.match(await p2.textContent("#optRigMsg"), /needs Chrome or Edge/);
+});
+
+test("parks and summits: POTA and SOTA activators listed, filtered, on the map and scope, click to tune", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.waitForFunction(() => document.querySelectorAll("#xtList .xtrow").length === 3);
+  const rows = await page.$$eval("#xtList .xtrow", (els) => els.map((e) => e.innerText.replace(/\s+/g, " ").trim()));
+  assert.match(rows[0], /POTA G0ABC 14,244 kHz SSB GB-0123 Log Peak District National Park · GB-ENG · \d[\d,]* km 3 min ago · 59 in IO93/);
+  assert.match(rows[1], /SOTA GW0SUM 10,118 kHz CW GW\/NW-001 Log Yr Wyddfa, 1085m, 10 Points · GW 5 min ago · QRV now/);
+  assert.match(rows[2], /POTA N0POTA 7,074 kHz FT8 US-0001/);
+  assert.match(await page.textContent("#xtNote"), /3 of 3 activators/);
+  assert.equal(await page.getAttribute("#xtList .xtref a", "href"), "https://pota.app/#/park/GB-0123");
+
+  // Filters: SOTA only, then POTA on 40 m data
+  await page.click('#xtSrc button[data-src="sota"]');
+  assert.equal(await page.locator("#xtList .xtrow").count(), 1);
+  await page.click('#xtSrc button[data-src="pota"]');
+  await page.selectOption("#xtBand", "40");
+  await page.selectOption("#xtMode", "data");
+  assert.deepEqual(await page.$$eval("#xtList .xtcall", (els) => els.map((e) => e.textContent)), ["N0POTA"]);
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-xota"))), { src: "pota", band: "40", mode: "data", alerts: false, onMap: true });
+
+  // On the map for the selected band (40 m), with the US park
+  await page.evaluate(() => selectBand("40"));
+  await page.waitForFunction(() => document.querySelectorAll("#map .xtmark.pota").length === 1);
+
+  // Click to tune: FT8 in USB on 7074 kHz; SSB on 20 m in USB, CW on 30 m
+  await page.click("#xtList .xttune");
+  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "7074 usb");
+  await page.click('#xtSrc button[data-src="both"]');
+  await page.selectOption("#xtBand", "all");
+  await page.selectOption("#xtMode", "all");
+  await page.click('#xtList .xttune >> text="14,244 kHz SSB"');
+  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "14244 usb");
+  await page.click('#xtList .xttune >> text="10,118 kHz CW"');
+  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "10118 cw");
+
+  // Alerts for activators that appear later
+  await page.check("#xtAlerts");
+  feed.pota = () => [...XOTA.potaRows(), { activator: "F0NEW", frequency: "14062", mode: "CW", reference: "FR-0042", parkName: "Parc", spotTime: new Date().toISOString().slice(0, 19) }];
+  await page.evaluate(() => fetch("/api/test/advance?ms=120000", { method: "POST" }));
+  await page.evaluate(() => refreshXota());
+  await page.waitForFunction(() => /New POTA activator/.test(document.body.innerText) && /F0NEW at FR-0042/.test(document.body.innerText));
+  feed.pota = null;
+  assert.deepEqual(errors, []);
+});
+
+test("parks and summits: says so when the feeds are down", { skip }, async (t) => {
+  const { page } = await openPage(t, { potaDown: true });
+  await page.waitForFunction(() => /POTA not available just now/.test(document.getElementById("xtNote").textContent));
+  assert.equal(await page.locator("#xtList .xtrow").count(), 1);
+});
+
+test("logbook: log from a decode and an activator, edit, delete and undo, ADIF export and import", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.fill("#mycall", "M3VRV");
+  await page.press("#mycall", "Enter");
+  assert.match(await page.textContent("#lgRows"), /No contacts logged yet/);
+
+  // A decoded CQ: one click fills in the form
+  await page.evaluate(() => {
+    tuneTo(14074, "usb", { quiet: true });
+    dc.rows = [{ utc: "120015", cycle: 1, mode: "FT8", snr: -7, dt: 0.1, freq: 1200, text: "CQ G4ABC IO93" },
+      { utc: "120015", cycle: 1, mode: "FT8", snr: 3, dt: 0.2, freq: 800, text: "M3VRV EA8XYZ RR73" }];
+    renderDcRows();
+  });
+  await page.click('#dcRows tr:first-child .dclog');
+  assert.deepEqual(await page.evaluate(() => ["lgCall", "lgKHz", "lgMode", "lgGrid", "lgRcvd"].map((id) => document.getElementById(id).value)),
+    ["G4ABC", "14075.2", "FT8", "IO93", "-07"]);
+  await page.fill("#lgSent", "-10");
+  await page.click("#lgSave");
+  assert.match(await page.textContent("#lgMsg"), /Logged G4ABC on 20m FT8/);
+  assert.match(await page.textContent("#lgCount"), /1 contact, 1 station, 1 grid square/);
+  // The decode now shows it's in the log
+  await page.evaluate(() => renderDcRows());
+  assert.equal(await page.locator("#dcRows tr:first-child .worked").count(), 1);
+  // Second decode: the sender is EA8XYZ (no grid in an RR73)
+  await page.click('#dcRows tr:nth-child(2) .dclog');
+  assert.equal(await page.inputValue("#lgCall"), "EA8XYZ");
+  assert.equal(await page.inputValue("#lgGrid"), "");
+  await page.click('#lgForm button[type="reset"]');
+
+  // A POTA activator: park reference filled in, then marked as worked
+  await page.waitForFunction(() => document.querySelectorAll("#xtList .xtlog").length === 3);
+  await page.click('#xtList .xtrow:first-child .xtlog');
+  assert.deepEqual(await page.evaluate(() => ["lgCall", "lgKHz", "lgMode", "lgRef", "lgSent", "lgGrid"].map((id) => document.getElementById(id).value)),
+    ["G0ABC", "14244", "SSB", "GB-0123", "59", "IO93ah"]);
+  await page.click("#lgSave");
+  await page.waitForFunction(() => /✓ worked/.test(document.querySelector("#xtList .xtrow").textContent));
+
+  // Bad input is explained, not saved
+  await page.fill("#lgCall", "hello");
+  await page.click("#lgSave");
+  assert.match(await page.textContent("#lgMsg"), /Enter the other station's callsign/);
+  await page.click('#lgForm button[type="reset"]');
+
+  // Search, edit, delete and undo
+  await page.fill("#lgSearch", "gb-0123");
+  assert.equal(await page.locator("#lgRows tr").count(), 1);
+  await page.fill("#lgSearch", "");
+  await page.click('#lgRows [data-edit]:below(:text("G0ABC"))').catch(() => {});
+  const ids = await page.evaluate(() => log.qsos.map((q) => q.call));
+  assert.deepEqual(ids.sort(), ["G0ABC", "G4ABC"]);
+  await page.evaluate(() => logEdit(log.qsos.find((q) => q.call === "G4ABC").id));
+  assert.equal(await page.inputValue("#lgSave").catch(() => ""), "");
+  assert.equal(await page.textContent("#lgSave"), "Save changes");
+  await page.fill("#lgName", "Ann");
+  await page.click("#lgSave");
+  assert.equal(await page.evaluate(() => log.qsos.find((q) => q.call === "G4ABC").name), "Ann");
+  assert.equal(await page.evaluate(() => log.qsos.length), 2, "edit doesn't duplicate");
+  await page.click(`#lgRows [data-del="${await page.evaluate(() => log.qsos.find((q) => q.call === "G0ABC").id)}"]`);
+  assert.equal(await page.evaluate(() => log.qsos.length), 1);
+  await page.click("#lgUndo");
+  assert.equal(await page.evaluate(() => log.qsos.length), 2);
+
+  // ADIF export
+  const dl = page.waitForEvent("download");
+  await page.click("#lgExport");
+  const file = await dl;
+  assert.match(file.suggestedFilename(), /^bandwatch-log-\d{8}\.adi$/);
+  const adi = require("fs").readFileSync(await file.path(), "utf8");
+  assert.match(adi, /<EOH>/);
+  assert.match(adi, /<CALL:5>G4ABC <QSO_DATE:8>\d{8} <TIME_ON:4>\d{4} <BAND:3>20m <FREQ:7>14.0752 <MODE:3>FT8 <RST_SENT:3>-10 <RST_RCVD:3>-07 <GRIDSQUARE:4>IO93 <NAME:3>Ann /);
+  assert.match(adi, /<CALL:5>G0ABC .*<MODE:3>SSB .*<SIG:4>POTA <SIG_INFO:7>GB-0123 <POTA_REF:7>GB-0123 /);
+  assert.match(adi, /<STATION_CALLSIGN:5>M3VRV <MY_GRIDSQUARE:4>IO93 <EOR>/);
+
+  // ADIF import: FT4 (MFSK + SUBMODE), a SOTA summit, a duplicate skipped
+  const imported = `Exported by another logger <ADIF_VER:5>3.1.4 <EOH>
+<CALL:6>JA1ABC <QSO_DATE:8>20261101 <TIME_ON:6>083000 <BAND:3>15m <FREQ:6>21.140 <MODE:4>MFSK <SUBMODE:3>FT4 <GRIDSQUARE:4>PM95 <EOR>
+<call:6>GW0SUM <qso_date:8>20261102 <time_on:4>1200 <band:3>30m <freq:6>10.118 <mode:2>CW <rst_sent:3>599 <sota_ref:9>GW/NW-001 <name:5>Gwyn  <EOR>
+${adi.split("<EOH>")[1].split("<EOR>")[0]}<EOR>`;
+  await page.setInputFiles("#lgImport", { name: "other.adi", mimeType: "text/plain", buffer: Buffer.from(imported) });
+  await page.waitForFunction(() => /Imported 2 contacts from other.adi \(1 already in the log\)/.test(document.getElementById("lgMsg").textContent));
+  const ja = await page.evaluate(() => log.qsos.find((q) => q.call === "JA1ABC"));
+  assert.deepEqual([ja.mode, ja.band, ja.kHz, ja.time, ja.grid], ["FT4", "15m", 21140, "0830", "PM95"]);
+  const gw = await page.evaluate(() => log.qsos.find((q) => q.call === "GW0SUM"));
+  assert.deepEqual([gw.mode, gw.ref, gw.name, gw.rstS], ["CW", "GW/NW-001", "Gwyn", "599"]);
+  // and it's kept after a reload
+  await page.reload();
+  await page.waitForFunction(() => log.qsos.length === 4);
+  assert.match(await page.textContent("#lgCount"), /4 contacts, 4 stations, 2 grid squares/);
+  assert.deepEqual(errors, []);
+});
+
+test("wanted alerts: wanted calls, prefixes and new grids from decodes and activators, once each", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.waitForFunction(() => xota.spots.length === 3);
+  assert.match(await page.textContent("#wnHits"), /Nothing wanted heard yet/);
+  // GW (a prefix) and EA8XYZ (a callsign)
+  await page.fill("#wnCalls", "gw, EA8XYZ");
+  await page.dispatchEvent("#wnCalls", "change");
+  await page.waitForFunction(() => /GW0SUM/.test(document.getElementById("wnHits").textContent));
+  assert.match(await page.textContent("#toast"), /Wanted station heard.*GW0SUM on 30 m CW, SOTA GW\/NW-001: matches GW/);
+  // A decode of EA8XYZ
+  await page.evaluate(() => {
+    tuneTo(14074, "usb", { quiet: true });
+    dc.rows = [{ utc: "120015", cycle: 1, mode: "FT8", snr: -7, dt: 0.1, freq: 1200, text: "CQ G4ABC IO93" },
+      { utc: "120015", cycle: 1, mode: "FT8", snr: 3, dt: 0.2, freq: 800, text: "M0XYZ EA8XYZ IL18" }];
+    checkWanted();
+  });
+  await page.waitForFunction(() => /EA8XYZ/.test(document.getElementById("wnHits").textContent));
+  assert.match(await page.textContent("#wnHits"), /EA8XYZ\s+14,074\.8 kHz FT8\s+your decodes: matches EA8XYZ/);
+  assert.doesNotMatch(await page.textContent("#wnHits"), /G4ABC/, "G4ABC isn't wanted");
+  // New grid squares: IO93 (G4ABC) isn't in the log; once logged it isn't new any more
+  await page.check("#wnNew");
+  await page.waitForFunction(() => /G4ABC.*new grid square IO93/s.test(document.getElementById("wnHits").textContent));
+  // Each station alerts once (per band, per half hour)
+  const n = await page.evaluate(() => wanted.hits.length);
+  await page.evaluate(() => { checkWanted(); checkWanted(); });
+  assert.equal(await page.evaluate(() => wanted.hits.length), n);
+  // Tune from the list
+  await page.click('#wnHits .wntune >> text="10,118 kHz CW"');
+  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "10118 cw");
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-wanted"))), { calls: "gw, EA8XYZ", grids: "", newGrids: true, sound: true });
+  // Matching rules
+  assert.deepEqual(await page.evaluate(() => [
+    callMatches("VK2ABC", "VK"), callMatches("VK2ABC", "VK*"), callMatches("G4ABC", "G4AB"), callMatches("G4ABCD", "G4ABC"),
+    callMatches("EA8/G4ABC/P", "G4ABC"), gridMatches("PM95ab", "PM"), gridMatches("PM95", "PM9*"), gridMatches("QF22", "PM"),
+  ]), [true, true, false, false, true, true, true, false]);
+  assert.deepEqual(errors, []);
+});
+
+test("WSPR and CW decoders: in the decoder panel, through the background worker", { skip, timeout: 120000 }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addScriptTag({ url: "/js/wspr.js" });
+  await page.addScriptTag({ url: "/js/cw.js" });
+  // WSPR: two stations, fed as 4 minutes of audio with a pretend clock starting on an even minute
+  await page.selectOption("#dcMode", "WSPR");
+  assert.match(await page.textContent("#dcTune"), /Tune to WSPR on \d+ m \([\d,.]+ kHz USB\)/);
+  assert.ok(await page.isHidden("#dcCqRow"));
+  await page.click("#dcStart");
+  const ms = await page.evaluate(async () => {
+    const fs = 12000;
+    const t0 = Math.floor(Date.now() / 120000) * 120000 - 360000;
+    const audio = new Float32Array(240 * fs);
+    let s = 7;
+    const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+    for (let i = 0; i < audio.length; i++) audio[i] = 0.3 * (rnd() - 0.5);
+    Wspr.synthesize(Wspr.encodeTones("M3VRV IO93 23"), { baseHz: 1460, startSec: 1, amp: 0.05, out: audio });
+    Wspr.synthesize(Wspr.encodeTones("K1ABC FN42 37"), { baseHz: 1530, startSec: 1.4, amp: 0.03, out: audio });
+    dc.worker.postMessage({ type: "start", mode: "WSPR", rate: fs });
+    dc.rate = fs;
+    const block = 4800;
+    for (let i = 0; i < audio.length; i += block) {
+      const chunk = audio.slice(i, i + block);
+      dc.worker.postMessage({ type: "audio", samples: chunk, at: t0 + ((i + chunk.length) / fs) * 1000 }, [chunk.buffer]);
+    }
+    const start = Date.now();
+    await new Promise((r) => { const id = setInterval(() => { if (dc.rows.length >= 2) { clearInterval(id); r(); } }, 200); });
+    return Date.now() - start;
+  });
+  const rows = await page.evaluate(() => dc.rows.map((r) => `${r.mode} ${r.text} ${Math.round(r.freq)}`).sort());
+  assert.deepEqual(rows, ["WSPR K1ABC FN42 37 1532", "WSPR M3VRV IO93 23 1462"]);
+  await page.waitForFunction(() => /WSPR: \d decoded in the \d\d:\d\d:00 cycle \(\d+\.\d s to decode\)/.test(document.getElementById("dcStatus").textContent), null, { timeout: 30000 });
+  assert.ok(ms < 60000, `took ${ms} ms`);
+  await page.click("#dcStart");
+
+  // CW: Morse on the sound card path, decoded as text with the speed and tone
+  await page.selectOption("#dcMode", "CW");
+  assert.ok(await page.isVisible("#dcCw"));
+  assert.ok(await page.isHidden("#dcTable"));
+  assert.ok(await page.isHidden("#dcTune"));
+  await page.click("#dcStart");
+  await page.evaluate(async () => {
+    const audio = Cw.key("CQ CQ DE M3VRV M3VRV K", { wpm: 22, hz: 650, amp: 0.5, fs: 48000 });
+    for (let i = 0; i < audio.length; i += 4800) decoderFeed(audio.slice(i, i + 4800), 48000);
+    decoderFeed(new Float32Array(48000), 48000);
+  });
+  await page.waitForFunction(() => /CQ CQ DE M3VRV M3VRV K/.test(document.getElementById("dcCwText").textContent), null, { timeout: 20000 });
+  assert.match(await page.textContent("#dcCwInfo"), /2[0-4] WPM · 6[45]\d Hz tone/);
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-decode"))).mode, "CW");
+  await page.click("#dcStart");
+  assert.deepEqual(errors, []);
 });
