@@ -2,8 +2,9 @@ Band Watch by M3vrv - Windows
 =============================
 
 Band Watch is one program, BandWatch.exe. It needs nothing else installed
-(unless Smart App Control blocks it, see below): it runs a small server on this PC only (http://localhost:8073) and opens it
-in your web browser.
+(unless Smart App Control blocks it, see below): it runs a small server on this PC only (http://localhost:8073) and shows
+it in a window of its own, using Microsoft Edge (part of Windows) or Chrome. Everything runs on this PC: it
+isn't the website. If neither browser is found it opens in your normal web browser instead.
 
 Try it without installing
   Unzip this folder and double-click BandWatch.exe (if Windows allows it,

@@ -345,3 +345,22 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .wnhits{list-style:none;padding:0;margin:4px 0 0;max-height:260px;overflow:auto}
 .wnhits li{padding:4px 0;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 .abupd{margin:0 0 10px;font-size:.875rem;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+
+/* 1.12.3: brighter, glossy look for the Light, Dark and "Match my device" colours. High contrast and Night
+   stay flat on purpose. Gloss is a white highlight layered over each colour, so accent colours still work. */
+:root:not([data-theme]),:root[data-theme="light"],:root[data-theme="system"]{--bg:#eef6f8;--line:#c3d6dc;--warm:#b86e00;--cool:#007a99;--gloss:rgba(255,255,255,.55);--shade:rgba(10,60,80,.14)}
+@media (prefers-color-scheme:dark){:root:not([data-theme]),:root[data-theme="system"]{--bg:#0a1824;--surface:#12283a;--line:#244a60;--warm:#ffbf3d;--cool:#45e0f5;--grid:#1d3a4c;--gloss:rgba(255,255,255,.10);--shade:rgba(0,0,0,.45)}}
+:root[data-theme="dark"]{--bg:#0a1824;--surface:#12283a;--line:#244a60;--warm:#ffbf3d;--cool:#45e0f5;--grid:#1d3a4c;--gloss:rgba(255,255,255,.10);--shade:rgba(0,0,0,.45)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) body{background:radial-gradient(1200px 600px at 10% -10%,color-mix(in srgb,var(--cool) 16%,transparent),transparent 60%),radial-gradient(900px 500px at 100% 0%,color-mix(in srgb,var(--warm) 12%,transparent),transparent 60%),var(--bg);background-attachment:fixed}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) header{border-bottom:2px solid transparent;border-image:linear-gradient(90deg,var(--cool),var(--warm)) 1}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .hero .big span{background:linear-gradient(180deg,color-mix(in srgb,var(--cool) 70%,#fff),var(--cool));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 6px color-mix(in srgb,var(--cool) 35%,transparent))}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.map,.toast,.wcc,.actbox,.stmap,.planchart,.banner){background-image:linear-gradient(180deg,var(--gloss),transparent 45%);border-radius:10px;box-shadow:0 6px 20px var(--shade),inset 0 1px 0 var(--gloss)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.lk button,.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on,.dbtns button,.qc .go,.lsbar button,.optrow button,.filebtn,.dcrow button){background-image:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.08) 50%,rgba(0,0,0,.08));border-radius:8px;box-shadow:0 2px 6px var(--shade),inset 0 1px 0 rgba(255,255,255,.6);transition:transform .1s,box-shadow .1s,filter .1s}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.lk button,.dbtns button,.qc .go,.lsbar button,.optrow button,.filebtn,.dcrow button,.chips button,.qbtn,.lbtn,.rigbtn):hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 10px var(--shade),inset 0 1px 0 rgba(255,255,255,.6)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.lk button,.dbtns button,.qc .go,.lsbar button,.optrow button,.filebtn,.dcrow button,.chips button,.qbtn,.lbtn,.rigbtn):active{transform:translateY(0);filter:brightness(.97)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .chips button{background-image:linear-gradient(180deg,var(--gloss),transparent 60%);box-shadow:0 1px 3px var(--shade)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .bar{border-radius:999px;box-shadow:inset 0 1px 2px var(--shade)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .bar i{border-radius:999px;background-image:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%),linear-gradient(90deg,color-mix(in srgb,var(--cool) 75%,#fff),var(--cool));box-shadow:0 0 8px color-mix(in srgb,var(--cool) 45%,transparent)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) tbody tr:hover{background:color-mix(in srgb,var(--cool) 7%,transparent)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) tbody tr[aria-selected="true"]{background:linear-gradient(90deg,color-mix(in srgb,var(--warm) 14%,var(--surface)),var(--surface))}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.ctl input,.lk input,select,textarea){border-radius:8px;box-shadow:inset 0 1px 3px var(--shade)}

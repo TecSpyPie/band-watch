@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.12.3", "On Windows, Band Watch opens in its own window (no address bar or tabs) instead of a browser tab; brighter, glossy colours"],
   ["1.12.2", "Install updates from Settings, About this build; the installer updates your copy in place (no need to uninstall)"],
   ["1.12.1", "SOTA spots removed (SOTA's API terms don't allow AI-written software without approval); POTA checked every two minutes"],
   ["1.12.0", "Yaesu FT-991A radio control over USB; POTA activators on a list, the map and the scope; a logbook with ADIF export and import; wanted alerts; WSPR and CW decoders"],

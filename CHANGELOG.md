@@ -1,5 +1,13 @@
 # What's new
 
+## 1.12.3 (17 Nov 2026)
+- **Its own window:** on Windows, Band Watch now opens in an app window of its own, with no address bar or
+  tabs and its own button on the taskbar, instead of a tab in your browser. It uses Microsoft Edge (which
+  comes with Windows) or Chrome, so radio control works too. To have a normal browser tab again, set
+  BANDWATCH_WINDOW=browser.
+- **Brighter, glossy colours:** shinier buttons, softly lit panels, glowing activity bars and a brighter teal
+  and amber in the Light and Dark colours. High contrast and Night stay plain on purpose.
+
 ## 1.12.2 (17 Nov 2026)
 - **Updates from inside Band Watch:** Settings > About this build says when a newer version is out. In the
   Windows app, **Install update** downloads it from GitHub, checks it against the release's checksums, and

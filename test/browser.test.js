@@ -683,7 +683,7 @@ test("display options: colours, accent, text size, scale, layout, sections and s
   assert.equal(await page.getAttribute("html", "data-theme"), null);
   assert.equal(await css("html", "fontSize"), "16px");
   assert.equal(await page.isVisible("#secMap"), true);
-  assert.equal(await rootVar("--cool"), "#0b7285");
+  assert.equal(await rootVar("--cool"), "#007a99");
   assert.deepEqual(errors, []);
 });
 
