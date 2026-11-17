@@ -1178,10 +1178,11 @@ test("install page: Windows, iPhone and Android steps, chosen for the device, wi
   assert.match(await page.textContent("#pAndroid"), /Install app/);
   const qrOk = await page.$eval("#pAndroid .iqr img", (i) => i.complete && i.naturalWidth > 0);
   assert.ok(qrOk, "QR image loads");
-  // The web server offers the Windows download only if it has one; the test server has none.
-  assert.ok(await page.isHidden("#winDl"));
+  // The Windows download is the latest GitHub release (the test server has no copy of its own).
   // The browser's own install prompt, where it offers one.
   await page.click("#tabWindows");
+  assert.ok(await page.isVisible("#winDl"));
+  assert.match(await page.getAttribute("#winDl", "href"), /^https:\/\/github\.com\/[^/]+\/band-watch\/releases\/latest\/download\/BandWatch-Setup\.exe$/);
   assert.ok(await page.isHidden("#pWindows .installNow"));
   await page.evaluate(() => {
     const e = new Event("beforeinstallprompt");
@@ -1779,4 +1780,76 @@ test("RTL-SDR connection settings: Band Watch starts rtl_tcp itself, and reconne
   await page.keyboard.press("Escape");
   await page.click("#lsStop");
   assert.deepEqual(errors.filter((e) => !/request failed: .*\/api\/sdr\/stream|status of 502/.test(e)), []);
+});
+
+/* Screenshots for the README and release page: SHOTS_DIR=docs/images npm run test:browser -- --test-name-pattern=screenshots */
+test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS_DIR to take them") || skip, timeout: 120000 }, async (t) => {
+  const dir = process.env.SHOTS_DIR;
+  require("fs").mkdirSync(dir, { recursive: true });
+  const shot = (p, name, opts = {}) => p.screenshot({ path: require("path").join(dir, name), ...opts });
+
+  // 1. The main page
+  const { page } = await openPage(t);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.fill("#mycall", "M3VRV");
+  await page.press("#mycall", "Enter");
+  await new Promise((r) => setTimeout(r, 800));
+  await shot(page, "overview.png");
+
+  // 2. Live band scope from the RTL-SDR
+  const fake = await startStreamingRtlTcp();
+  t.after(() => { for (const s of fake.state.sockets) s.destroy(); fake.server.close(); });
+  await page.evaluate((port) => { sdrSet("addr", `127.0.0.1:${port}`); selectBand("20"); }, fake.port);
+  await page.click('#scopeSpan button[data-s="full"]');
+  await page.click("#scopeLiveGo");
+  await page.waitForFunction(() => scope && scope.live && liveScope.rows >= 235, null, { timeout: 45000 });
+  // Show the usual rtl_tcp address rather than the test's random port
+  const tidy = () => page.evaluate(() => { for (const id of ["rtlAddr", "optRtlAddr"]) if (document.getElementById(id)) document.getElementById(id).value = "127.0.0.1:1234";
+    const st = document.getElementById("rtlStatus"); st.textContent = st.textContent.replace(/127\.0\.0\.1:\d+/, "127.0.0.1:1234"); });
+  await tidy();
+  const top = await page.locator("#scopeTitle").boundingBox();
+  const note = await page.locator("#scopeNote").boundingBox();
+  await page.screenshot({ path: require("path").join(dir, "live-scope.png"), clip: { x: top.x - 8, y: top.y - 8, width: note.width + 16, height: note.y + note.height - top.y + 16 } });
+  // 3. Listen panel with the RTL-SDR waterfall
+  await page.locator("#secListen").screenshot({ path: require("path").join(dir, "listen-rtl-sdr.png") });
+  // 4. Settings: RTL-SDR receiver and About this build
+  await page.click("#optBtn");
+  await tidy();
+  await page.locator("#optRtlDongle").scrollIntoViewIfNeeded();
+  await new Promise((r) => setTimeout(r, 300));
+  await shot(page, "settings-rtl-sdr.png");
+  await page.keyboard.press("Escape");
+  await page.click("#lsStop");
+
+  // 5. FT4 decoder and its results window
+  const ftx = await startFtxRtlTcp({ text: "CQ M3VRV IO93", mode: "FT4", audioHz: 1200 });
+  t.after(() => { for (const s of ftx.state.sockets) s.destroy(); ftx.server.close(); });
+  await page.selectOption("#dcMode", "FT4");
+  await page.selectOption("#dcSrc", "rtl");
+  await page.selectOption("#lsBand", "20");
+  await page.click("#dcTune");
+  await page.fill("#rtlAddr", `127.0.0.1:${ftx.port}`);
+  await page.press("#rtlAddr", "Enter");
+  await page.click("#lsGo");
+  await page.waitForFunction(() => /Connected: R828D/.test(document.getElementById("rtlStatus").textContent));
+  await page.click("#dcStart");
+  const popupP = page.waitForEvent("popup");
+  await page.click("#dcWindow");
+  const popup = await popupP;
+  await popup.setViewportSize({ width: 900, height: 230 });
+  await page.waitForFunction(() => dc.rows.length >= 2, null, { timeout: 40000 });
+  await new Promise((r) => setTimeout(r, 800));
+  await page.evaluate(() => { const st = document.getElementById("rtlStatus"); st.textContent = st.textContent.replace(/127\.0\.0\.1:\d+/, "127.0.0.1:1234"); });
+  await page.locator("#secDecode").screenshot({ path: require("path").join(dir, "ft4-decoder.png") });
+  await shot(popup, "decode-results.png");
+  await page.click("#dcStart");
+  await page.click("#lsStop");
+
+  // 6. On a phone, dark mode
+  const phone = await (await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: "dark", isMobile: true, hasTouch: true })).newPage();
+  t.after(() => phone.context().close());
+  await phone.goto(base + "/");
+  await phone.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await new Promise((r) => setTimeout(r, 800));
+  await shot(phone, "phone.png");
 });

@@ -8,6 +8,8 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
   [latest release](../../releases/latest), run it, answer Yes. It installs to `C:\BandWatch`
   for you only (no administrator rights) and adds desktop and Start menu shortcuts.
 
+![Band Watch: your best band right now, world clock, map and band table](docs/images/overview.png)
+
 ## What it does
 
 - Best band now, a bands table and a map of who hears whom, from live PSK Reporter spots
@@ -16,6 +18,22 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - FT8 and FT4 decoders with a results window
 - UK band plan, sunspots and space weather, world clock, band monitor alerts
 - QRZ.com lookups (sign in with your own QRZ account; your password goes only to QRZ.com and is never stored)
+
+## Screenshots
+
+| Live band scope from your RTL-SDR | Listen with your RTL-SDR |
+|---|---|
+| ![Live spectrum and waterfall across 20 m, with spotted stations marked](docs/images/live-scope.png) | ![Listen panel tuned to 14,200 kHz USB on an RTL-SDR Blog V4](docs/images/listen-rtl-sdr.png) |
+
+| FT8 / FT4 decoder | Decodes window |
+|---|---|
+| ![FT4 decoder decoding CQ M3VRV IO93 from the RTL-SDR](docs/images/ft4-decoder.png) | ![The separate decode results window](docs/images/decode-results.png) |
+
+| RTL-SDR settings | On a phone (dark mode) |
+|---|---|
+| ![Settings: dongle type, sample rate, filter widths, squelch](docs/images/settings-rtl-sdr.png) | <img src="docs/images/phone.png" alt="Band Watch on a phone in dark mode" width="300"> |
+
+*Screenshots use demo spots and a test signal.*
 
 ## Windows warnings
 

@@ -487,7 +487,7 @@ const PAGES = { "/": "index.html", "/install": "install.html", "/decodes": "deco
 const NO_CACHE = new Set(["index.html", "install.html", "decodes.html", "sw.js", "manifest.webmanifest"]);
 // Optional downloads offered by the install page, kept next to server.js in ./download.
 const DOWNLOAD_DIR = process.env.BW_DOWNLOAD_DIR || path.join(__dirname, "download");
-const DOWNLOADS = new Set(["BandWatch-Windows.zip"]);
+const DOWNLOADS = new Set(["BandWatch-Windows.zip", "BandWatch-Setup.exe"]);
 
 function sendDownload(req, res, name) {
   if (!DOWNLOADS.has(name)) return sendJson(res, 404, { error: "not found" });

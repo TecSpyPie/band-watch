@@ -36,9 +36,9 @@
       : `You're on ${NAMES[mine]}.`;
   }
 
-  // The Windows download, where this server offers one.
-  fetch("/download/BandWatch-Windows.zip", { method: "HEAD" })
-    .then((r) => { if (r.ok) { $("winDl").hidden = false; $("winGet").innerHTML = "Download <b>BandWatch-Windows.zip</b>:"; } })
+  // The Windows download comes from the GitHub release; a server can also offer its own copy.
+  fetch("/download/BandWatch-Setup.exe", { method: "HEAD" })
+    .then((r) => { if (r.ok) $("winDl").href = "/download/BandWatch-Setup.exe"; })
     .catch(() => {});
   // In the Windows app itself.
   fetch("/healthz").then((r) => r.json()).then((h) => { if (h.desktop) $("winInstalled").hidden = false; }).catch(() => {});
