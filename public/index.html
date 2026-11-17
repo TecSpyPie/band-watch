@@ -295,6 +295,13 @@
       <div class="chkrow"><label><input type="checkbox" id="qlAuto"> Send each new contact to QRZ as soon as I log it</label></div>
       <p class="small" id="qlMsg" role="status"></p>
     </details>
+    <details class="lgmapbox" id="lgMapBox" open>
+      <summary>Map of my contacts</summary>
+      <div class="chips" id="lgMapBands" role="group" aria-label="Band shown on the contacts map"></div>
+      <svg class="map" id="lgMap" viewBox="0 0 360 180" role="img" aria-label="World map of the contacts in your log, coloured by band"></svg>
+      <div class="lgtools"><span class="small muted grow" id="lgMapNote" role="status"></span>
+        <button type="button" class="lbtn" id="lgMapSave">Save as picture</button></div>
+    </details>
     <div class="lgwrap">
       <table class="lgtab">
         <thead><tr><th>UTC</th><th>Call</th><th>Band</th><th>kHz</th><th>Mode</th><th>RST</th><th>Grid</th><th>Notes</th><th><span class="sr-only">Actions</span></th></tr></thead>
@@ -685,6 +692,7 @@
 <script src="/js/bandplan.js?v=1.13.0"></script>
 <script src="/js/core.js?v=1.13.0"></script>
 <script src="/js/modes.js?v=1.13.0"></script>
+<script src="/js/land.js?v=1.13.0"></script>
 <script src="/js/map.js?v=1.13.0"></script>
 <script src="/js/scope.js?v=1.13.0"></script>
 <script src="/js/monitor.js?v=1.13.0"></script>
@@ -701,6 +709,7 @@
 <script src="/js/rig.js?v=1.13.0"></script>
 <script src="/js/xota.js?v=1.13.0"></script>
 <script src="/js/logbook.js?v=1.13.0"></script>
+<script src="/js/logmap.js?v=1.13.0"></script>
 <script src="/js/wanted.js?v=1.13.0"></script>
 <script src="/js/decoders.js?v=1.13.0"></script>
 <script src="/js/sun.js?v=1.13.0"></script>

@@ -2306,6 +2306,35 @@ test("logbook: Send to QRZ checks the key, sends each contact once, and can send
   assert.deepEqual(errors, []);
 });
 
+test("logbook map: contacts on a world map by band, filter, and save as a picture", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.fill("#mycall", "M3VRV");
+  await page.press("#mycall", "Enter");
+  assert.match(await page.textContent("#lgMapNote"), /Log some contacts/);
+  await page.evaluate(() => {
+    const q = (id, call, band, grid) => ({ id, call, date: "20261117", time: "1000", kHz: 14074, band, mode: "FT8", rstS: "", rstR: "", grid, name: "", qth: "", ref: "", note: "" });
+    log.qsos = [q("a", "JA1ZZZ", "20m", "PM95"), q("b", "JA1YYY", "20m", "PM95xx"), q("c", "K1ABC", "40m", "FN42"), q("d", "VK2XYZ", "20m", "QF56"), q("e", "G4NOG", "40m", "")];
+    saveLog(); renderLog();
+  });
+  // One dot per grid square and band, plus your station
+  assert.equal(await page.locator("#lgMap circle").count(), 4);
+  assert.equal(await page.textContent("#lgMapNote"), "4 contacts in 3 grid squares. 1 has no grid square, so it isn't shown (add one with Edit).");
+  assert.match(await page.textContent("#lgMap"), /PM95 on 20m: JA1ZZZ, JA1YYY \(2 contacts\)/);
+  assert.deepEqual(await page.$$eval("#lgMapBands button", (bs) => bs.map((b) => b.textContent)), ["All bands", "40m", "20m"]);
+  await page.click('#lgMapBands button[data-b="40m"]');
+  assert.equal(await page.locator("#lgMap circle").count(), 2);
+  assert.match(await page.textContent("#lgMapNote"), /^1 contact in 1 grid square on 40m\. 1 has no grid square/);
+  // Save as a picture
+  const dl = page.waitForEvent("download");
+  await page.click("#lgMapSave");
+  const file = await dl;
+  assert.match(file.suggestedFilename(), /^bandwatch-map-\d{8}\.png$/);
+  const png = require("fs").readFileSync(await file.path());
+  assert.equal(png.subarray(1, 4).toString(), "PNG");
+  assert.ok(png.length > 5000, "a real picture");
+  assert.deepEqual(errors, []);
+});
+
 test("logbook: log from a decode and an activator, edit, delete and undo, ADIF export and import", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.fill("#mycall", "M3VRV");

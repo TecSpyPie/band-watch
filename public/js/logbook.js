@@ -152,6 +152,7 @@ function renderLog() {
   const calls = new Set(log.qsos.map((q) => baseCall(q.call)));
   const grids = new Set(log.qsos.map((q) => String(q.grid || "").slice(0, 4)).filter(Boolean));
   renderQrzLog();
+  if (typeof renderLogMap === "function") renderLogMap();
   $("lgCount").textContent = log.qsos.length
     ? `${log.qsos.length} contact${log.qsos.length === 1 ? "" : "s"}, ${calls.size} station${calls.size === 1 ? "" : "s"}, ${grids.size} grid square${grids.size === 1 ? "" : "s"}${rows.length < log.qsos.length ? ` (${rows.length} shown)` : ""}`
     : "";

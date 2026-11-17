@@ -3,11 +3,18 @@
 
 /* ===================== Map and spot list ===================== */
 
+/** Land outlines (land.js). Rings that cross the 180th meridian run past the map's edge, so the outline is drawn
+    again 360 degrees to each side; the map's viewBox clips the rest. */
+function landSvg(fill = "var(--grid)") {
+  if (typeof LAND_PATH !== "string") return "";
+  return [-360, 0, 360].map((dx) => `<path d="${LAND_PATH}" fill="${fill}" opacity=".7"${dx ? ` transform="translate(${dx} 0)"` : ""}/>`).join("");
+}
+
 function drawMap() {
   const X = (lon) => lon + 180;
   const Y = (lat) => 90 - lat;
   const sun = subsolarPoint(Date.now());
-  let svg = "";
+  let svg = landSvg();
 
   for (let l = -150; l <= 150; l += 30) svg += `<line x1="${X(l)}" y1="0" x2="${X(l)}" y2="180" stroke="var(--grid)" stroke-width=".4"/>`;
   for (let l = -60; l <= 60; l += 30) svg += `<line x1="0" y1="${Y(l)}" x2="360" y2="${Y(l)}" stroke="var(--grid)" stroke-width=".4"/>`;

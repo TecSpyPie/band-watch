@@ -339,6 +339,11 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .lgtab td:nth-child(8){white-space:normal;min-width:120px}
 .lgact{display:flex;gap:6px}
 .qlbox{margin:6px 0 10px;font-size:.875rem}
+.lgmapbox{margin:6px 0 10px}
+.lgmapbox summary{cursor:pointer;color:var(--muted);font-size:.875rem;margin-bottom:6px}
+.lgmapbox .map{margin:6px 0}
+.lgdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.lgtools .grow{flex:1}
 .optupd{border:1px solid var(--line);border-radius:8px;padding:2px 12px 10px;margin:10px 0 14px}
 .optupd .opth{margin-top:8px}
 .updlinks{flex-wrap:wrap;gap:8px}

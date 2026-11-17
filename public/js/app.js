@@ -13,6 +13,7 @@ function start() {
   setupListen();
   setupRig();
   setupLog();
+  setupLogMap();
   setupWanted();
   setupXota();
   setupDecoders();
