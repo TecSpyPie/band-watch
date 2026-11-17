@@ -730,9 +730,13 @@ const WEBSDR_STUB = `<!doctype html><title>WebSDR</title><body>stub receiver<scr
   addEventListener("message", (e) => window.msgs.push(String(e.data)));
 </script>`;
 
+/** Pretend receivers. The receiver is set to "another WebSDR" (a stub), which can play inside Band Watch;
+    the real Twente WebSDR always opens in its own window (it won't run inside another page). */
 async function routeReceivers(page) {
   await page.context().route("http://websdr.ewi.utwente.nl:8901/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: WEBSDR_STUB }));
+  await page.context().route("http://websdr.example.org:8901/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: WEBSDR_STUB }));
   await page.context().route("http://kiwi.example.org:8073/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<title>Kiwi</title>kiwi" }));
+  await page.evaluate(() => { listen.rx = "websdr"; listen.websdrUrl = "http://websdr.example.org:8901"; saveListen(); renderListen(); });
 }
 
 test("mode filter box: presets, single modes, remembered, applied everywhere", { skip }, async (t) => {
@@ -834,9 +838,9 @@ test("listen panel: tunes, plays inside Band Watch, retunes from the scope, and 
   await page.click("#lsGo");
   await page.waitForSelector("#lsFrame:not([hidden])");
   const src = await page.getAttribute("#lsFrame", "src");
-  assert.equal(src, `http://websdr.ewi.utwente.nl:8901/?tune=7030cw&messageorigin=${encodeURIComponent(base)}`);
+  assert.equal(src, `http://websdr.example.org:8901/?tune=7030cw&messageorigin=${encodeURIComponent(base)}`);
   await page.waitForFunction(() => document.getElementById("lsFrame").contentWindow && document.getElementById("lsGo").textContent === "Retune");
-  const frame = () => page.frames().find((f) => f.url().startsWith("http://websdr.ewi.utwente.nl"));
+  const frame = () => page.frames().find((f) => f.url().startsWith("http://websdr.example.org"));
   await page.waitForFunction(() => true);
   for (let i = 0; i < 50 && !(frame() && await frame().evaluate(() => Array.isArray(window.msgs)).catch(() => false)); i++) await page.waitForTimeout(100);
 
@@ -860,7 +864,18 @@ test("listen panel: tunes, plays inside Band Watch, retunes from the scope, and 
   // In its own window instead.
   await page.uncheck("#lsEmbed");
   const [popup] = await Promise.all([page.waitForEvent("popup"), page.click("#lsGo")]);
-  assert.match(popup.url(), /^http:\/\/websdr\.ewi\.utwente\.nl:8901\/\?tune=1407[45](\.\d+)?usb/);
+  assert.match(popup.url(), /^http:\/\/websdr\.example\.org:8901\/\?tune=1407[45](\.\d+)?usb/);
+  await page.click("#lsStop");
+  await page.check("#lsEmbed");
+
+  // The Twente WebSDR won't run inside another page, so it always gets its own window, and says why.
+  await page.selectOption("#lsRx", "twente");
+  assert.equal(await page.isChecked("#lsEmbed"), false);
+  assert.equal(await page.isDisabled("#lsEmbed"), true);
+  assert.match(await page.textContent("#lsEmbedNote"), /doesn't allow being shown inside other apps/);
+  const [tw] = await Promise.all([page.waitForEvent("popup"), page.click("#lsGo")]);
+  assert.match(tw.url(), /^http:\/\/websdr\.ewi\.utwente\.nl:8901\/\?tune=1407[45](\.\d+)?usb/);
+  assert.equal(await page.isVisible("#lsFrame"), false);
   await page.click("#lsStop");
 
   // 6 m is beyond the Twente receiver; a KiwiSDR needs its address.
@@ -1082,7 +1097,7 @@ test("listen panel pops out into a window you can drag, resize and dock, without
   await routeReceivers(page);
   await page.click("#lsGo");
   await page.waitForSelector("#lsFrame:not([hidden])");
-  const frameOf = () => page.frames().find((f) => f.url().startsWith("http://websdr.ewi.utwente.nl"));
+  const frameOf = () => page.frames().find((f) => f.url().startsWith("http://websdr.example.org"));
   for (let i = 0; i < 50 && !(frameOf() && await frameOf().evaluate(() => Array.isArray(window.msgs)).catch(() => false)); i++) await page.waitForTimeout(100);
   await frameOf().evaluate(() => { window.marker = "still the same page"; });
 
@@ -1156,7 +1171,7 @@ test("tuning controls: step buttons, dial, wheel, and the stations heard on the 
   // With the receiver open, tuning sends the new frequency to it.
   await page.click("#lsGo");
   await page.waitForSelector("#lsFrame:not([hidden])");
-  const frameOf = () => page.frames().find((f) => f.url().startsWith("http://websdr.ewi.utwente.nl"));
+  const frameOf = () => page.frames().find((f) => f.url().startsWith("http://websdr.example.org"));
   for (let i = 0; i < 50 && !(frameOf() && await frameOf().evaluate(() => Array.isArray(window.msgs)).catch(() => false)); i++) await page.waitForTimeout(100);
   await page.click("#lsNext");
   for (let i = 0; i < 30 && !(await frameOf().evaluate(() => window.msgs.length)); i++) await page.waitForTimeout(100);
@@ -1406,6 +1421,9 @@ test("RTL-SDR: clear messages when rtl_tcp isn't running, or the address is wron
   await page.click("#lsGo");
   await page.waitForFunction(() => /Is rtl_tcp running\?/.test(document.getElementById("rtlStatus").textContent));
   assert.equal(await page.textContent("#lsGo"), "Listen", "not left looking connected");
+  // On this PC Band Watch tries to start rtl_tcp itself, and says why it couldn't, right under the Listen button
+  assert.match(await page.textContent("#lsErr"), /Is rtl_tcp running\? Band Watch tried to start it for you, but: Band Watch couldn't find rtl_tcp/);
+  assert.match(await page.textContent("#toast"), /RTL-SDR/);
   await page.fill("#rtlAddr", "8.8.8.8:1234");
   await page.press("#rtlAddr", "Enter");
   await page.click("#lsGo");
@@ -1414,7 +1432,8 @@ test("RTL-SDR: clear messages when rtl_tcp isn't running, or the address is wron
   await page.fill("#lsFreq", "0.3"); // MHz: 300 kHz
   await page.press("#lsFreq", "Enter");
   assert.match(await page.textContent("#lsErr"), /500 kHz to 1,766 MHz/);
-  assert.deepEqual(errors.filter((e) => !/the server responded with a status of (502|400)/.test(e)), []);
+  // 502: rtl_tcp not answering; 404: no rtl_tcp program to start; 400: not a home-network address
+  assert.deepEqual(errors.filter((e) => !/the server responded with a status of (502|404|400)/.test(e)), []);
 });
 
 test("RTL-SDR settings: test connection, all settings kept in step with Listen and applied live", { skip }, async (t) => {
@@ -2475,6 +2494,14 @@ test("updates: Settings says when a newer Band Watch is out, with a download lin
   await page.waitForFunction(() => /Band Watch 99\.1\.0 is available/.test(document.getElementById("abUpdate").textContent));
   assert.equal(await page.locator("#abInstall").count(), 0, "no install button outside the Windows app");
   assert.equal(await page.getAttribute("#abUpdate a", "href"), "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0");
+  // The Updates section is the first thing in Settings, with the GitHub links
+  assert.equal(await page.evaluate(() => document.querySelector("#optForm h3").textContent), "Updates");
+  assert.ok(await page.evaluate(() => document.getElementById("optUpdates").contains(document.getElementById("abUpdate"))));
+  assert.deepEqual(await page.$$eval("#optUpdates .updlinks a", (as) => as.map((a) => [a.textContent, a.href])), [
+    ["Band Watch on GitHub", "https://github.com/TecSpyPie/band-watch"],
+    ["All versions", "https://github.com/TecSpyPie/band-watch/releases"],
+    ["Download the Windows installer", "https://github.com/TecSpyPie/band-watch/releases/latest/download/BandWatch-Setup.exe"],
+  ]);
   // Up to date
   feed.latestTag = `v${require("../package.json").version}`;
   await srv.reset();

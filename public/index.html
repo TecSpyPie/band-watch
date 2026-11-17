@@ -152,6 +152,7 @@
       <button type="button" class="ghost" id="lsStop" hidden>Stop</button>
       <span id="lsWhere" class="small"></span>
     </div>
+    <p class="err" id="lsErr" role="status"></p>
     <div id="lsEmbedRow"><label class="small muted lsembed"><input type="checkbox" id="lsEmbed"> Play inside Band Watch</label> <span class="small muted" id="lsEmbedNote"></span></div>
     <div id="lsRtl" class="rtl" hidden>
       <div class="row">
@@ -163,7 +164,8 @@
         <label class="rtlchk"><input type="checkbox" id="rtlBias"> Bias tee</label>
       </div>
       <p class="small muted">Plug in the dongle and start <b>rtl_tcp</b> from the RTL-SDR Blog drivers (they support the Blog V4), for example
-        <code>rtl_tcp -a 127.0.0.1</code>. Band Watch connects to it when you press Listen. The V4 tunes 500 kHz to 1,766 MHz;
+        <code>rtl_tcp -a 127.0.0.1</code>. Band Watch connects to it when you press Listen, and in the Windows app starts
+        rtl_tcp itself if it isn't running (put rtl_tcp.exe in C:\BandWatch, or say where it is in Settings). The V4 tunes 500 kHz to 1,766 MHz;
         below 28.8 MHz it switches in its built-in HF upconverter by itself. Only tick Bias tee if an active antenna or preamp needs power from the dongle.</p>
       <div id="rtlScope" class="rtlscope" hidden>
         <canvas id="rtlSpec" aria-label="Spectrum around the tuned frequency: click to tune"></canvas>
@@ -172,7 +174,6 @@
       </div>
       <p class="small" id="rtlStatus" role="status"></p>
     </div>
-    <p class="err" id="lsErr" role="status"></p>
     <iframe id="lsFrame" class="rxframe" title="Web receiver" allow="autoplay" referrerpolicy="origin" hidden></iframe>
     <p class="small muted lsmore">Find more receivers: <a href="http://rx.linkfanel.net/" target="_blank" rel="noopener noreferrer">KiwiSDR map</a> ·
       <a href="http://websdr.org/" target="_blank" rel="noopener noreferrer">WebSDR list</a>. Most digital modes (FT8, WSPR and so on) sound like tones; decode them with WSJT-X or fldigi.</p>
@@ -404,6 +405,16 @@
     <form id="optForm" method="dialog">
       <h2 id="optTitle">Settings</h2>
       <p class="muted small">Changes apply straight away and are saved in this browser.</p>
+
+      <section class="optupd" id="optUpdates" aria-labelledby="optUpdTitle">
+        <h3 class="opth" id="optUpdTitle">Updates</h3>
+        <div class="abupd" id="abUpdate" role="status"></div>
+        <div class="optrow updlinks">
+          <a class="lbtn optlink" id="updGithub" href="https://github.com/TecSpyPie/band-watch" target="_blank" rel="noopener noreferrer">Band Watch on GitHub</a>
+          <a class="lbtn optlink" id="updReleases" href="https://github.com/TecSpyPie/band-watch/releases" target="_blank" rel="noopener noreferrer">All versions</a>
+          <a class="lbtn optlink" id="updDownload" href="https://github.com/TecSpyPie/band-watch/releases/latest/download/BandWatch-Setup.exe" rel="noopener noreferrer">Download the Windows installer</a>
+        </div>
+      </section>
       <div class="optgrid">
         <label for="optTheme">Colours</label>
         <select id="optTheme">
@@ -589,7 +600,6 @@
 
       <h3 class="opth">About this build</h3>
       <dl class="optabout" id="optAbout"><dt>Version</dt><dd id="abVer">…</dd></dl>
-      <div class="abupd" id="abUpdate" role="status"></div>
       <details class="small">
         <summary>What's new in each version</summary>
         <ul class="abhist" id="abHist"></ul>

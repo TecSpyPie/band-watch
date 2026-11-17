@@ -339,6 +339,9 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .lgtab td:nth-child(8){white-space:normal;min-width:120px}
 .lgact{display:flex;gap:6px}
 .qlbox{margin:6px 0 10px;font-size:.875rem}
+.optupd{border:1px solid var(--line);border-radius:8px;padding:2px 12px 10px;margin:10px 0 14px}
+.optupd .opth{margin-top:8px}
+.updlinks{flex-wrap:wrap;gap:8px}
 .qlbox summary{cursor:pointer;color:var(--muted)}
 .qlrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
 .qlrow input{flex:1;min-width:180px}

@@ -263,6 +263,7 @@ async function sdrStart() {
   if (sdr.running) { sdrTune(); return; }
   if (!(await checkSdr())) { sdrSetStatus("The RTL-SDR receiver works in Band Watch on your own PC (the Windows app)."); return; }
   sdr.running = true;
+  sdr.lastError = "";
   if (typeof renderScopeSrc === "function") renderScopeSrc();
   sdrNewDemod();
   sdrSetStatus(`Connecting to rtl_tcp at ${sdr.addr}…`);
@@ -284,7 +285,15 @@ async function sdrStart() {
     if (problem) { sdrStop(problem); return; }
     launched = true;
   }
-  if (!(await sdrConnect(launched ? 8 : 1))) return;
+  // On this PC, if rtl_tcp isn't running, start it rather than just failing.
+  let ok = await sdrConnect(launched ? 8 : 1, { canLaunch: !launched && sdrIsLocal() });
+  if (ok === "launch") {
+    sdrSetStatus("rtl_tcp isn't running, so Band Watch is starting it…");
+    const problem = await sdrLaunch();
+    if (problem) { sdrStop(`${sdr.connectMsg} Band Watch tried to start it for you, but: ${problem}`); return; }
+    ok = await sdrConnect(8);
+  }
+  if (!ok) return;
   sdrSendSettings();
   readSdrStream(sdr.reader).catch(() => { if (sdr.running) sdrLost("The connection to rtl_tcp was lost."); });
 }
@@ -301,7 +310,7 @@ function sdrSendSettings() {
 }
 
 /** Open the stream from rtl_tcp, trying a few times if it was only just started. */
-async function sdrConnect(tries) {
+async function sdrConnect(tries, { canLaunch = false } = {}) {
   for (let i = 1; i <= tries; i++) {
     if (!sdr.running) return false;
     sdr.abort = new AbortController();
@@ -320,6 +329,7 @@ async function sdrConnect(tries) {
     }
     let msg = `Couldn't connect (${res.status}).`;
     try { msg = (await res.json()).error || msg; } catch { /* keep */ }
+    if (res.status === 502 && canLaunch && sdr.running) { sdr.connectMsg = msg; return "launch"; }
     if (res.status !== 502 || i === tries) { sdrStop(msg); return false; }
     sdrSetStatus(`Waiting for rtl_tcp to start (${i} of ${tries})…`);
     await new Promise((r) => setTimeout(r, 700));
@@ -412,6 +422,12 @@ function sdrStop(why = "") {
   if (why && listen.open && listen.rx === "rtl") {
     listen.open = false;
     renderListen();
+  }
+  // A problem is shown beside the Listen button too, and as a pop-up, so the button never looks dead.
+  sdr.lastError = why && why !== "Stopped." ? why : "";
+  if (sdr.lastError && listen.rx === "rtl") {
+    if ($("lsErr")) $("lsErr").textContent = why;
+    if (typeof showToast === "function") showToast("RTL-SDR", why);
   }
 }
 

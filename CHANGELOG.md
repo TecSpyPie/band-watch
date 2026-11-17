@@ -1,6 +1,6 @@
 # What's new
 
-## 1.13.0
+## 1.13.0 (17 Nov 2026)
 - **Icom and Kenwood radio control:** Settings > Radio control has a new **Radio make** choice. Icom radios
   (IC-7300, IC-705, IC-7610, IC-9700 and other CI-V radios) and Kenwood radios (TS-590, TS-890, TS-990,
   TS-480, TS-2000) are tuned and followed just like the Yaesu radios, with USB-D / DATA-USB on digital
@@ -8,6 +8,14 @@
 - **Send to QRZ:** the logbook sends your contacts straight into your QRZ.com logbook, using the API key from
   QRZ's logbook settings (QRZ needs a subscription for this). Each contact is sent once and marked "QRZ ✓",
   and you can have new contacts sent as soon as you log them.
+- **Updates in Settings:** a new **Updates** section at the top of Settings says whether you have the newest
+  version, has the **Install update** button, and links to Band Watch on GitHub, all versions, and the
+  Windows installer.
+- **Fixed: Listen with your RTL-SDR looked dead** when rtl_tcp wasn't running. The Windows app now starts
+  rtl_tcp by itself when you press Listen, and any problem shows in red under the Listen button and as a pop-up.
+- **Fixed: "Play inside Band Watch" with the Twente WebSDR.** Since 1 November the Twente receiver won't run
+  inside another app, so it now opens in its own window, and the tick box says why. KiwiSDRs and other WebSDRs
+  still play inside Band Watch.
 
 ## 1.12.3 (17 Nov 2026)
 - **Its own window:** on Windows, Band Watch now opens in an app window of its own, with no address bar or

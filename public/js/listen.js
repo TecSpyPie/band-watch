@@ -6,7 +6,9 @@
 const LISTEN_MODES = [["usb", "USB"], ["lsb", "LSB"], ["am", "AM"], ["fm", "FM"], ["cw", "CW"], ["wfm", "WFM (broadcast)"]];
 const TWENTE = "http://websdr.ewi.utwente.nl:8901";
 const RECEIVERS = {
-  twente: { name: "WebSDR, University of Twente (Netherlands), 0–29 MHz", max: 29160, kind: "websdr", base: () => TWENTE },
+  // Since November 2026 the Twente page won't run inside another page (it tries to take over the whole window),
+  // so it always opens in its own window.
+  twente: { name: "WebSDR, University of Twente (Netherlands), 0–29 MHz", max: 29160, kind: "websdr", base: () => TWENTE, ownWindow: true },
   websdr: { name: "Another WebSDR (enter its address)", kind: "websdr", base: () => listen.websdrUrl },
   kiwi: { name: "A KiwiSDR (enter its address)", max: 30000, kind: "kiwi", base: () => listen.kiwiUrl },
   rtl: { name: "My RTL-SDR (Blog V4 or any RTL-SDR), through rtl_tcp", get min() { return rtlMinKHz(); }, max: RTL_MAX_KHZ, kind: "rtl", base: () => sdr.addr },
@@ -22,6 +24,7 @@ const listen = {
 const STEPS = [0.01, 0.1, 0.5, 1, 5, 10];
 
 const canEmbed = () => location.protocol === "http:"; // an https page can't show an http receiver inside it
+const playsInside = () => listen.embed && canEmbed() && !RECEIVERS[listen.rx].ownWindow;
 
 function loadListen() {
   try {
@@ -99,9 +102,11 @@ function renderListen() {
   $("lsWebsdrRow").hidden = listen.rx !== "websdr";
   $("lsKiwi").value = listen.kiwiUrl;
   $("lsWebsdr").value = listen.websdrUrl;
-  $("lsEmbed").checked = listen.embed && canEmbed();
-  $("lsEmbed").disabled = !canEmbed();
-  $("lsEmbedNote").textContent = canEmbed() ? "" : "Web receivers use plain http, so on this secure page they open in their own window. In the Windows app they play inside Band Watch.";
+  const own = Boolean(RECEIVERS[listen.rx].ownWindow);
+  $("lsEmbed").checked = listen.embed && canEmbed() && !own;
+  $("lsEmbed").disabled = !canEmbed() || own;
+  $("lsEmbedNote").textContent = own ? "The Twente WebSDR doesn't allow being shown inside other apps, so it opens in its own window. KiwiSDRs and other WebSDRs can play inside."
+    : canEmbed() ? "" : "Web receivers use plain http, so on this secure page they open in their own window. In the Windows app they play inside Band Watch.";
 
   const p = BANDPLAN[listen.band];
   $("lsPresets").innerHTML = p.centres.map(([k, label]) => `<button type="button" data-k="${k}">${esc(label)} ${k.toLocaleString()}</button>`).join("");
@@ -114,11 +119,11 @@ function renderListen() {
   const problem = listenProblem();
   $("lsWhere").innerHTML = `<b>${listen.kHz.toLocaleString()} kHz ${listen.mode.toUpperCase()}</b>` +
     (seg ? ` · ${esc(seg.use)}` : listen.kHz ? " · outside the amateur bands" : "");
-  $("lsErr").textContent = problem;
+  $("lsErr").textContent = problem || (listen.rx === "rtl" && typeof sdr !== "undefined" && !sdr.running && sdr.lastError) || "";
   $("lsGo").disabled = Boolean(problem);
   $("lsGo").textContent = listen.open ? "Retune" : "Listen";
   $("lsStop").hidden = !listen.open;
-  $("lsFrame").hidden = isRtl || !(listen.open && listen.embed && canEmbed());
+  $("lsFrame").hidden = isRtl || !(listen.open && playsInside());
   if (typeof dcRenderTune === "function") dcRenderTune();
 }
 
@@ -153,7 +158,7 @@ function startListening() {
   const url = receiverUrl();
   const rx = RECEIVERS[listen.rx];
   const live = rx.kind === "websdr" && listen.open && url.split("?")[0] === listen.url.split("?")[0];
-  if (listen.embed && canEmbed()) {
+  if (playsInside()) {
     const frame = $("lsFrame");
     if (live && frame.contentWindow) frame.contentWindow.postMessage(`tune ${listen.kHz}${listen.mode}`, "*");
     else frame.src = url;
