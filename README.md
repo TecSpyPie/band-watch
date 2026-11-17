@@ -7,7 +7,7 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **On a Windows PC:** download **BandWatch-Setup.exe** from the
   [latest release](https://github.com/TecSpyPie/band-watch/releases/latest), run it, answer Yes. It installs to `C:\BandWatch`
   for you only (no administrator rights) and adds desktop and Start menu shortcuts.
-- **Updating:** Settings > About this build > **Install update**, or run a newer BandWatch-Setup.exe: it
+- **Updating:** Settings > Updates > **Install update**, or run a newer BandWatch-Setup.exe: it
   updates your copy in place. No need to uninstall first.
 
 ![Band Watch: your best band right now, world clock, map and band table](docs/images/overview.png)
@@ -16,10 +16,13 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 
 - Best band now, a bands table and a map of who hears whom, from live PSK Reporter spots
 - Band scope: live spectrum and waterfall from your RTL-SDR, or drawn from spots
-- Listen: public WebSDR/KiwiSDR receivers, or your own RTL-SDR (Blog V4, V3 or others) through rtl_tcp
+- Listen: public WebSDR/KiwiSDR receivers, or your own RTL-SDR (Blog V4, V3 or others) through rtl_tcp,
+  which comes with the Windows app
 - **Radio control:** tunes your Yaesu (FT-991A, FT-710, FTDX10, FTDX101), Icom (IC-7300, IC-705, IC-7610,
   IC-9700 and other CI-V radios) or Kenwood (TS-590, TS-890, TS-990, TS-480, TS-2000) over USB when you click
   a spot, the scope or a decoder, and follows the radio's dial (Chrome or Edge on the PC the radio is plugged into)
+- **ATS Mini:** the SI4732 pocket receiver (firmware 2.34 or later, Settings > USB Port > Ad hoc) works the same way:
+  Band Watch changes its band and mode and tunes it, and shows its signal strength and SNR
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
 - **POTA:** live park activators on a list, the map and the scope, with alerts
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook
