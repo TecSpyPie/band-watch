@@ -1,5 +1,15 @@
 # What's new
 
+## 1.23.0 (18 Nov 2026)
+- **Help guide:** a **Help** button at the top opens a guide to every part of Band Watch, with pictures and simple
+  numbered steps: getting started, connecting your radio, the Radio panel, Listen, your RTL-SDR (with the Zadig
+  steps), the bands and scope, shortwave stations, the decoders, POTA, Wanted alerts, the logbook, the ATS Mini,
+  own windows, settings and updates, and what to do if something doesn't work. It follows your colours and works
+  offline.
+- **Icom IC-7300 set-up steps** in Settings > Radio control, the Help guide, README-Windows.txt and the GitHub page:
+  the CP210x driver, MENU > SET > Connectors > CI-V (USB Port: Unlink from [REMOTE], Baud Rate: Auto, Transceive: ON),
+  then Icom, IC-7300, 115200 baud. The Zadig steps for the RTL-SDR are spelled out too.
+
 ## 1.22.0 (18 Nov 2026)
 - **Listen goes with the Radio panel:** when you pop the radio out, the Listen panel goes into the same window, under
   it. Pressing **Listen** there now starts the sound (your RTL-SDR, or a receiver playing inside Band Watch) in that

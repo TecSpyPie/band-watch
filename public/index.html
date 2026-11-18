@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.22.0">
-<link rel="stylesheet" href="/listen.css?v=1.22.0">
+<link rel="stylesheet" href="/style.css?v=1.23.0">
+<link rel="stylesheet" href="/listen.css?v=1.23.0">
 </head>
 <body>
 <div class="wrap">
@@ -37,6 +37,7 @@
     <button type="button" class="lbtn" id="modesBtn" aria-haspopup="dialog" aria-controls="modesBox">Modes: all</button>
     <button type="button" class="lbtn rigbtn" id="rigBtn" aria-pressed="false">Connect radio</button>
     <button type="button" class="lbtn" id="optBtn" aria-haspopup="dialog">Settings</button>
+    <a class="lbtn helpbtn" id="helpBtn" href="/help" target="bandwatch-help" rel="noopener">Help</a>
     <div class="clock" id="clock" aria-label="UTC time"></div>
   </header>
 
@@ -591,6 +592,11 @@
         and follows the radio when you turn its dial. On a Yaesu, pick the <b>Enhanced COM Port</b> when the browser asks.
         Close other programs that use the radio's CAT port (WSJT-X, a logger) first, or use their rig sharing.
         Needs Chrome or Edge.
+        <b>Yaesu FT-991A:</b> pick Yaesu below, 4800 baud (menu 031 CAT RATE), and pick the Enhanced COM Port.
+        <b>Icom IC-7300:</b> on the radio, <b>MENU &gt; SET &gt; Connectors &gt; CI-V</b>: CI-V USB Port <b>Unlink from [REMOTE]</b>,
+        CI-V USB Baud Rate <b>Auto</b>, CI-V Transceive <b>ON</b>. Then pick Icom and IC-7300 below, 115200 baud, press Connect radio
+        and choose the Silicon Labs CP210x port.
+        Step-by-step help for each radio: <a href="/help#radio" target="bandwatch-help">Help → Connect your radio</a>.
         <b>ATS Mini:</b> no driver needed. On the radio, set <b>Settings &gt; USB Port</b> to <b>Ad hoc</b>,
         then pick ATS Mini below and press Connect radio.
         <b>Malahit DSP2:</b> plug it in, pick Malahit below, press Connect radio and choose its <b>Malahit CAT</b> port.</p>
@@ -790,34 +796,34 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.22.0"></script>
-<script src="/js/bandplan.js?v=1.22.0"></script>
-<script src="/js/core.js?v=1.22.0"></script>
-<script src="/js/modes.js?v=1.22.0"></script>
-<script src="/js/map.js?v=1.22.0"></script>
-<script src="/js/scope.js?v=1.22.0"></script>
-<script src="/js/monitor.js?v=1.22.0"></script>
-<script src="/js/lookup.js?v=1.22.0"></script>
-<script src="/js/worldclock.js?v=1.22.0"></script>
-<script src="/js/locator.js?v=1.22.0"></script>
-<script src="/js/activity.js?v=1.22.0"></script>
-<script src="/js/qrz.js?v=1.22.0"></script>
-<script src="/js/hovercard.js?v=1.22.0"></script>
-<script src="/js/station.js?v=1.22.0"></script>
-<script src="/js/sdr-dsp.js?v=1.22.0"></script>
-<script src="/js/sdr.js?v=1.22.0"></script>
-<script src="/js/listen.js?v=1.22.0"></script>
-<script src="/js/rig.js?v=1.22.0"></script>
-<script src="/js/xota.js?v=1.22.0"></script>
-<script src="/js/eibi-data.js?v=1.22.0"></script>
-<script src="/js/eibi.js?v=1.22.0"></script>
-<script src="/js/panel.js?v=1.22.0"></script>
-<script src="/js/logbook.js?v=1.22.0"></script>
-<script src="/js/wanted.js?v=1.22.0"></script>
-<script src="/js/decoders.js?v=1.22.0"></script>
-<script src="/js/sun.js?v=1.22.0"></script>
-<script src="/js/options.js?v=1.22.0"></script>
-<script src="/js/windows.js?v=1.22.0"></script>
-<script src="/js/app.js?v=1.22.0"></script>
+<script src="/js/install.js?v=1.23.0"></script>
+<script src="/js/bandplan.js?v=1.23.0"></script>
+<script src="/js/core.js?v=1.23.0"></script>
+<script src="/js/modes.js?v=1.23.0"></script>
+<script src="/js/map.js?v=1.23.0"></script>
+<script src="/js/scope.js?v=1.23.0"></script>
+<script src="/js/monitor.js?v=1.23.0"></script>
+<script src="/js/lookup.js?v=1.23.0"></script>
+<script src="/js/worldclock.js?v=1.23.0"></script>
+<script src="/js/locator.js?v=1.23.0"></script>
+<script src="/js/activity.js?v=1.23.0"></script>
+<script src="/js/qrz.js?v=1.23.0"></script>
+<script src="/js/hovercard.js?v=1.23.0"></script>
+<script src="/js/station.js?v=1.23.0"></script>
+<script src="/js/sdr-dsp.js?v=1.23.0"></script>
+<script src="/js/sdr.js?v=1.23.0"></script>
+<script src="/js/listen.js?v=1.23.0"></script>
+<script src="/js/rig.js?v=1.23.0"></script>
+<script src="/js/xota.js?v=1.23.0"></script>
+<script src="/js/eibi-data.js?v=1.23.0"></script>
+<script src="/js/eibi.js?v=1.23.0"></script>
+<script src="/js/panel.js?v=1.23.0"></script>
+<script src="/js/logbook.js?v=1.23.0"></script>
+<script src="/js/wanted.js?v=1.23.0"></script>
+<script src="/js/decoders.js?v=1.23.0"></script>
+<script src="/js/sun.js?v=1.23.0"></script>
+<script src="/js/options.js?v=1.23.0"></script>
+<script src="/js/windows.js?v=1.23.0"></script>
+<script src="/js/app.js?v=1.23.0"></script>
 </body>
 </html>

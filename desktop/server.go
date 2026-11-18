@@ -312,14 +312,15 @@ var mimeTypes = map[string]string{
 	".svg":         "image/svg+xml",
 	".json":        "application/json",
 	".png":         "image/png",
+	".webp":        "image/webp",
 	".jpg":         "image/jpeg",
 	".ico":         "image/x-icon",
 	".webmanifest": "application/manifest+json",
 }
 
 // Pages served without their .html ending, and files that must be checked for updates on every visit.
-var pages = map[string]string{"": "index.html", "install": "install.html", "decodes": "decodes.html"}
-var noCache = map[string]bool{"index.html": true, "install.html": true, "decodes.html": true, "sw.js": true, "manifest.webmanifest": true}
+var pages = map[string]string{"": "index.html", "install": "install.html", "decodes": "decodes.html", "help": "help.html"}
+var noCache = map[string]bool{"index.html": true, "install.html": true, "decodes.html": true, "help.html": true, "sw.js": true, "manifest.webmanifest": true}
 
 func (s *Server) sendStatic(w http.ResponseWriter, r *http.Request, p string) {
 	rel := strings.TrimPrefix(p, "/")

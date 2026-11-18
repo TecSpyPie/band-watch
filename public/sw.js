@@ -2,9 +2,9 @@
 // and opens the last copy of the page when there's no connection. Live data (/api/) is never cached:
 // it always comes straight from the server, so what you see is never out of date without saying so.
 "use strict";
-const VERSION = "1.22.0";
+const VERSION = "1.23.0";
 const CACHE = `bandwatch-${VERSION}`;
-const SHELL = ["/", "/install", "/style.css", "/listen.css", "/install.css", "/favicon.svg", "/manifest.webmanifest", "/icons/icon-192.png"];
+const SHELL = ["/", "/install", "/help", "/style.css", "/listen.css", "/install.css", "/favicon.svg", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));

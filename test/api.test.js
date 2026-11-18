@@ -257,6 +257,22 @@ test("serves the page and its assets with the right types", async () => {
   assert.equal((await get("/")).headers["cache-control"], "no-cache");
 });
 
+test("the Help guide and its pictures", async () => {
+  for (const [path, type] of [["/help", "text/html"], ["/help.html", "text/html"], ["/help/radio-panel.webp", "image/webp"], ["/help/overview.webp", "image/webp"]]) {
+    const r = await get(path);
+    assert.equal(r.status, 200, path);
+    assert.ok(r.type.startsWith(type), `${path}: ${r.type}`);
+  }
+  assert.equal((await get("/help")).headers["cache-control"], "no-cache", "the guide is checked for updates like the page");
+  const help = (await get("/help")).body;
+  // Every picture it shows is there
+  for (const [, src] of help.matchAll(/<img src="([^"]+)"/g)) assert.equal((await get(src)).status, 200, src);
+  // Every link to a section has its section
+  for (const [, id] of help.matchAll(/href="#([a-z]+)"/g)) assert.match(help, new RegExp(`id="${id}"`), id);
+  assert.match(help, /CI-V USB Baud Rate:<\/b> Auto/);
+  assert.match(help, /Zadig/);
+});
+
 test("install page, app manifest, icons and service worker", async () => {
   const cases = [["/install", "text/html"], ["/install.css", "text/css"], ["/manifest.webmanifest", "application/manifest+json"],
     ["/sw.js", "text/javascript"], ["/js/install.js", "text/javascript"], ["/js/installpage.js", "text/javascript"],

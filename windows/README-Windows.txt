@@ -57,10 +57,51 @@ Listening
   receiver once if you don't hear anything: browsers need a click before they
   play sound.
 
+Your radio (CAT control over its USB cable)
+  Band Watch tunes your radio when you click a spot, the band scope, the band
+  plan, a shortwave station or the Radio panel, and follows its dial. It needs
+  Chrome or Edge (Band Watch opens in Edge by itself). Close other programs that
+  use the radio's CAT port (WSJT-X, a logger) first.
+  Yaesu FT-991A (also FT-710, FTDX10, FTDX101)
+    1. Install the Silicon Labs CP210x USB driver (yaesu.com, the radio's page).
+    2. Settings > Radio control > Radio make: Yaesu. Baud rate 4800 (the
+       FT-991A's factory setting, menu 031 CAT RATE).
+    3. Press Connect radio at the top and pick the Enhanced COM Port.
+  Icom IC-7300 (also IC-705, IC-7610, IC-9700 and other CI-V radios)
+    1. Install the Silicon Labs CP210x USB driver from icomjapan.com
+       (Support > Firmware/Drivers > IC-7300).
+    2. On the radio: MENU > SET > Connectors > CI-V, and set
+         CI-V USB Port:       Unlink from [REMOTE]
+         CI-V USB Baud Rate:  Auto
+         CI-V Transceive:     ON   (so Band Watch follows the radio's dial)
+    3. Settings > Radio control > Radio make: Icom. Icom model: IC-7300.
+       Baud rate: 115200.
+    4. Press Connect radio at the top and pick the radio's port (Silicon Labs
+       CP210x, or "USB to UART").
+    The IC-7300 has a sound card built in: the Decoder's "Audio from" can take
+    the radio's audio straight from its USB cable, for FT8 and FT4.
+  Kenwood (TS-590, TS-890, TS-990, TS-480, TS-2000)
+    Install Kenwood's virtual COM port driver, pick Kenwood, match the baud
+    rate to the radio's menu, and press Connect radio.
+  ATS Mini
+    No driver needed. On the radio: Settings > USB Port > Ad hoc. Pick ATS Mini
+    and press Connect radio. Only one program can use it at a time: close ATS
+    Mini Controller (or disconnect it there) first.
+  Malahit DSP2
+    Pick Malahit, press Connect radio and choose its "Malahit CAT" port.
+    Windows may need the Malahit USB CAT driver from malahiteam.com.
+  If it doesn't connect, Settings > Radio control says what went wrong.
+
 Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
   Band Watch can listen through your own dongle instead of a web receiver.
-  1. Set the dongle's USB driver once with Zadig, as for any RTL-SDR program:
-     see the Quick Start Guide on https://www.rtl-sdr.com.
+  1. Set the dongle's USB driver once with Zadig, as for any RTL-SDR program.
+     Windows sees the dongle without this, but no program can use it.
+       a. Download Zadig from https://zadig.akeo.ie and run it.
+       b. Options > List All Devices.
+       c. Pick "Bulk-In, Interface (Interface 0)" (or RTL2838UHIDIR /
+          RTL2832U). Not your keyboard, mouse or radio.
+       d. Make sure the right-hand box says WinUSB, then Replace Driver.
+       e. Unplug the dongle, plug it back in, and restart Band Watch.
   2. In Band Watch, Listen > Receiver > "My RTL-SDR", then press Listen.
      Band Watch comes with rtl_tcp.exe (from the RTL-SDR Blog drivers V1.4.0,
      which support the Blog V4; see README-rtl-sdr.txt) and starts it for you.

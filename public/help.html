@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help · Band Watch by M3vrv</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css?v=1.23.0">
+<script>
+  // The same colours as Band Watch itself (Settings > Display)
+  try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
+</script>
+<style>
+  body{margin:0}
+  .help{max-width:880px;margin:0 auto;padding:16px 16px 60px}
+  .help header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  .help h1{margin:0}
+  .help h2{margin:0 0 6px;scroll-margin-top:12px}
+  .help h3{margin:14px 0 4px;font-size:1rem}
+  .help section{margin:0 0 22px}
+  .help p,.help li{line-height:1.55}
+  .help ol,.help ul{padding-left:1.4em;margin:6px 0}
+  .help li{margin:3px 0}
+  .help figure{margin:10px 0 4px}
+  .help figure img{display:block;max-width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
+  .help figcaption{font-size:.85rem;color:var(--muted);margin-top:4px}
+  .help kbd{font:600 .85em ui-monospace,Consolas,monospace;padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--surface)}
+  .help .toc{columns:2 15em;gap:24px;padding-left:1.2em}
+  .help .tip{padding:8px 12px;border-left:4px solid var(--cool);background:color-mix(in srgb,var(--cool) 8%,transparent);border-radius:6px}
+  .help .warn{padding:8px 12px;border-left:4px solid var(--warm);background:color-mix(in srgb,var(--warm) 10%,transparent);border-radius:6px}
+  .help b.btn{white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="help wrap">
+  <header>
+    <h1>Band Watch help</h1>
+    <a class="lbtn" href="/">Back to Band Watch</a>
+  </header>
+
+  <section class="panel" id="contents" aria-labelledby="hContents">
+    <h2 id="hContents">Contents</h2>
+    <ol class="toc">
+      <li><a href="#start">Getting started</a></li>
+      <li><a href="#radio">Connect your radio</a></li>
+      <li><a href="#panel">The Radio panel</a></li>
+      <li><a href="#listen">Listen</a></li>
+      <li><a href="#rtlsdr">Your RTL-SDR</a></li>
+      <li><a href="#bands">Bands, map and band scope</a></li>
+      <li><a href="#shortwave">Shortwave stations on air</a></li>
+      <li><a href="#decoders">Decoders: FT8, FT4, WSPR, CW</a></li>
+      <li><a href="#pota">Parks on the air (POTA)</a></li>
+      <li><a href="#wanted">Wanted alerts</a></li>
+      <li><a href="#logbook">Logbook</a></li>
+      <li><a href="#activity">Band activity and callsign lookup</a></li>
+      <li><a href="#atsmini">ATS Mini</a></li>
+      <li><a href="#windows">Own windows and a second screen</a></li>
+      <li><a href="#settings">Settings and updates</a></li>
+      <li><a href="#problems">If something doesn't work</a></li>
+    </ol>
+  </section>
+
+  <section class="panel" id="start" aria-labelledby="hStart">
+    <h2 id="hStart">Getting started</h2>
+    <p>Band Watch shows which bands are open from where you are, using live reports of who is hearing whom
+      (PSK Reporter). It can tune your radio, let you listen, decode FT8 and more, and keep your log.</p>
+    <ol>
+      <li>At the top, type your <b>locator</b> (grid square, like IO93) in <b>Your locator</b>.</li>
+      <li>Type your <b>callsign</b> in <b>Your callsign</b>, so Band Watch can find reports of your own signal.</li>
+      <li>The big line near the top tells you the <b>best band right now</b>. It updates every minute.</li>
+    </ol>
+    <figure><img src="/help/overview.webp" alt="Band Watch's main page: the best band now, the world clock, and the spot map" loading="lazy"
+      <figcaption>The top of Band Watch: your best band now, the world clock and the spot map.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="radio" aria-labelledby="hRadio">
+    <h2 id="hRadio">Connect your radio</h2>
+    <p>Band Watch tunes your radio over its USB cable when you click a spot, the band scope, a shortwave station or the
+      Radio panel, and follows your radio when you turn its dial. Close other programs that use the radio (WSJT-X, a
+      logger) first.</p>
+    <h3>Yaesu FT-991A (also FT-710, FTDX10, FTDX101)</h3>
+    <ol>
+      <li>Install the <b>Silicon Labs CP210x</b> USB driver (on yaesu.com, on the radio's page), and plug the radio in.</li>
+      <li>In Band Watch, <b class="btn">Settings → Radio control</b>: Radio make <b>Yaesu</b>, Baud rate <b>4800</b>
+        (the FT-991A's menu 031 CAT RATE).</li>
+      <li>Click <b class="btn">Connect radio</b> at the top and pick the <b>Enhanced COM Port</b>.</li>
+    </ol>
+    <h3>Icom IC-7300 (also IC-705, IC-7610, IC-9700)</h3>
+    <ol>
+      <li>Install the <b>CP210x</b> USB driver from icomjapan.com (Support → Firmware/Drivers → IC-7300).</li>
+      <li>On the radio: <b class="btn">MENU → SET → Connectors → CI-V</b> and set
+        <ul>
+          <li><b>CI-V USB Port:</b> Unlink from [REMOTE]</li>
+          <li><b>CI-V USB Baud Rate:</b> Auto</li>
+          <li><b>CI-V Transceive:</b> ON (so Band Watch follows the radio's dial)</li>
+        </ul></li>
+      <li>In Band Watch, <b class="btn">Settings → Radio control</b>: Radio make <b>Icom</b>, Icom model <b>IC-7300</b>,
+        Baud rate <b>115200</b>.</li>
+      <li>Click <b class="btn">Connect radio</b> and pick the <b>Silicon Labs CP210x</b> (or "USB to UART") port.</li>
+    </ol>
+    <p class="tip">The IC-7300 has a sound card built in, so the FT8 decoder can take its audio straight from the USB
+      cable: see <a href="#decoders">Decoders</a>.</p>
+    <h3>ATS Mini, Malahit and Kenwood</h3>
+    <ul>
+      <li><b>ATS Mini:</b> no driver. On the radio, <b>Settings → USB Port → Ad hoc</b>. Pick <b>ATS Mini</b> and click
+        Connect radio. Only one program can use it at a time, so close ATS Mini Controller first.</li>
+      <li><b>Malahit DSP2:</b> pick <b>Malahit</b>, click Connect radio and choose its <b>Malahit CAT</b> port
+        (Windows may need the driver from malahiteam.com).</li>
+      <li><b>Kenwood</b> (TS-590, TS-890, TS-990, TS-480, TS-2000): install Kenwood's COM port driver, pick Kenwood,
+        and match the baud rate to the radio's menu.</li>
+    </ul>
+    <figure><img src="/help/radio-connected.webp" alt="The top bar with Radio: 14.074.000 DATA-USB showing a connected radio" loading="lazy">
+      <figcaption>Connected: the button at the top shows the radio's frequency and mode.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="panel" aria-labelledby="hPanel">
+    <h2 id="hPanel">The Radio panel</h2>
+    <p>The front of a radio on your screen. It moves the same dial as the rest of Band Watch, so your radio and Listen follow it.</p>
+    <figure><img src="/help/radio-panel.webp" alt="The Radio panel: S-meter, big frequency display, spectrum, waterfall, band and mode keys, and the tuning knob" loading="lazy">
+      <figcaption>The Radio panel with an FT-991A connected.</figcaption></figure>
+    <ul>
+      <li><b>Tuning knob:</b> drag it round with the mouse, scroll on it, or click it and use the arrow keys.
+        <kbd>Page Up</kbd> and <kbd>Page Down</kbd> move ten steps. <b>◀</b> and <b>▶</b> move one step.</li>
+      <li><b>Step:</b> how far one click of the knob moves (10 Hz to 10 kHz). <b>Span:</b> how wide the spectrum is.</li>
+      <li><b>Frequency:</b> click the big numbers, type a frequency (<b>14.2</b> for MHz or <b>7074</b> for kHz) and press <kbd>Enter</kbd>.</li>
+      <li><b>Band keys</b> (160 to 6 m): go back to where you last were on that band, like a real radio.</li>
+      <li><b>Mode keys:</b> LSB, USB, CW, AM, FM.</li>
+      <li><b>S-meter:</b> live from the FT-991A (and other Yaesus), Icom radios and the ATS Mini.</li>
+      <li><b>Spectrum and waterfall:</b> live from your RTL-SDR when you're listening with it, otherwise drawn from the
+        stations spotted on that band. Click either to tune there.</li>
+      <li><b>Listen:</b> starts and stops the receiver chosen in the Listen panel.</li>
+      <li><b>Pop out ⧉:</b> puts the radio, with Listen underneath, in its own window. Drag it onto another screen.
+        <b>Back in Band Watch</b> brings it home.</li>
+    </ul>
+    <p class="warn">Band Watch only tunes and listens. It never transmits.</p>
+  </section>
+
+  <section class="panel" id="listen" aria-labelledby="hListen">
+    <h2 id="hListen">Listen</h2>
+    <p>Hear the band through a receiver on the internet or your own RTL-SDR.</p>
+    <ol>
+      <li>Pick a <b>Receiver</b>: the WebSDR at the University of Twente, another WebSDR or a KiwiSDR (type its address),
+        or <b>My RTL-SDR</b>.</li>
+      <li>Set the <b>Band</b>, <b>Frequency</b> and <b>Mode</b>, or just click a spot, the scope or the band plan.</li>
+      <li>Click <b class="btn">Listen</b>. Click <b class="btn">Stop</b> to stop.</li>
+    </ol>
+    <p class="tip">If you hear nothing from a web receiver, click inside it once: browsers need a click before they play sound.</p>
+  </section>
+
+  <section class="panel" id="rtlsdr" aria-labelledby="hRtl">
+    <h2 id="hRtl">Your RTL-SDR</h2>
+    <p>Band Watch comes with rtl_tcp and starts it for you. Windows needs the dongle's driver changed once first, or no
+      program can use it (even though Windows shows it's plugged in).</p>
+    <ol>
+      <li>Download <b>Zadig</b> from zadig.akeo.ie and run it.</li>
+      <li>Click <b class="btn">Options → List All Devices</b>.</li>
+      <li>Pick <b>Bulk-In, Interface (Interface 0)</b> (or RTL2838UHIDIR / RTL2832U). Not your keyboard, mouse or radio.</li>
+      <li>Make sure the right-hand box says <b>WinUSB</b>, then click <b class="btn">Replace Driver</b>.</li>
+      <li>Unplug the dongle, plug it back in, and restart Band Watch.</li>
+      <li>In Listen, pick <b>Receiver: My RTL-SDR</b> and click <b class="btn">Listen</b>.</li>
+    </ol>
+    <figure><img src="/help/listen-rtl-sdr.webp" alt="The Listen panel playing through an RTL-SDR, with its spectrum and waterfall" loading="lazy">
+      <figcaption>Listening through an RTL-SDR. Settings → RTL-SDR receiver has gain, filters, sample rate and more.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="bands" aria-labelledby="hBands">
+    <h2 id="hBands">Bands, map and band scope</h2>
+    <ul>
+      <li><b>Bands from your location:</b> each band shows Open, Marginal or Closed, from how many stations heard or were heard
+        from your area in the last 30 minutes. Click a band to see it on the map and the scope.</li>
+      <li><b>Map:</b> the paths of those reports, with the day and night line.</li>
+      <li><b>Band scope:</b> where on the band the activity is. With an RTL-SDR, click <b class="btn">Start live scope</b>
+        for a live spectrum and waterfall. Click anywhere on it to tune there.</li>
+    </ul>
+    <figure><img src="/help/live-scope.webp" alt="The band scope showing a live spectrum and waterfall from an RTL-SDR" loading="lazy">
+      <figcaption>The band scope, live from an RTL-SDR.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="shortwave" aria-labelledby="hSw">
+    <h2 id="hSw">Shortwave stations on air</h2>
+    <p>Broadcasters on the air right now, from the free EiBi schedule.</p>
+    <ol>
+      <li>Pick a <b>band</b> (long wave, medium wave, 120 m to 11 m) or a <b>language</b>, or type a station or country.</li>
+      <li>Tick <b>Also starting in the next hour</b> to see what's coming up.</li>
+      <li>Click a <b>frequency</b> to tune there in AM. Your ATS Mini or radio follows.</li>
+    </ol>
+    <figure><img src="/help/shortwave.webp" alt="The shortwave list: BBC and Radio Romania International with frequencies, languages and times" loading="lazy">
+      <figcaption>Stations on now, and starting soon.</figcaption></figure>
+    <p class="tip">The 49 m and 41 m bands are busiest after dark.</p>
+  </section>
+
+  <section class="panel" id="decoders" aria-labelledby="hDec">
+    <h2 id="hDec">Decoders: FT8, FT4, WSPR, CW</h2>
+    <p>Band Watch can decode what your receiver hears, like WSJT-X. Your PC's clock must be right to within a second.</p>
+    <ol>
+      <li>Pick the <b>Mode</b>: FT8, FT4, WSPR or CW.</li>
+      <li>Pick <b>Audio from</b>: <b>My RTL-SDR</b>, or <b>This computer's sound input</b> for a radio's audio
+        (the IC-7300's USB sound card, or a cable from the radio's speaker).</li>
+      <li>Tune to the right frequency (click a band key in the Radio panel, then pick DATA/USB), and click
+        <b class="btn">Start decoding</b>.</li>
+      <li>Tick <b>CQ only</b> to see just the stations calling CQ. <b class="btn">Log</b> on a line puts that station in the logbook.</li>
+      <li><b class="btn">Results window</b> opens the decodes in a window of their own.</li>
+    </ol>
+    <figure><img src="/help/ft4-decoder.webp" alt="The decoder panel showing decoded FT4 messages" loading="lazy">
+      <figcaption>Decoded messages, newest at the top.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="pota" aria-labelledby="hPota">
+    <h2 id="hPota">Parks on the air (POTA)</h2>
+    <p>Activators on the air from parks right now, refreshed every two minutes.</p>
+    <ul>
+      <li>Click a <b>frequency</b> to tune there; <b class="btn">Log</b> fills in the logbook with the park.</li>
+      <li>Filter by band or mode. Tick <b>Tell me about new activators</b> for an alert.</li>
+    </ul>
+    <figure><img src="/help/pota.webp" alt="The POTA panel listing activators with park references" loading="lazy"></figure>
+  </section>
+
+  <section class="panel" id="wanted" aria-labelledby="hWanted">
+    <h2 id="hWanted">Wanted alerts</h2>
+    <ol>
+      <li>Type the callsigns or prefixes you want (like <b>VK*</b> for all of Australia, or a full callsign).</li>
+      <li>Type grid squares you want (like <b>PM95</b>, or <b>QF</b> for a whole field).</li>
+      <li>Band Watch tells you when one is heard in the spots, your decodes or POTA. Tick <b>Play a sound</b> for a beep.</li>
+    </ol>
+    <figure><img src="/help/wanted.webp" alt="Wanted alerts with callsigns, grid squares and recently heard stations" loading="lazy"></figure>
+  </section>
+
+  <section class="panel" id="logbook" aria-labelledby="hLog">
+    <h2 id="hLog">Logbook</h2>
+    <ol>
+      <li>Fill in the <b>Callsign</b> (and anything else you like), or click <b class="btn">Log</b> on a decode or a POTA activator.</li>
+      <li><b class="btn">Use Listen's frequency</b> fills in the frequency and mode. Click <b class="btn">Log it</b>.</li>
+      <li><b class="btn">Export ADIF</b> saves your log for LoTW, Club Log or another logger; <b class="btn">Import ADIF</b> loads one in.</li>
+      <li><b class="btn">Send to QRZ</b>: paste your QRZ Logbook API key (on QRZ.com: Logbook → Settings) to send contacts to QRZ.</li>
+    </ol>
+    <figure><img src="/help/logbook.webp" alt="The logbook with contacts and the ADIF buttons" loading="lazy"></figure>
+    <p class="warn">The log is kept in this browser on this PC. Export ADIF now and then as a backup.</p>
+  </section>
+
+  <section class="panel" id="activity" aria-labelledby="hAct">
+    <h2 id="hAct">Band activity and callsign lookup</h2>
+    <ul>
+      <li><b>Band activity</b> lists every report: who, where, which band and how strong. Rest the pointer on a callsign
+        to see who it is; click it for its station window. Click a frequency to tune there.</li>
+      <li><b>Callsign lookup:</b> type a callsign and click <b class="btn">Look up</b>. For names and addresses, click
+        <b class="btn">Log in to QRZ</b> at the top with your own QRZ account.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="atsmini" aria-labelledby="hAts">
+    <h2 id="hAts">ATS Mini</h2>
+    <p>With the ATS Mini connected, this panel shows its screen live, with a big digital readout and an S-meter, and has its buttons:
+      Band −/+, ◀ Tune / Tune ▶, Push, Mode, Volume and Light. Clicking a shortwave station or the Radio panel tunes it too.</p>
+    <p class="tip">On the radio, set <b>Settings → USB Port → Ad hoc</b> first. If the screen stays black, untick
+      <b>Live screen</b> for a drawn screen instead.</p>
+  </section>
+
+  <section class="panel" id="windows" aria-labelledby="hWin">
+    <h2 id="hWin">Own windows and a second screen</h2>
+    <p>Most parts have a <b>⧉</b> button by their name. It moves that part into a window of its own, which you can drag
+      onto another screen and resize. Band Watch remembers where you put it. Close the window, or click
+      <b class="btn">Back to the main window</b>, to put it back.</p>
+  </section>
+
+  <section class="panel" id="settings" aria-labelledby="hSet">
+    <h2 id="hSet">Settings and updates</h2>
+    <ul>
+      <li><b class="btn">Settings</b> at the top has the display (colours, text size, layout and which parts to show),
+        radio control, the RTL-SDR receiver, and profiles.</li>
+      <li><b>Updates:</b> <b class="btn">Settings → Updates → Install update</b> gets the newest Band Watch and
+        installs it over the old one. Your settings and log are kept.</li>
+      <li><b>Colours:</b> Light, Dark or "Match my device" have the 3D look; High contrast and Night stay plain for easy reading.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="problems" aria-labelledby="hProb">
+    <h2 id="hProb">If something doesn't work</h2>
+    <ul>
+      <li><b>"Windows protected your PC":</b> click <b>More info</b>, then <b>Run anyway</b>. Band Watch isn't signed with a paid certificate yet.</li>
+      <li><b>The radio won't connect:</b> check its USB driver is installed, close other programs that use it, and look
+        at what <b class="btn">Settings → Radio control</b> says. Only Chrome and Edge can talk to radios.</li>
+      <li><b>The RTL-SDR isn't found:</b> do the <a href="#rtlsdr">Zadig</a> step.</li>
+      <li><b>No sound:</b> click inside the web receiver once; check the volume; in the Radio panel's own window, press
+        Listen there.</li>
+      <li><b>The website version is blank at first:</b> it sleeps when nobody is using it. Wait a few seconds and reload.</li>
+      <li><b>Nothing new on the bands:</b> Band Watch only shows what stations report. Quiet bands, or a wrong locator, show less.</li>
+    </ul>
+    <p>Band Watch by M3vrv is free (MIT licence). Ideas and problems are welcome on
+      <a href="https://github.com/TecSpyPie/band-watch" target="_blank" rel="noopener">github.com/TecSpyPie/band-watch</a>.</p>
+  </section>
+</div>
+</body>
+</html>

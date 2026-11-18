@@ -1973,6 +1973,7 @@ test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS
   await rp.waitForFunction(() => document.getElementById("pnS").textContent === "S9+10");
   await rp.waitForTimeout(800); // the needle settles
   await rp.evaluate(() => document.getElementById("toast").classList.remove("on"));
+  await rp.evaluate(() => { for (let i = 0; i < 80; i++) { panel.lastRow = 0; drawPanelSpectrum(); } }); // fill the waterfall
   await rp.waitForTimeout(400);
   await rp.locator("#secPanel").screenshot({ path: require("path").join(dir, "radio-panel.png") });
 });
@@ -2080,6 +2081,36 @@ const FAKE_FT991A = `(() => {
     addEventListener() {},
   } });
 })();`;
+
+test("Help: the button opens the guide; it follows the colours and fits a phone", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  const [help] = await Promise.all([page.waitForEvent("popup"), page.click("#helpBtn")]);
+  await help.waitForLoadState("load");
+  assert.equal(await help.title(), "Help · Band Watch by M3vrv");
+  assert.ok((await help.$$("section.panel")).length >= 15);
+  // The pictures load
+  const broken = await help.evaluate(async () => {
+    const imgs = [...document.images];
+    await Promise.all(imgs.map((i) => (i.loading = "eager", i.decode().catch(() => {}))));
+    return imgs.filter((i) => !i.naturalWidth).map((i) => i.src);
+  });
+  assert.deepEqual(broken, []);
+  // A link in the contents goes to its section
+  await help.click('a[href="#rtlsdr"]');
+  assert.equal(await help.evaluate(() => location.hash), "#rtlsdr");
+  // Settings > Radio control links to it too
+  assert.equal(await page.getAttribute('a[href="/help#radio"]', "target"), "bandwatch-help");
+  await help.close();
+  // Dark colours carried over, and nothing too wide on a phone
+  await page.evaluate(() => localStorage.setItem("bw-display", JSON.stringify({ theme: "dark" })));
+  const phone = await page.context().newPage();
+  await phone.setViewportSize({ width: 380, height: 800 });
+  await phone.goto(page.url().replace(/\/(\?.*)?$/, "") + "/help");
+  assert.equal(await phone.evaluate(() => document.documentElement.dataset.theme), "dark");
+  assert.deepEqual(await phone.evaluate(() => [...document.querySelectorAll("body *")].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).map((e) => e.tagName + "." + e.className).slice(0, 5)), []);
+  await phone.close();
+  assert.deepEqual(errors, []);
+});
 
 test("radio panel: band and mode keys, the knob, typing a frequency, the band stack", { skip }, async (t) => {
   const { page, errors } = await openPage(t);

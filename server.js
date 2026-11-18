@@ -64,6 +64,7 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".json": "application/json",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".webmanifest": "application/manifest+json",
   ".zip": "application/zip",
 };
@@ -598,9 +599,9 @@ function handleSdr(req, res, url) {
 }
 
 // Pages served without their .html ending.
-const PAGES = { "/": "index.html", "/install": "install.html", "/decodes": "decodes.html" };
+const PAGES = { "/": "index.html", "/install": "install.html", "/decodes": "decodes.html", "/help": "help.html" };
 // Files that must be checked for updates on every visit.
-const NO_CACHE = new Set(["index.html", "install.html", "decodes.html", "sw.js", "manifest.webmanifest"]);
+const NO_CACHE = new Set(["index.html", "install.html", "decodes.html", "help.html", "sw.js", "manifest.webmanifest"]);
 // Optional downloads offered by the install page, kept next to server.js in ./download.
 const DOWNLOAD_DIR = process.env.BW_DOWNLOAD_DIR || path.join(__dirname, "download");
 const DOWNLOADS = new Set(["BandWatch-Windows.zip", "BandWatch-Setup.exe"]);

@@ -72,6 +72,21 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 
 *Screenshots use demo spots, test signals and a pretend radio.*
 
+## Connect your radio
+
+Band Watch tunes your radio over its USB cable (CAT), in Chrome or Edge. Install the maker's USB driver first.
+
+- **Yaesu FT-991A** (FT-710, FTDX10, FTDX101): Silicon Labs CP210x driver. **Settings > Radio control**: Yaesu,
+  4800 baud (menu 031 CAT RATE). **Connect radio**, then pick the **Enhanced COM Port**.
+- **Icom IC-7300** (IC-705, IC-7610, IC-9700…): CP210x driver from icomjapan.com. On the radio,
+  **MENU > SET > Connectors > CI-V**: CI-V USB Port *Unlink from [REMOTE]*, CI-V USB Baud Rate *Auto*,
+  CI-V Transceive *ON*. In Band Watch: Icom, model IC-7300, 115200 baud, **Connect radio**, pick the CP210x port.
+- **Kenwood** (TS-590, TS-890, TS-990, TS-480, TS-2000): Kenwood's COM port driver; match the radio's baud rate.
+- **ATS Mini**: no driver; on the radio **Settings > USB Port > Ad hoc**.
+- **Malahit DSP2**: pick its **Malahit CAT** port (Windows may need the driver from malahiteam.com).
+- **RTL-SDR** (Blog V4 and others): set its driver once with [Zadig](https://zadig.akeo.ie) (Options > List All
+  Devices, *Bulk-In, Interface (Interface 0)*, WinUSB, Replace Driver), then **Listen > Receiver > My RTL-SDR**.
+
 ## Windows warnings
 
 Until the Windows files are code-signed (see [CODE_SIGNING.md](CODE_SIGNING.md)), Windows may say
