@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.23.0">
-<link rel="stylesheet" href="/listen.css?v=1.23.0">
+<link rel="stylesheet" href="/style.css?v=1.24.0">
+<link rel="stylesheet" href="/listen.css?v=1.24.0">
 </head>
 <body>
 <div class="wrap">
@@ -144,6 +144,7 @@
         <div class="pnkeys" id="pnModes" role="group" aria-label="Mode"></div>
         <label class="pnsel">Step <select id="pnStep"></select></label>
         <label class="pnsel">Span <select id="pnSpan"></select></label>
+        <label class="pnsel">ClearRX <select id="pnFx"></select></label>
         <button type="button" class="pnkey pnlisten" id="pnListen" aria-pressed="false">Listen</button>
         <button type="button" class="pnkey pnpop" id="pnPop" aria-pressed="false" hidden>Pop out ⧉</button>
       </div>
@@ -215,6 +216,31 @@
         <span class="small" id="rtlMeter" aria-live="off"></span>
       </div>
       <p class="small" id="rtlStatus" role="status"></p>
+      <fieldset class="clearrx" id="fxBox">
+        <legend>ClearRX audio</legend>
+        <div class="fxpresets" id="fxPresets" role="group" aria-label="ClearRX preset"></div>
+        <div class="fxrow">
+          <label><input type="checkbox" id="fxVoice"> Voice filter</label>
+          <label class="fxsub">from <select id="fxLo"></select></label>
+          <label class="fxsub">to <select id="fxHi"></select></label>
+        </div>
+        <div class="fxrow">
+          <label><input type="checkbox" id="fxCw"> CW peak</label>
+          <label class="fxsub">width <select id="fxWidth"></select></label>
+        </div>
+        <div class="fxrow">
+          <label><input type="checkbox" id="fxNotch"> Auto notch (removes whistles)</label>
+        </div>
+        <div class="fxrow">
+          <label><input type="checkbox" id="fxNr"> Noise reduction</label>
+          <label class="fxsub">strength <select id="fxNrLevel"><option value="1">Light</option><option value="2">Medium</option><option value="3">Strong</option></select></label>
+        </div>
+        <div class="fxrow">
+          <label><input type="checkbox" id="fxComp"> Steady volume (compressor)</label>
+        </div>
+        <div class="fxmeter" aria-hidden="true"><i id="fxBar"></i><b id="fxPeak"></b></div>
+        <p class="small" id="fxNote" role="status"></p>
+      </fieldset>
     </div>
     <iframe id="lsFrame" class="rxframe" title="Web receiver" allow="autoplay" referrerpolicy="origin" hidden></iframe>
     <p class="small muted lsmore">Find more receivers: <a href="http://rx.linkfanel.net/" target="_blank" rel="noopener noreferrer">KiwiSDR map</a> ·
@@ -796,34 +822,36 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.23.0"></script>
-<script src="/js/bandplan.js?v=1.23.0"></script>
-<script src="/js/core.js?v=1.23.0"></script>
-<script src="/js/modes.js?v=1.23.0"></script>
-<script src="/js/map.js?v=1.23.0"></script>
-<script src="/js/scope.js?v=1.23.0"></script>
-<script src="/js/monitor.js?v=1.23.0"></script>
-<script src="/js/lookup.js?v=1.23.0"></script>
-<script src="/js/worldclock.js?v=1.23.0"></script>
-<script src="/js/locator.js?v=1.23.0"></script>
-<script src="/js/activity.js?v=1.23.0"></script>
-<script src="/js/qrz.js?v=1.23.0"></script>
-<script src="/js/hovercard.js?v=1.23.0"></script>
-<script src="/js/station.js?v=1.23.0"></script>
-<script src="/js/sdr-dsp.js?v=1.23.0"></script>
-<script src="/js/sdr.js?v=1.23.0"></script>
-<script src="/js/listen.js?v=1.23.0"></script>
-<script src="/js/rig.js?v=1.23.0"></script>
-<script src="/js/xota.js?v=1.23.0"></script>
-<script src="/js/eibi-data.js?v=1.23.0"></script>
-<script src="/js/eibi.js?v=1.23.0"></script>
-<script src="/js/panel.js?v=1.23.0"></script>
-<script src="/js/logbook.js?v=1.23.0"></script>
-<script src="/js/wanted.js?v=1.23.0"></script>
-<script src="/js/decoders.js?v=1.23.0"></script>
-<script src="/js/sun.js?v=1.23.0"></script>
-<script src="/js/options.js?v=1.23.0"></script>
-<script src="/js/windows.js?v=1.23.0"></script>
-<script src="/js/app.js?v=1.23.0"></script>
+<script src="/js/install.js?v=1.24.0"></script>
+<script src="/js/bandplan.js?v=1.24.0"></script>
+<script src="/js/core.js?v=1.24.0"></script>
+<script src="/js/modes.js?v=1.24.0"></script>
+<script src="/js/map.js?v=1.24.0"></script>
+<script src="/js/scope.js?v=1.24.0"></script>
+<script src="/js/monitor.js?v=1.24.0"></script>
+<script src="/js/lookup.js?v=1.24.0"></script>
+<script src="/js/worldclock.js?v=1.24.0"></script>
+<script src="/js/locator.js?v=1.24.0"></script>
+<script src="/js/activity.js?v=1.24.0"></script>
+<script src="/js/qrz.js?v=1.24.0"></script>
+<script src="/js/hovercard.js?v=1.24.0"></script>
+<script src="/js/station.js?v=1.24.0"></script>
+<script src="/js/sdr-dsp.js?v=1.24.0"></script>
+<script src="/js/sdr.js?v=1.24.0"></script>
+<script src="/js/listen.js?v=1.24.0"></script>
+<script src="/js/rig.js?v=1.24.0"></script>
+<script src="/js/xota.js?v=1.24.0"></script>
+<script src="/js/eibi-data.js?v=1.24.0"></script>
+<script src="/js/eibi.js?v=1.24.0"></script>
+<script src="/js/rxfx.js?v=1.24.0"></script>
+<script src="/js/clearrx.js?v=1.24.0"></script>
+<script src="/js/panel.js?v=1.24.0"></script>
+<script src="/js/logbook.js?v=1.24.0"></script>
+<script src="/js/wanted.js?v=1.24.0"></script>
+<script src="/js/decoders.js?v=1.24.0"></script>
+<script src="/js/sun.js?v=1.24.0"></script>
+<script src="/js/options.js?v=1.24.0"></script>
+<script src="/js/windows.js?v=1.24.0"></script>
+<script src="/js/app.js?v=1.24.0"></script>
 </body>
 </html>

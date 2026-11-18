@@ -17,6 +17,7 @@ function start() {
   setupWanted();
   setupXota();
   setupSked();
+  setupClearRx();
   setupPanel();
   setupDecoders();
   const savedGrid = load("bw-grid");

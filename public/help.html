@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.23.0">
+<link rel="stylesheet" href="/style.css?v=1.24.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -46,6 +46,7 @@
       <li><a href="#panel">The Radio panel</a></li>
       <li><a href="#listen">Listen</a></li>
       <li><a href="#rtlsdr">Your RTL-SDR</a></li>
+      <li><a href="#clearrx">ClearRX audio</a></li>
       <li><a href="#bands">Bands, map and band scope</a></li>
       <li><a href="#shortwave">Shortwave stations on air</a></li>
       <li><a href="#decoders">Decoders: FT8, FT4, WSPR, CW</a></li>
@@ -129,6 +130,7 @@
       <li><b>Spectrum and waterfall:</b> live from your RTL-SDR when you're listening with it, otherwise drawn from the
         stations spotted on that band. Click either to tune there.</li>
       <li><b>Listen:</b> starts and stops the receiver chosen in the Listen panel.</li>
+      <li><b>ClearRX:</b> picks the audio preset for your RTL-SDR's sound (see <a href="#clearrx">ClearRX audio</a>).</li>
       <li><b>Pop out ⧉:</b> puts the radio, with Listen underneath, in its own window. Drag it onto another screen.
         <b>Back in Band Watch</b> brings it home.</li>
     </ul>
@@ -161,6 +163,32 @@
     </ol>
     <figure><img src="/help/listen-rtl-sdr.webp" alt="The Listen panel playing through an RTL-SDR, with its spectrum and waterfall" loading="lazy">
       <figcaption>Listening through an RTL-SDR. Settings → RTL-SDR receiver has gain, filters, sample rate and more.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="clearrx" aria-labelledby="hClearrx">
+    <h2 id="hClearrx">ClearRX audio</h2>
+    <p>ClearRX cleans up the sound from your RTL-SDR, like a DSP speaker. It's in the Listen panel (under the RTL-SDR settings),
+      and the Radio panel has a <b>ClearRX</b> box to pick a preset. Web receivers play their own sound, so ClearRX can't reach them.
+      The decoders always get the untouched sound.</p>
+    <h3>Presets</h3>
+    <ul>
+      <li><b>Auto</b> (the usual choice): SSB voice on USB and LSB, CW on CW, AM broadcast on AM, and off on FM. It changes when you change mode.</li>
+      <li><b>SSB voice:</b> the voice filter, the auto notch and steady volume.</li>
+      <li><b>Weak DX:</b> as SSB voice, a little narrower, with noise reduction too.</li>
+      <li><b>CW:</b> the CW peak filter on the 700 Hz note, light noise reduction and steady volume.</li>
+      <li><b>AM broadcast:</b> a wider voice filter (100 Hz to 4.5 kHz) for music and speech, with the auto notch.</li>
+      <li><b>Off:</b> the sound as it comes.</li>
+    </ul>
+    <h3>The switches</h3>
+    <ul>
+      <li><b>Voice filter:</b> keeps the voice (300 Hz to 2.7 kHz to start with) and cuts hum and hiss outside it.</li>
+      <li><b>CW peak:</b> a narrow filter on the Morse note, so one station stands out from its neighbours.</li>
+      <li><b>Auto notch:</b> finds steady whistles (carriers, someone tuning up) and removes them. Voices pass.</li>
+      <li><b>Noise reduction:</b> takes down the hiss between words. Strong can sound a little "underwater": use the lightest that helps.</li>
+      <li><b>Steady volume:</b> brings weak and strong stations to the same loudness, and never lets it clip.</li>
+    </ul>
+    <p>Changing a switch makes the settings <b>Custom</b>; pick a preset to go back. The bar shows how loud the sound is.
+      If it says <b>Too loud</b>, turn the volume down a little.</p>
   </section>
 
   <section class="panel" id="bands" aria-labelledby="hBands">

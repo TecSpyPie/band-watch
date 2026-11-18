@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.24.0", "ClearRX audio: voice filter, CW peak, auto notch, noise reduction and steady volume for your RTL-SDR"],
   ["1.23.0", "A Help guide (the Help button at the top), and step-by-step set-up for the Icom IC-7300"],
   ["1.22.0", "Listen goes with the popped-out radio and plays there; everything looks 3D and sharp"],
   ["1.21.0", "Radio panel: a waterfall under the spectrum, Pop out into its own window, and a 3D glossy look"],

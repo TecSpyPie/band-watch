@@ -29,6 +29,7 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **POTA:** live park activators on a list, the map and the scope, with alerts
 - **Radio panel:** the front of a transceiver on screen: big frequency display, live S-meter, close-up spectrum and waterfall, band
   and mode keys and a tuning knob; pop it out into its own window; your radio follows
+- **ClearRX audio:** voice filter, CW peak, auto notch, noise reduction and steady volume for your RTL-SDR's sound
 - **Shortwave stations on air:** what's broadcasting right now from the EiBi schedule; click one to tune your radio
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook
 - **Wanted alerts:** callsigns, prefixes and grid squares you need, and new grid squares not in your log

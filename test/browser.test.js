@@ -1442,6 +1442,46 @@ test("radio panel popped out: Listen goes with it, and the RTL-SDR's sound start
   assert.deepEqual(errors.filter((e) => !/request failed: .*\/api\/sdr\/stream/.test(e)), []); // the stream closed on purpose
 });
 
+test("ClearRX: presets, Auto following the mode, your own settings, and it works on the RTL-SDR's sound", { skip }, async (t) => {
+  const fake = await startStreamingRtlTcp();
+  t.after(() => { for (const s of fake.state.sockets) s.destroy(); fake.server.close(); });
+  const { page, errors } = await openPage(t);
+  // Off the RTL-SDR, it says where it works
+  assert.match(await page.textContent("#fxNote"), /works on your RTL-SDR's sound/);
+  await page.selectOption("#lsRx", "rtl");
+  await page.fill("#rtlAddr", `127.0.0.1:${fake.port}`);
+  await page.press("#rtlAddr", "Enter");
+  // Auto: SSB voice on USB, CW on CW
+  await page.evaluate(() => tuneTo(14200, "usb", { quiet: true }));
+  assert.equal(await page.getAttribute('#fxPresets button[data-p="auto"]', "aria-pressed"), "true");
+  assert.match(await page.textContent("#fxNote"), /^Auto: SSB voice for USB\./);
+  assert.deepEqual(await page.evaluate(() => [crx.chain.s.voice, crx.chain.s.notch, crx.chain.s.comp, crx.chain.s.cw]), [true, true, true, false]);
+  await page.evaluate(() => tuneTo(14050, "cw", { quiet: true }));
+  assert.deepEqual(await page.evaluate(() => [crx.chain.s.voice, crx.chain.s.cw]), [false, true]);
+  assert.ok(await page.isChecked("#fxCw"));
+  // A preset
+  await page.click('#fxPresets button[data-p="weak"]');
+  assert.deepEqual(await page.evaluate(() => [crx.chain.s.nr, crx.chain.s.hi]), [true, 2400]);
+  assert.equal(await page.inputValue("#pnFx"), "weak", "the Radio panel shows it too");
+  // Changing a box makes it Custom, and it's remembered
+  await page.uncheck("#fxNotch");
+  assert.equal(await page.inputValue("#pnFx"), "custom");
+  assert.equal(await page.evaluate(() => crx.chain.s.notch), false);
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-clearrx"))).preset, "custom");
+  // From the Radio panel
+  await page.selectOption("#pnFx", "am");
+  assert.equal(await page.getAttribute('#fxPresets button[data-p="am"]', "aria-pressed"), "true");
+  // Listening: the sound goes through it, and the meter moves
+  await page.selectOption("#pnFx", "ssb");
+  await page.evaluate(() => tuneTo(14200, "usb", { quiet: true }));
+  await page.click("#lsGo");
+  await page.waitForFunction(() => /Connected: R828D/.test(document.getElementById("rtlStatus").textContent));
+  await page.waitForFunction(() => crx.chain.meter.peak > -100, null, { timeout: 8000 });
+  await page.waitForFunction(() => /dB|Too loud/.test(document.getElementById("fxPeak").textContent));
+  await page.click("#lsGo"); // stop
+  assert.deepEqual(errors.filter((e) => !/request failed: .*\/api\/sdr\/stream/.test(e)), []);
+});
+
 test("RTL-SDR: clear messages when rtl_tcp isn't running, or the address is wrong", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.selectOption("#lsRx", "rtl");

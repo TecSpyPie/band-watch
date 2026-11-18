@@ -1,5 +1,13 @@
 # What's new
 
+## 1.24.0 (18 Nov 2026)
+- **ClearRX audio:** a radio audio processor for your RTL-SDR's sound, like a DSP speaker. A voice filter (300 Hz to
+  2.7 kHz, adjustable), a CW peak filter on the 700 Hz note, an auto notch that removes carrier whistles, noise
+  reduction for the hiss between words (light, medium or strong), steady volume with a limiter so it never clips, and
+  a level meter that warns when it's too loud. Presets: Auto (follows the mode), SSB voice, Weak DX, CW, AM broadcast
+  and Off; change a switch for your own settings. It's in the Listen panel, and the Radio panel has a ClearRX box.
+  The decoders still get the untouched sound. Web receivers play their own sound, so it can't reach those.
+
 ## 1.23.0 (18 Nov 2026)
 - **Help guide:** a **Help** button at the top opens a guide to every part of Band Watch, with pictures and simple
   numbered steps: getting started, connecting your radio, the Radio panel, Listen, your RTL-SDR (with the Zadig

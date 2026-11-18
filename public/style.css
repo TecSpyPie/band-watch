@@ -581,3 +581,63 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
   -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 var(--lip)) drop-shadow(0 6px 10px color-mix(in srgb,var(--cool) 30%,transparent))}
 :root:not([data-theme="contrast"]):not([data-theme="night"]) .hero .big{text-shadow:0 2px 0 var(--edge-hi),0 3px 6px var(--shade)}
 a.lbtn.helpbtn{text-decoration:none;display:inline-block}
+
+/* 1.24.0: ClearRX, the radio audio processor's controls */
+.clearrx{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.clearrx legend{font-weight:600;padding:0 6px}
+.fxpresets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.fxpresets button[aria-pressed="true"]{color:var(--bg);background:var(--cool);border-color:var(--cool)}
+.fxrow{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin:4px 0;font-size:.9rem}
+.fxsub{color:var(--muted)}
+.fxmeter{position:relative;height:12px;margin:10px 0 22px;border-radius:999px;background:var(--grid,#1d3a4c);box-shadow:inset 0 1px 3px var(--shade,rgba(0,0,0,.3))}
+.fxmeter i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:999px;background:linear-gradient(90deg,#2fc6dd,#9be15d 70%,#ffd166);transition:width .15s}
+.fxmeter i.hot{background:linear-gradient(90deg,#2fc6dd,#ffd166 60%,#ff5a4e)}
+.fxmeter b{position:absolute;right:0;top:15px;font:600 .75rem/16px system-ui,sans-serif;color:var(--muted);white-space:nowrap}
+.fxmeter b.clip{color:#ff5a4e}
+:root .fxpresets button[aria-pressed="true"],:root:not([data-theme="contrast"]):not([data-theme="night"]) .fxpresets button[aria-pressed="true"]{
+  color:var(--card-top,#fff);background:var(--cool);background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0) 55%);border-color:var(--cool);font-weight:600}
+
+/* 1.24.0: jazzed-up 3D (Light, Dark and "Match my device"; High contrast and Night stay plain) */
+/* Cards rise a little under the pointer */
+@media (hover:hover){
+  :root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .panel,:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .cols > section{transition:transform .18s ease,box-shadow .18s ease}
+  :root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .panel:hover,:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .cols > section:hover{
+    transform:translateY(-2px);box-shadow:inset 0 1px 0 var(--edge-hi),0 1px 0 var(--edge-lo),0 4px 0 var(--lip),0 16px 30px var(--shade)}
+  :root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > #secPanel:hover{transform:none;box-shadow:none}
+}
+/* Title strips: a raised bar across the top of each card, with a groove under it */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .panel > .phead,:root:not([data-theme="contrast"]):not([data-theme="night"]) body.popwin > .panel > .phead{
+  margin:-14px -16px 12px;padding:10px 16px 9px;border-radius:14px 14px 0 0;
+  background:linear-gradient(180deg,var(--gloss),transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--cool) 9%,var(--card-top)),var(--card-bot));
+  border-bottom:1px solid var(--edge-lo);box-shadow:0 1px 0 var(--edge-hi),inset 0 1px 0 var(--edge-hi)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .panel > .phead h2{position:relative;padding-left:14px}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .panel > .phead h2::before{content:"";position:absolute;left:0;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,var(--cool) 55%,color-mix(in srgb,var(--cool) 60%,#000));box-shadow:0 0 6px color-mix(in srgb,var(--cool) 70%,transparent)}
+/* The Radio panel keeps its own metal face: no strip */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > #secPanel > .phead,:root:not([data-theme="contrast"]):not([data-theme="night"]) body.popwin > #secPanel > .phead{margin:0 0 8px;padding:0;background:none;border:0;box-shadow:none}
+
+/* ClearRX as a rack unit: the radio's metal face, glowing LED switches */
+:root:not([data-theme="contrast"]) .clearrx{position:relative;color:#dff6ff;border:1px solid #57636d;border-top-color:#7d8a94;border-bottom-color:#0a0e11;border-radius:12px;padding:12px 14px 10px;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px),linear-gradient(180deg,#3a4651 0%,#232c34 22%,#161d23 75%,#0f1418 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.45),0 1px 0 #2a333b,0 3px 0 #171d23,0 5px 0 #0e1317,0 12px 22px rgba(0,0,0,.45)}
+:root:not([data-theme="contrast"]) .clearrx legend{color:#9ff3ff;font-weight:700;letter-spacing:.04em;text-shadow:0 0 8px rgba(69,224,245,.5);background:#141b21;border:1px solid #3a4852;border-radius:6px;padding:1px 8px}
+:root:not([data-theme="contrast"]) .clearrx .fxsub,:root:not([data-theme="contrast"]) .clearrx #fxNote{color:#8fa9b4}
+:root:not([data-theme="contrast"]) .clearrx select{background:#1c262e;color:#dff6ff;border:1px solid #0d1216;border-bottom-color:#56646e;border-radius:6px;box-shadow:inset 0 2px 4px rgba(0,0,0,.6)}
+:root:not([data-theme="contrast"]) .clearrx .fxpresets button{color:#dff6ff;border:1px solid #0d1216;border-top-color:#6b7a85;
+  background:linear-gradient(180deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.08) 48%,rgba(255,255,255,0) 52%),linear-gradient(180deg,#56656f,#2a343c);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 2px 0 #11171b,0 3px 6px rgba(0,0,0,.5)}
+:root:not([data-theme="contrast"]) .clearrx .fxpresets button[aria-pressed="true"]{color:#06222b;border-color:#0b3a44;border-top-color:#b8f6ff;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.15) 48%,rgba(255,255,255,0) 52%),linear-gradient(180deg,#a6f4ff,#22b4cb);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 0 #0b3a44,0 0 12px rgba(69,224,245,.55);transform:translateY(1px)}
+/* LED switches: a little rocker that slides across and lights up */
+:root:not([data-theme="contrast"]) .clearrx input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:34px;height:18px;margin:0 6px 0 0;flex:none;cursor:pointer;vertical-align:-4px;
+  border-radius:999px;background:#0c1216;border:1px solid #05080a;box-shadow:inset 0 2px 4px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.12)}
+:root:not([data-theme="contrast"]) .clearrx input[type=checkbox]::after{content:"";position:absolute;top:1px;left:1px;width:14px;height:14px;border-radius:50%;transition:left .15s,background .15s,box-shadow .15s;
+  background:radial-gradient(circle at 35% 30%,#9aa7b0,#4a565f 60%,#2a333a);box-shadow:0 1px 2px rgba(0,0,0,.7)}
+:root:not([data-theme="contrast"]) .clearrx input[type=checkbox]:checked{background:linear-gradient(180deg,#0c3a44,#0f5664);box-shadow:inset 0 2px 4px rgba(0,0,0,.6),0 0 10px rgba(69,224,245,.35)}
+:root:not([data-theme="contrast"]) .clearrx input[type=checkbox]:checked::after{left:17px;background:radial-gradient(circle at 40% 35%,#ffffff,#8ff0ff 40%,#2fc6dd 75%);box-shadow:0 0 8px rgba(69,224,245,.9),0 1px 2px rgba(0,0,0,.5)}
+:root:not([data-theme="contrast"]) .clearrx input[type=checkbox]:focus-visible{outline:2px solid #ffd166;outline-offset:2px}
+:root:not([data-theme="contrast"]) .clearrx label{display:inline-flex;align-items:center}
+:root:not([data-theme="contrast"]) .fxmeter{background:#0a1014;box-shadow:inset 0 2px 5px rgba(0,0,0,.85),0 1px 0 rgba(255,255,255,.1)}
+:root:not([data-theme="contrast"]) .fxmeter i{box-shadow:0 0 8px rgba(155,225,93,.5)}
+:root:not([data-theme="contrast"]) .fxmeter b{color:#9fb3bb}
