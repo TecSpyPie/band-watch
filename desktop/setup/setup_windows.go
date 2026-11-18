@@ -117,7 +117,11 @@ func localAppData() string {
 }
 
 // runStopScript stops a running Band Watch: the installed BandWatch.exe --stop, and any Node.js copy.
+// ClearRX (which comes with it) is closed too, so its exe can be replaced.
 func runStopScript(script, dest string) {
+	if exe := filepath.Join(dest, "ClearRX.exe"); fileExists(exe) {
+		_ = hidden(exec.Command(exe, "--stop")).Run()
+	}
 	if exe := filepath.Join(dest, "BandWatch.exe"); fileExists(exe) {
 		_ = hidden(exec.Command(exe, "--stop")).Run()
 	}

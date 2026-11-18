@@ -46,6 +46,10 @@ jobs:
           sh desktop/build.sh
           sh desktop/build-setup.sh
           (cd desktop/setup && go test ./...)
+      - name: ClearRX tests
+        run: |
+          sh clearrx/build.sh test
+          (cd clearrx && go vet ./... && go test ./...)
 
   plan:
     needs: test
@@ -94,6 +98,8 @@ jobs:
           done
       - name: Build BandWatch.exe
         run: sh desktop/build.sh
+      - name: Build ClearRX.exe
+        run: sh clearrx/build.sh
 
       - name: Upload BandWatch.exe for signing
         id: exe

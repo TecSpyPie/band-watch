@@ -1,5 +1,18 @@
 # What's new
 
+## 1.24.0 (18 Nov 2026)
+- **New: ClearRX by M3VRV**, a radio audio processor that comes with Band Watch for Windows. It's a program of its
+  own (its own desktop icon and window), made for ham radio: it takes the sound from your radio's USB sound card,
+  a line-in, a mixer or any sound card, and plays it to the speakers you choose, cleaned up. Presets for SSB voice,
+  Weak DX, CW and AM broadcast, or your own: a voice filter, a steep CW peak filter, an auto notch for whistles,
+  noise reduction (light, medium, strong) and a steady-volume compressor. Input and output meters, a warning when
+  the sound coming in is too loud, a before-and-after spectrum, and a switch to hear it without ClearRX to compare.
+  Its settings are kept on your PC.
+- **Linked to Band Watch, not built in:** while ClearRX is open, Listen shows **Send my RTL-SDR sound through
+  ClearRX**. Tick it and the RTL-SDR's sound is cleaned up with ClearRX's settings; ClearRX shows **Band Watch is
+  using these settings**. Close ClearRX and Band Watch carries on as before.
+- The installer adds ClearRX's shortcuts, and closes ClearRX before an update. The Help guide has a ClearRX section.
+
 ## 1.23.0 (18 Nov 2026)
 - **Help guide:** a **Help** button at the top opens a guide to every part of Band Watch, with pictures and simple
   numbered steps: getting started, connecting your radio, the Radio panel, Listen, your RTL-SDR (with the Zadig

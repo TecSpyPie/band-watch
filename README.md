@@ -16,6 +16,9 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 
 - Best band now, a bands table and a map of who hears whom, from live PSK Reporter spots
 - Band scope: live spectrum and waterfall from your RTL-SDR, or drawn from spots
+- **ClearRX by M3VRV** (Windows): a radio audio processor of its own that comes with Band Watch: voice and CW filters,
+  auto notch, noise reduction and steady volume for the sound from your radio, a mixer or any sound card. While it's
+  open, Band Watch can send its RTL-SDR sound through it
 - Listen: public WebSDR/KiwiSDR receivers, or your own RTL-SDR (Blog V4, V3 or others) through rtl_tcp,
   which comes with the Windows app
 - **Radio control:** tunes your Yaesu (FT-991A, FT-710, FTDX10, FTDX101), Icom (IC-7300, IC-705, IC-7610,

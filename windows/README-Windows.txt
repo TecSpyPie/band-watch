@@ -92,6 +92,14 @@ Your radio (CAT control over its USB cable)
     Windows may need the Malahit USB CAT driver from malahiteam.com.
   If it doesn't connect, Settings > Radio control says what went wrong.
 
+ClearRX by M3VRV (radio audio processor)
+  A program of its own that comes with Band Watch: open "ClearRX by M3VRV" from
+  the desktop. Pick "Sound from" (your radio's USB Audio CODEC, a line-in or a
+  mixer) and "Play to" (your speakers), press Start and choose a preset:
+  SSB voice, Weak DX, CW or AM broadcast. While ClearRX is open, Band Watch's
+  Listen can send the RTL-SDR's sound through it ("Send my RTL-SDR sound
+  through ClearRX"). Its settings are kept in clearrx-settings.json.
+
 Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
   Band Watch can listen through your own dongle instead of a web receiver.
   1. Set the dongle's USB driver once with Zadig, as for any RTL-SDR program.

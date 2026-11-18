@@ -1,0 +1,27 @@
+1 ICON "clearrx.ico"
+1 VERSIONINFO
+FILEVERSION @MA@,@MI@,@PA@,0
+PRODUCTVERSION @MA@,@MI@,@PA@,0
+FILEOS 0x40004
+FILETYPE 0x1
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904B0"
+    BEGIN
+      VALUE "CompanyName", "M3vrv"
+      VALUE "FileDescription", "ClearRX by M3VRV - radio audio processor"
+      VALUE "FileVersion", "@VERSION@"
+      VALUE "InternalName", "ClearRX"
+      VALUE "OriginalFilename", "ClearRX.exe"
+      VALUE "ProductName", "ClearRX by M3VRV"
+      VALUE "ProductVersion", "@VERSION@"
+      VALUE "LegalCopyright", "M3vrv"
+      VALUE "Comments", "Built @BUILD@"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0809, 1200
+  END
+END

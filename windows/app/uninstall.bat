@@ -5,10 +5,12 @@ set "DEST=%~dp0"
 if "%DEST:~-1%"=="\" set "DEST=%DEST:~0,-1%"
 
 echo.
-choice /C YN /M "  Remove Band Watch by M3vrv from this PC"
+choice /C YN /M "  Remove Band Watch by M3vrv (and ClearRX) from this PC"
 if errorlevel 2 exit /b 0
 
 call "%~dp0stop-bandwatch.bat" quiet
+if exist "%~dp0ClearRX.exe" "%~dp0ClearRX.exe" --stop >nul 2>nul
+taskkill /im ClearRX.exe /f >nul 2>nul
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-shortcuts.ps1" -InstallDir "%DEST%" -Remove
 rem Remove the entry in Settings > Apps (made by BandWatch-Setup.exe).
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\BandWatchM3vrv" /f >nul 2>nul

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClearRX by M3VRV</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/clearrx.css?v=1.0.0">
+</head>
+<body>
+<main class="rack" aria-labelledby="title">
+  <span class="screw tl" aria-hidden="true"></span><span class="screw tr" aria-hidden="true"></span>
+  <span class="screw bl" aria-hidden="true"></span><span class="screw br" aria-hidden="true"></span>
+
+  <header class="top">
+    <h1 id="title"><span class="logo">ClearRX</span> <span class="by">by M3VRV</span></h1>
+    <span class="tag">radio audio processor</span>
+    <span class="link" id="bwLink" hidden>Band Watch is using these settings</span>
+    <button type="button" class="key power" id="power" aria-pressed="false">Start</button>
+  </header>
+
+  <section class="io" aria-label="Sound in and out">
+    <label>Sound from <select id="inDev"><option value="">Default input</option></select></label>
+    <label>Play to <select id="outDev"><option value="">Default speakers</option></select></label>
+    <label class="vol">Volume <input type="range" id="vol" min="0" max="200" value="100" aria-describedby="volVal"> <span id="volVal">100%</span></label>
+  </section>
+
+  <section class="screens" aria-label="Spectrum and level">
+    <div class="screen">
+      <canvas id="spec" aria-label="The sound's spectrum: grey before ClearRX, blue after"></canvas>
+      <span class="key-before">before</span><span class="key-after">after</span>
+    </div>
+    <div class="meters">
+      <div class="meter"><span>In</span><div class="bar"><i id="inBar"></i></div><b id="inDb"></b></div>
+      <div class="meter"><span>Out</span><div class="bar"><i id="outBar"></i></div><b id="outDb"></b></div>
+      <p class="warn" id="clip" role="status"></p>
+    </div>
+  </section>
+
+  <section class="controls" aria-label="Effects">
+    <div class="presets" id="presets" role="group" aria-label="Preset"></div>
+    <div class="fx">
+      <label class="sw"><input type="checkbox" id="fxVoice"> Voice filter</label>
+      <label class="sub">from <select id="fxLo"></select></label>
+      <label class="sub">to <select id="fxHi"></select></label>
+    </div>
+    <div class="fx">
+      <label class="sw"><input type="checkbox" id="fxCw"> CW peak</label>
+      <label class="sub">note <select id="fxTone"></select></label>
+      <label class="sub">width <select id="fxWidth"></select></label>
+    </div>
+    <div class="fx"><label class="sw"><input type="checkbox" id="fxNotch"> Auto notch (removes whistles)</label></div>
+    <div class="fx">
+      <label class="sw"><input type="checkbox" id="fxNr"> Noise reduction</label>
+      <label class="sub">strength <select id="fxNrLevel"><option value="1">Light</option><option value="2">Medium</option><option value="3">Strong</option></select></label>
+    </div>
+    <div class="fx"><label class="sw"><input type="checkbox" id="fxComp"> Steady volume (compressor)</label></div>
+    <div class="fx"><label class="sw"><input type="checkbox" id="bypass"> Hear it without ClearRX (to compare)</label></div>
+  </section>
+
+  <p class="status" id="status" role="status">Pick where the sound comes from (your radio's USB sound card, or the PC's line-in), then press Start.</p>
+  <footer class="small">Settings are kept on this PC. While ClearRX is open, Band Watch can send its RTL-SDR sound through it
+    (Listen &gt; "Send my RTL-SDR sound through ClearRX"). <a href="#" id="quit">Close ClearRX</a></footer>
+</main>
+<script src="/js/rxfx.js?v=1.0.0"></script>
+<script src="/js/app.js?v=1.0.0"></script>
+</body>
+</html>

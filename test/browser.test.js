@@ -1442,6 +1442,41 @@ test("radio panel popped out: Listen goes with it, and the RTL-SDR's sound start
   assert.deepEqual(errors.filter((e) => !/request failed: .*\/api\/sdr\/stream/.test(e)), []); // the stream closed on purpose
 });
 
+test("ClearRX link: shows when ClearRX is open, and the ticked RTL-SDR sound goes through ClearRX's settings", { skip }, async (t) => {
+  const fake = await startStreamingRtlTcp();
+  t.after(() => { for (const s of fake.state.sockets) s.destroy(); fake.server.close(); });
+  const { page, errors } = await openPage(t);
+  let open = false;
+  const settings = { preset: "cw", voice: false, lo: 300, hi: 2700, cw: true, tone: 700, width: 200, notch: false, nr: true, nrLevel: 1, comp: true, on: true };
+  await page.route(/:8074\/api\/settings/, (route) => (open
+    ? route.fulfill({ status: 200, contentType: "application/json", headers: { "Access-Control-Allow-Origin": "*" }, body: JSON.stringify(settings) })
+    : route.abort("connectionrefused")));
+  await page.selectOption("#lsRx", "rtl");
+  await page.fill("#rtlAddr", `127.0.0.1:${fake.port}`);
+  await page.press("#rtlAddr", "Enter");
+  await page.evaluate(() => { app.desktop = true; startClearRxLink(); });
+  await page.waitForFunction(() => crx.timer);
+  assert.ok(await page.isHidden("#crxRow"), "no tick box while ClearRX is closed");
+  open = true;
+  await page.evaluate(() => crxPoll());
+  await page.waitForSelector("#crxRow:not([hidden])");
+  await page.check("#crxUse");
+  assert.match(await page.textContent("#crxNote"), /Using: CW/);
+  assert.equal(await page.evaluate(() => localStorage.getItem("bw-clearrx")), "1");
+  await page.click("#lsGo");
+  await page.waitForFunction(() => /Connected: R828D/.test($("rtlStatus").textContent));
+  // The sound went through ClearRX's chain (its meter moved), with ClearRX's CW settings
+  await page.waitForFunction(() => crx.chain && crx.chain.meter.peak > -120, null, { timeout: 8000 });
+  assert.equal(await page.evaluate(() => crx.chain.s.cw && crx.chain.s.nr && !crx.chain.s.voice), true);
+  // ClearRX closed: the tick box goes, the sound plays as it is
+  open = false;
+  await page.evaluate(() => crxPoll());
+  await page.waitForSelector("#crxRow[hidden]", { state: "attached" });
+  assert.equal(await page.evaluate(() => crx.chain), null);
+  await page.click("#lsGo");
+  assert.deepEqual(errors.filter((e) => !/request failed: .*\/api\/sdr\/stream|ERR_CONNECTION_REFUSED|8074/.test(e)), []);
+});
+
 test("RTL-SDR: clear messages when rtl_tcp isn't running, or the address is wrong", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.selectOption("#lsRx", "rtl");

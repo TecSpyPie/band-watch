@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.23.0">
+<link rel="stylesheet" href="/style.css?v=1.24.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -46,6 +46,7 @@
       <li><a href="#panel">The Radio panel</a></li>
       <li><a href="#listen">Listen</a></li>
       <li><a href="#rtlsdr">Your RTL-SDR</a></li>
+      <li><a href="#clearrx">ClearRX: cleaner radio sound</a></li>
       <li><a href="#bands">Bands, map and band scope</a></li>
       <li><a href="#shortwave">Shortwave stations on air</a></li>
       <li><a href="#decoders">Decoders: FT8, FT4, WSPR, CW</a></li>
@@ -161,6 +162,32 @@
     </ol>
     <figure><img src="/help/listen-rtl-sdr.webp" alt="The Listen panel playing through an RTL-SDR, with its spectrum and waterfall" loading="lazy">
       <figcaption>Listening through an RTL-SDR. Settings → RTL-SDR receiver has gain, filters, sample rate and more.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="clearrx" aria-labelledby="hCrx">
+    <h2 id="hCrx">ClearRX: cleaner radio sound</h2>
+    <p><b>ClearRX by M3VRV</b> is a radio audio processor that comes with Band Watch for Windows. It's a program of its own,
+      with its own icon on your desktop. It takes the sound from your radio and plays it back cleaned up: less hiss, no
+      whistles, and a steady volume.</p>
+    <ol>
+      <li>Open <b>ClearRX by M3VRV</b> from the desktop (or the Start menu, in the Band Watch folder).</li>
+      <li>In <b>Sound from</b>, pick where your radio's sound comes in: for the IC-7300 or FT-991A it's the radio's
+        <b>USB Audio CODEC</b>; otherwise the PC's line-in, or your mixer or sound card.</li>
+      <li>In <b>Play to</b>, pick your speakers or headphones (not the radio's USB sound, or you'd send it back to the radio).</li>
+      <li>Press <b class="btn">Start</b>. The first time, allow ClearRX to use the sound input.</li>
+      <li>Pick a preset: <b>SSB voice</b> for talking stations, <b>Weak DX</b> for faint ones, <b>CW</b> for Morse,
+        <b>AM broadcast</b> for shortwave stations, or <b>Off</b>. Change any switch to make your own (it shows <b>Custom</b>).</li>
+    </ol>
+    <p>The switches: <b>Voice filter</b> keeps only the speech frequencies; <b>CW peak</b> keeps just the Morse note
+      (set the note to your radio's CW pitch); <b>Auto notch</b> removes steady whistles and carriers; <b>Noise reduction</b>
+      takes away hiss (Strong can sound a little "underwater"); <b>Steady volume</b> evens out loud and quiet stations.
+      Tick <b>Hear it without ClearRX</b> to compare. The spectrum shows the sound before (grey) and after (blue).</p>
+    <p><b>With Band Watch:</b> while ClearRX is open, Listen shows <b>Send my RTL-SDR sound through ClearRX</b>. Tick it
+      and your RTL-SDR's sound is cleaned up with ClearRX's settings; change them in the ClearRX window. Band Watch
+      works just the same when ClearRX is closed.</p>
+    <p>If the sound coming in is too loud, ClearRX says so: turn down the radio's USB audio level (on the IC-7300,
+      MENU &gt; SET &gt; Connectors &gt; ACC/USB AF Output Level) or the Volume in ClearRX. If Windows says it blocked
+      ClearRX.exe, that's Smart App Control: ClearRX isn't signed yet. Band Watch works without it.</p>
   </section>
 
   <section class="panel" id="bands" aria-labelledby="hBands">

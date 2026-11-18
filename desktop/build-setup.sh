@@ -11,6 +11,9 @@ BUILD_DATE=$(node -p 'require("../build-info.json").date')
 P=build/payload
 rm -rf "$P" && mkdir -p "$P/server"
 cp build/BandWatch.exe ../windows/README-Windows.txt ../LICENSE "$P/"
+# ClearRX by M3VRV, the radio audio processor (its own program, linked to Band Watch)
+[ -f ../clearrx/build/ClearRX.exe ] || sh ../clearrx/build.sh
+cp ../clearrx/build/ClearRX.exe ../clearrx/winres/clearrx.ico "$P/"
 cp ../windows/app/* "$P/"
 cp ../server.js ../qrz.js ../clock.js ../package.json ../build-info.json "$P/server/"
 printf 'Band Watch by M3vrv\r\nVersion %s\r\nBuilt %s\r\n' "$VERSION" "$BUILD_DATE" > "$P/BUILD-INFO.txt"

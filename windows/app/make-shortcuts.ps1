@@ -13,21 +13,25 @@ $startupDir = [Environment]::GetFolderPath("Startup")
 $start = Join-Path $InstallDir "start-bandwatch.bat"
 $stop = Join-Path $InstallDir "stop-bandwatch.bat"
 $icon = Join-Path $InstallDir "bandwatch.ico"
+# ClearRX by M3VRV, the radio audio processor: a program of its own that comes with Band Watch
+$crxName = "ClearRX by M3VRV"
+$crxExe = Join-Path $InstallDir "ClearRX.exe"
+$crxIcon = Join-Path $InstallDir "clearrx.ico"
 
 if ($Remove) {
-  Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $desktop "$name.lnk"), (Join-Path $startupDir "$name.lnk")
+  Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $desktop "$name.lnk"), (Join-Path $startupDir "$name.lnk"), (Join-Path $desktop "$crxName.lnk")
   Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $menu
   exit 0
 }
 
 $shell = New-Object -ComObject WScript.Shell
-function New-Shortcut([string]$path, [string]$target, [string]$arguments, [string]$description) {
+function New-Shortcut([string]$path, [string]$target, [string]$arguments, [string]$description, [string]$iconFile = $icon, [int]$style = 7) {
   $s = $shell.CreateShortcut($path)
   $s.TargetPath = $target
   $s.Arguments = $arguments
   $s.WorkingDirectory = $InstallDir
-  $s.IconLocation = "$icon,0"
-  $s.WindowStyle = 7   # minimised, so the launcher's window stays out of the way
+  $s.IconLocation = "$iconFile,0"
+  $s.WindowStyle = $style   # 7 = minimised, so the launcher's window stays out of the way
   $s.Description = $description
   $s.Save()
 }
@@ -36,6 +40,10 @@ New-Item -ItemType Directory -Force -Path $menu | Out-Null
 New-Shortcut (Join-Path $desktop "$name.lnk") $start "" "Open Band Watch by M3vrv"
 New-Shortcut (Join-Path $menu "$name.lnk") $start "" "Open Band Watch by M3vrv"
 New-Shortcut (Join-Path $menu "Stop Band Watch.lnk") $stop "" "Stop Band Watch"
+if (Test-Path $crxExe) {
+  New-Shortcut (Join-Path $desktop "$crxName.lnk") $crxExe "" "Open ClearRX by M3VRV, the radio audio processor" $crxIcon 1
+  New-Shortcut (Join-Path $menu "$crxName.lnk") $crxExe "" "Open ClearRX by M3VRV, the radio audio processor" $crxIcon 1
+}
 New-Shortcut (Join-Path $menu "Uninstall Band Watch.lnk") (Join-Path $InstallDir "uninstall.bat") "" "Remove Band Watch by M3vrv"
 
 $startupLink = Join-Path $startupDir "$name.lnk"

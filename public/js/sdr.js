@@ -369,6 +369,7 @@ async function readSdrStream(reader) {
     sdr.odd = (sdr.odd ? 1 : 0) + chunk.length % 2 === 1;
     const audio = sdr.demod.process(chunk);
     if (audio.length && typeof dc !== "undefined" && dc.running && dc.src === "rtl") decoderFeed(audio.slice(), SdrDsp.AUDIO_RATE);
+    if (audio.length && typeof clearrxProcess === "function") clearrxProcess(audio); // ClearRX, if it's open and ticked
     if (audio.length && sdr.node) sdr.node.port.postMessage(audio, [audio.buffer]);
     sdrKeepIq(chunk);
     const now = performance.now();

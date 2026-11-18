@@ -13,6 +13,7 @@ mkdir -p "$W/app/server"
 cp desktop/build/BandWatch.exe windows/README-Windows.txt windows/install.bat "windows/Install Band Watch (automatic).bat" "$W/"
 cp desktop/build/payload/BUILD-INFO.txt LICENSE "$W/"
 cp windows/app/* "$W/app/"
+cp clearrx/build/ClearRX.exe clearrx/winres/clearrx.ico "$W/app/"
 cp server.js qrz.js clock.js package.json build-info.json "$W/app/server/"
 cp -R public "$W/app/server/public"
 # rtl_tcp goes next to BandWatch.exe (install.bat copies app\ into C:\BandWatch)
