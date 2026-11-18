@@ -1,13 +1,13 @@
 {
   "name": "band-watch",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "private": true,
   "license": "MIT",
   "description": "Band Watch by M3vrv: live HF band conditions from PSK Reporter spots and NOAA solar data",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/server.test.js test/api.test.js test/sdr-dsp.test.js test/ft8.test.js test/wspr.test.js test/cw.test.js",
+    "test": "node --test test/server.test.js test/api.test.js test/sdr-dsp.test.js test/ft8.test.js test/wspr.test.js test/cw.test.js test/eibi.test.js",
     "test:browser": "node --test test/browser.test.js",
     "test:go": "cd desktop && go test ./... && cd .. && BW_SERVER=go node --test test/api.test.js test/browser.test.js",
     "build:exe": "sh desktop/build.sh"

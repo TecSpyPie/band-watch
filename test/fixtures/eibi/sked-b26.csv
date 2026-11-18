@@ -1,0 +1,25 @@
+kHz:75;Time(UTC):93;Days:59;ITU:49;Station:201;Lng:49;Target:62;Remarks:135;P:35;Start:60;Stop:60;
+5845;1430-1500;Mo-Fr;G;BBC;K;FE;/UZB;0;;
+5845;1530-1600;Mo-Fr;G;BBC;K;FE;/UZB;0;;
+5845;1630-1700;Mo-Fr;G;BBC;K;FE;/TJK;0;;
+5845;1730-1800;Mo-Fr;G;BBC;K;FE;/TJK;0;;
+5975;1400-1500;;G;BBC;DR;AFG;/OMA-a;0;;
+5975;1500-1600;;G;BBC;PS;AFG;/OMA-a;0;;
+639;1400-1430;Mo-Fr;G;BBC;A;ME;/CYP;1;;
+639;1900-1930;Mo-Fr;G;BBC;A;ME;/CYP;1;;[0925]
+720;1400-1430;Mo-Fr;G;BBC;A;ME;/CYP;1;;
+1134;0600-0850;We-Mo;CHN;China National Radio 1;M;CHN;q;1;;
+1377;0600-0850;We-Mo;CHN;China National Radio 1;M;WNW;xy;1;;
+639;1400-1430;SaSu;G;BBC;E;ME;/CYP;1;;
+639;1900-1930;SaSu;G;BBC;E;ME;/CYP;1;;
+1602;0000-1800;1.Sa;FIN;Scandinavian Weekend R.;FI;FIN;v;5;;
+873;2100-2300;irr;HNG;Nemzetiségi Rádió;D;HNG;lh;2;;[1018]
+873;2100-2300;irr;HNG;Nemzetiségi Rádió;D;HNG;p;2;;
+9690;2300-2330;157;E;Radio Exterior España;S;NAm;n;4;;
+1386;1430-1500;23Dec;D;SM Radio Dessau;D;EEu;/LTU-v;6;2810;2312
+1386;1430-1500;24Dec;D;SM Radio Dessau;D;EEu;/LTU-v;6;2810;2412
+3325;1000-1100;;INS;Voice of Indonesia;E;INS;p;8;;[0925]
+531;2330-0450;;ALG;R.Algiers Int.;A,F;NAf;fk;1;;
+576;2330-0450;;ALG;R.Algiers Int.;A,F;NAf;b;1;;
+5955;1500-1530;;ROU;Radio Romania Int.;I;SEu;t;0;;
+5955;1530-1600;;ROU;Radio Romania Int.;ARO;SEE;t;0;;

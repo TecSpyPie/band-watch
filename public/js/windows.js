@@ -3,7 +3,7 @@
    decoders. Closing its window, or "Back", puts it back in its place. */
 
 const POP_PARTS = [
-  ["secBands", "Bands"], ["secMap", "Map"], ["secScope", "Band scope"], ["secListen", "Listen"], ["secAts", "ATS Mini"],
+  ["secBands", "Bands"], ["secMap", "Map"], ["secScope", "Band scope"], ["secListen", "Listen"], ["secAts", "ATS Mini"], ["secSked", "Shortwave stations"],
   ["secDecode", "Decoder"], ["secXota", "POTA"], ["secWanted", "Wanted"], ["secLog", "Logbook"], ["secActivity", "Band activity"],
 ];
 const popWins = new Map(); // part id -> { win, holder }

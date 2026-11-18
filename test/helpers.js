@@ -9,7 +9,7 @@ const { spawn, execFileSync } = require("child_process");
 const ROOT = path.join(__dirname, "..");
 
 /**
- * A fake upstream (kinds: noaa, psk, qrz, qrzlog, pota, sota, update). `handle(kind, url, body, req)` returns:
+ * A fake upstream (kinds: noaa, psk, qrz, qrzlog, pota, sota, update, eibi). `handle(kind, url, body, req)` returns:
  *   a string (sent as text), an object/array (sent as JSON), { status } for an HTTP error,
  *   or an Error to drop the connection.
  */
@@ -18,7 +18,7 @@ async function startUpstream(handle) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://upstream");
     calls.push(url.toString());
-    const kind = ["psk", "qrzlog", "qrz", "pota", "sota", "update"].find((k) => url.pathname.startsWith(`/${k}`)) || "noaa";
+    const kind = ["psk", "qrzlog", "qrz", "pota", "sota", "update", "eibi"].find((k) => url.pathname.startsWith(`/${k}`)) || "noaa";
     const chunks = [];
     for await (const c of req) chunks.push(c);
     const body = Buffer.concat(chunks).toString("utf8");
@@ -27,6 +27,7 @@ async function startUpstream(handle) {
     if (out instanceof Error) { req.socket.destroy(); return; }
     if (out && typeof out === "object" && !Array.isArray(out) && out.status) { res.writeHead(out.status); res.end(); return; }
     if (out === undefined) { res.writeHead(404); res.end(); return; }
+    if (Buffer.isBuffer(out)) { res.writeHead(200, { "Content-Type": "text/plain" }); res.end(out); return; }
     const text = typeof out === "string" ? out : JSON.stringify(out);
     res.writeHead(200, { "Content-Type": typeof out === "string" ? "text/xml" : "application/json" });
     res.end(text);
@@ -66,6 +67,7 @@ async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node")
     BW_QRZLOG_URL: `${upstreamBase}/qrzlog/api`,
     BW_POTA_URL: `${upstreamBase}/pota/spot/activator`,
     BW_UPDATE_URL: `${upstreamBase}/update/releases/latest`,
+    BW_EIBI_URL: `${upstreamBase}/eibi/dx/`,
   };
   const child = kind === "go"
     ? spawn(buildGo(), ["--serve"], { env, stdio: ["ignore", "inherit", "inherit"] })

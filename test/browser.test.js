@@ -45,6 +45,7 @@ const SUN = {
 
 /** The fake PSK Reporter, NOAA and QRZ the server talks to during these tests. */
 const XOTA = require("./fixtures/xota.js");
+const { eibiFile } = require("./fixtures/eibi.js");
 
 function upstreamHandler(kind, url, body) {
   if (kind === "qrzlog") {
@@ -56,6 +57,7 @@ function upstreamHandler(kind, url, body) {
     return `RESULT=OK&LOGID=${1000 + feed.qrzLog.length}&COUNT=1`;
   }
   if (kind === "update") return { tag_name: feed.latestTag || "v99.1.0", html_url: "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0", assets: [] };
+  if (kind === "eibi") return eibiFile(url);
   if (kind === "pota") return feed.potaDown ? { status: 503 } : (feed.pota ? feed.pota() : XOTA.potaRows());
   if (kind === "qrz") {
     const q = url.searchParams;
@@ -1905,6 +1907,10 @@ test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS
     $("toast").classList.remove("on");
   });
   await page.locator("#secXota").screenshot({ path: require("path").join(dir, "pota.png") });
+  await page.waitForFunction(() => sked.loaded);
+  await page.clock.setFixedTime(new Date("2026-11-18T14:52:00Z"));
+  await page.evaluate(() => { sked.soon = true; renderSked(); });
+  await page.locator("#secSked").screenshot({ path: require("path").join(dir, "shortwave.png") });
   await page.locator("#secWanted").screenshot({ path: require("path").join(dir, "wanted.png") });
   await page.locator("#secLog").screenshot({ path: require("path").join(dir, "logbook.png") });
 
@@ -2203,6 +2209,46 @@ test("radio control: reconnects by itself, and explains when the browser can't d
   await p2.evaluate(() => Object.defineProperty(navigator, "serial", { value: undefined, configurable: true }));
   await p2.evaluate(() => rigConnect(true));
   assert.match(await p2.textContent("#optRigMsg"), /needs Chrome or Edge/);
+});
+
+test("shortwave stations on air: from the EiBi schedule, filtered, click to tune in AM", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.waitForFunction(() => sked.loaded);
+  // A Wednesday at 14:45 UTC
+  await page.clock.setFixedTime(new Date("2026-11-18T14:45:00Z"));
+  await page.evaluate(() => renderSked());
+  const rows = () => page.$$eval("#skList .skrow", (els) => els.map((e) => e.innerText.replace(/\s+/g, " ").trim()));
+  const r = await rows();
+  assert.deepEqual(r.map((x) => x.split(" kHz")[0]), ["5,845", "5,975"], "BBC in Korean and Dari; not the 639 kHz one that ended at 14:30");
+  assert.match(r[0], /^5,845 kHz BBC Korean 1430–1500 UTC · Mo-Fr United Kingdom · to FE$/);
+  assert.match(r[1], /^5,975 kHz BBC Dari 1400–1500 UTC United Kingdom · to AFG$/);
+  assert.match(await page.textContent("#skNote"), /^2 on the air now\. Click a frequency to tune there \(AM\)\. Schedule: EiBi, eibispace\.de\.$/);
+  assert.match(await page.textContent("#skSeason"), /^EiBi schedule, (winter|summer) season [AB]\d\d$/);
+  // Starting within the hour: Radio Romania at 15:00, BBC Korean again at 15:30 (not yet: 45 min away is within the hour)
+  await page.check("#skSoon");
+  const soon = await rows();
+  assert.ok(soon.some((x) => /^5,955 kHz Radio Romania Int\. in 15 min Italian/.test(x)), soon.join("\n"));
+  assert.ok(soon.some((x) => /^5,845 kHz BBC in 45 min Korean 1530–1600/.test(x)));
+  await page.uncheck("#skSoon");
+  // Language filter: only the languages on the air now, with counts
+  assert.deepEqual(await page.$$eval("#skLang option", (o) => o.map((x) => x.textContent)), ["All languages", "Dari (1)", "Korean (1)"]);
+  await page.selectOption("#skLang", "DR");
+  assert.deepEqual((await rows()).map((x) => x.split(" kHz")[0]), ["5,975"]);
+  await page.selectOption("#skLang", "all");
+  // Search
+  await page.fill("#skFind", "korean");
+  await page.waitForFunction(() => document.querySelectorAll("#skList .skrow").length === 1);
+  await page.fill("#skFind", "");
+  await page.waitForFunction(() => document.querySelectorAll("#skList .skrow").length === 2);
+  // Band filter: medium wave at 22:00 on a Wednesday has the irregular Hungarian station
+  await page.clock.setFixedTime(new Date("2026-11-18T22:00:00Z"));
+  await page.selectOption("#skBand", "mw");
+  assert.match((await rows())[0], /^873 kHz Nemzetiségi Rádió irregular German 2100–2300 UTC · irr Hungary/);
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-sked"))), { band: "mw", lang: "all", soon: false, util: false });
+  // Click to tune: AM on 873 kHz
+  await page.click("#skList .sktune");
+  assert.equal(await page.evaluate(() => `${listen.kHz} ${listen.mode}`), "873 am");
+  assert.deepEqual(errors, []);
 });
 
 test("parks on the air: POTA activators listed, filtered, on the map and scope, click to tune", { skip }, async (t) => {

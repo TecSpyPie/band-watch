@@ -3,6 +3,7 @@
 //   GET  /api/solar            -> { sfi, kp, at }          (NOAA SWPC, cached 15 min)
 //   GET  /api/spots?grid=IO93  -> { grid, spots[], at }    (PSK Reporter, cached 5 min per grid)
 //   GET  /api/xota             -> { spots[], at, failed[] } POTA activators (cached 2 min)
+//   GET  /api/eibi             -> { season, at, csv, readme } EiBi shortwave schedule, as published (cached 12 hours)
 //   GET  /api/update           -> { current, latest, newer, page, canInstall } (GitHub releases, cached 1 hour)
 //   GET  /api/sun              -> sunspot regions, sunspot number, X-rays, solar wind, NOAA scales (cached 30 min)
 //   GET  /api/qrz/status       -> { loggedIn, user, subscriber }
@@ -44,6 +45,11 @@ const PSK_QUERY = process.env.BW_PSK_URL || "https://retrieve.pskreporter.info/q
 const POTA_URL = process.env.BW_POTA_URL || "https://api.pota.app/spot/activator";
 // SOTA spots are not used: SOTA's API terms don't allow AI-written software without their approval.
 const XOTA_TTL = 2 * 60 * 1000;
+// EiBi shortwave schedules (eibispace.de): free to use in other software, says its README. Plain http:
+// the site's https certificate has expired.
+const EIBI_URL = (process.env.BW_EIBI_URL || "http://www.eibispace.de/dx/").replace(/\/?$/, "/");
+const EIBI_TTL = 12 * 60 * 60 * 1000;
+const Eibi = require("./public/js/eibi-data.js");
 const UPDATE_URL = process.env.BW_UPDATE_URL || "https://api.github.com/repos/TecSpyPie/band-watch/releases/latest";
 const UPDATE_TTL = 60 * 60 * 1000;
 const TEST_HOOKS = process.env.BW_TEST === "1";
@@ -130,6 +136,31 @@ async function getXota() {
       .sort((a, b) => (b.time > a.time ? 1 : b.time < a.time ? -1 : 0))
       .slice(0, 400);
     return { spots, at: clock.now(), failed: [] };
+  });
+}
+
+/* ---------- EiBi shortwave schedule ---------- */
+
+/** This season's CSV and README.TXT, converted from Latin-1. Early in a season the new file may not be
+ * out yet, so the season before is tried next. The page reads them with public/js/eibi-data.js. */
+async function getEibi() {
+  return cached("eibi", EIBI_TTL, async () => {
+    const now = new Date(clock.now());
+    const text = async (name) => {
+      const bytes = Buffer.from(await (await fetchOk(EIBI_URL + name, 30000)).arrayBuffer());
+      try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); } // in case EiBi moves to UTF-8
+      catch { return bytes.toString("latin1"); }
+    };
+    let season = Eibi.season(now), csv;
+    try {
+      csv = await text(`sked-${season.toLowerCase()}.csv`);
+    } catch {
+      season = Eibi.previousSeason(season);
+      csv = await text(`sked-${season.toLowerCase()}.csv`);
+    }
+    if (!/^kHz:/.test(csv) || csv.length > 8e6) throw new Error("EiBi's file isn't the schedule");
+    const readme = await text("README.TXT").catch(() => "");
+    return { season, at: clock.now(), csv, readme: readme.length > 2e6 ? "" : readme, source: "EiBi, eibispace.de" };
   });
 }
 
@@ -342,6 +373,19 @@ const SECURITY_HEADERS = {
 function sendJson(res, code, body, extraHeaders) {
   res.writeHead(code, { ...SECURITY_HEADERS, "Content-Type": MIME[".json"], "Cache-Control": "no-store", ...extraHeaders });
   res.end(JSON.stringify(body));
+}
+
+/** A large JSON answer (the EiBi schedule, ~600 kB): gzipped when the browser accepts it, and kept by the
+ * browser for maxAge seconds. */
+function sendBigJson(req, res, body, maxAge) {
+  let data = Buffer.from(JSON.stringify(body));
+  const headers = { ...SECURITY_HEADERS, "Content-Type": MIME[".json"], "Cache-Control": `private, max-age=${maxAge}`, Vary: "Accept-Encoding" };
+  if (/\bgzip\b/.test(String(req.headers["accept-encoding"] || ""))) {
+    data = require("zlib").gzipSync(data);
+    headers["Content-Encoding"] = "gzip";
+  }
+  res.writeHead(200, headers);
+  res.end(req.method === "HEAD" ? undefined : data);
 }
 
 const COOKIE = "bw_qrz";
@@ -606,6 +650,7 @@ async function handle(req, res) {
     if (url.pathname === "/api/sun") return sendJson(res, 200, await getSun());
     if (url.pathname === "/api/solar") return sendJson(res, 200, await getSolar());
     if (url.pathname === "/api/xota") return sendJson(res, 200, await getXota());
+    if (url.pathname === "/api/eibi") return sendBigJson(req, res, await getEibi(), 3600);
     if (url.pathname === "/api/update") return sendJson(res, 200, await getUpdate());
     if (url.pathname === "/api/spots") {
       const grid = String(url.searchParams.get("grid") || "").toUpperCase().slice(0, 4);

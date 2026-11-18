@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.18.0">
-<link rel="stylesheet" href="/listen.css?v=1.18.0">
+<link rel="stylesheet" href="/style.css?v=1.19.0">
+<link rel="stylesheet" href="/listen.css?v=1.19.0">
 </head>
 <body>
 <div class="wrap">
@@ -225,6 +225,23 @@
       <label>at <select id="atsReadoutAt"><option value="bottom">the bottom</option><option value="top">the top</option></select></label>
       <button type="button" class="lbtn" id="atsSave">Save picture</button>
     </div>
+  </section>
+
+  <section class="panel" id="secSked" aria-labelledby="skTitle">
+    <div class="phead">
+      <h2 id="skTitle">Shortwave stations on air</h2>
+      <span class="small muted" id="skSeason">From the EiBi schedule</span>
+    </div>
+    <div class="xtctl skctl">
+      <label class="sr-only" for="skBand">Band</label><select id="skBand"></select>
+      <label class="sr-only" for="skLang">Language</label><select id="skLang"><option value="all">All languages</option></select>
+      <label class="sr-only" for="skFind">Search stations</label>
+      <input type="search" id="skFind" placeholder="Station or country…" autocomplete="off">
+      <label class="small"><input type="checkbox" id="skSoon"> Also starting in the next hour</label>
+      <label class="small"><input type="checkbox" id="skUtil"> Include utility and out-of-band stations</label>
+    </div>
+    <ul class="xtlist sklist" id="skList" aria-live="polite"></ul>
+    <p class="small muted" id="skNote" role="status"></p>
   </section>
 
   <section class="panel" id="secDecode" aria-labelledby="dcTitle">
@@ -732,31 +749,33 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.18.0"></script>
-<script src="/js/bandplan.js?v=1.18.0"></script>
-<script src="/js/core.js?v=1.18.0"></script>
-<script src="/js/modes.js?v=1.18.0"></script>
-<script src="/js/map.js?v=1.18.0"></script>
-<script src="/js/scope.js?v=1.18.0"></script>
-<script src="/js/monitor.js?v=1.18.0"></script>
-<script src="/js/lookup.js?v=1.18.0"></script>
-<script src="/js/worldclock.js?v=1.18.0"></script>
-<script src="/js/locator.js?v=1.18.0"></script>
-<script src="/js/activity.js?v=1.18.0"></script>
-<script src="/js/qrz.js?v=1.18.0"></script>
-<script src="/js/hovercard.js?v=1.18.0"></script>
-<script src="/js/station.js?v=1.18.0"></script>
-<script src="/js/sdr-dsp.js?v=1.18.0"></script>
-<script src="/js/sdr.js?v=1.18.0"></script>
-<script src="/js/listen.js?v=1.18.0"></script>
-<script src="/js/rig.js?v=1.18.0"></script>
-<script src="/js/xota.js?v=1.18.0"></script>
-<script src="/js/logbook.js?v=1.18.0"></script>
-<script src="/js/wanted.js?v=1.18.0"></script>
-<script src="/js/decoders.js?v=1.18.0"></script>
-<script src="/js/sun.js?v=1.18.0"></script>
-<script src="/js/options.js?v=1.18.0"></script>
-<script src="/js/windows.js?v=1.18.0"></script>
-<script src="/js/app.js?v=1.18.0"></script>
+<script src="/js/install.js?v=1.19.0"></script>
+<script src="/js/bandplan.js?v=1.19.0"></script>
+<script src="/js/core.js?v=1.19.0"></script>
+<script src="/js/modes.js?v=1.19.0"></script>
+<script src="/js/map.js?v=1.19.0"></script>
+<script src="/js/scope.js?v=1.19.0"></script>
+<script src="/js/monitor.js?v=1.19.0"></script>
+<script src="/js/lookup.js?v=1.19.0"></script>
+<script src="/js/worldclock.js?v=1.19.0"></script>
+<script src="/js/locator.js?v=1.19.0"></script>
+<script src="/js/activity.js?v=1.19.0"></script>
+<script src="/js/qrz.js?v=1.19.0"></script>
+<script src="/js/hovercard.js?v=1.19.0"></script>
+<script src="/js/station.js?v=1.19.0"></script>
+<script src="/js/sdr-dsp.js?v=1.19.0"></script>
+<script src="/js/sdr.js?v=1.19.0"></script>
+<script src="/js/listen.js?v=1.19.0"></script>
+<script src="/js/rig.js?v=1.19.0"></script>
+<script src="/js/xota.js?v=1.19.0"></script>
+<script src="/js/eibi-data.js?v=1.19.0"></script>
+<script src="/js/eibi.js?v=1.19.0"></script>
+<script src="/js/logbook.js?v=1.19.0"></script>
+<script src="/js/wanted.js?v=1.19.0"></script>
+<script src="/js/decoders.js?v=1.19.0"></script>
+<script src="/js/sun.js?v=1.19.0"></script>
+<script src="/js/options.js?v=1.19.0"></script>
+<script src="/js/windows.js?v=1.19.0"></script>
+<script src="/js/app.js?v=1.19.0"></script>
 </body>
 </html>

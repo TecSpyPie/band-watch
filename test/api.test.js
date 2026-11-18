@@ -45,6 +45,8 @@ const SUN = {
 };
 
 const XOTA = require("./fixtures/xota.js");
+const { eibiFile } = require("./fixtures/eibi.js");
+const Eibi = require("../public/js/eibi-data.js");
 
 /* A pretend QRZ Logbook API: form posts, name=value answers. */
 const QRZLOG_KEY = "ABCD-1234-EF56-7890";
@@ -65,6 +67,7 @@ function qrzLogMock(body, req) {
 function handle(kind, url, body, req) {
   if (kind === "qrzlog") return qrzLogMock(body, req);
   if (kind === "qrz") return qrzMock(url.searchParams);
+  if (kind === "eibi") return up.eibiDown ? { status: 503 } : eibiFile(url, up.eibiMissing || []);
   if (kind === "pota") return up.potaDown ? { status: 503 } : XOTA.potaRows();
   if (kind === "sota") return up.sotaDown ? new Error("down") : XOTA.sotaRows();
   if (kind === "update") return up.updateDown ? { status: 503 } : { tag_name: up.latestTag || "v99.1.0", html_url: "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0", assets: [] };
@@ -652,6 +655,38 @@ test("GET /api/xota: POTA activators, newest first, cached; SOTA's API isn't use
 test("GET /api/xota: POTA down is a 502", async () => {
   up.potaDown = true;
   const r = await get("/api/xota");
+  assert.equal(r.status, 502);
+});
+
+test("GET /api/eibi: this season's EiBi schedule and README, from Latin-1, cached", async () => {
+  const r = await get("/api/eibi");
+  assert.equal(r.status, 200);
+  const d = JSON.parse(r.body);
+  assert.equal(d.season, Eibi.season(new Date()));
+  assert.match(d.csv, /^kHz:75;/);
+  assert.match(d.csv, /Nemzetiségi Rádió/, "Latin-1 accents become proper letters");
+  assert.match(d.readme, /third-party software/);
+  assert.ok(upstream.calls.some((u) => u.endsWith(`/eibi/dx/sked-${d.season.toLowerCase()}.csv`)));
+  const rows = Eibi.parseSked(d.csv);
+  assert.ok(rows.some((b) => b.station === "BBC" && b.kHz === 5975));
+  const n = upstream.calls.length;
+  await get("/api/eibi");
+  assert.equal(upstream.calls.length, n, "second request from the cache");
+  const z = await fetch(srv.base + "/api/eibi", { headers: { "Accept-Encoding": "gzip" } });
+  assert.equal(z.headers.get("content-encoding"), "gzip", "sent gzipped: it's a big file");
+  assert.equal((await z.json()).season, d.season);
+});
+
+test("GET /api/eibi: early in a season, the season before", async () => {
+  const now = Eibi.season(new Date());
+  up.eibiMissing = [now];
+  const d = JSON.parse((await get("/api/eibi")).body);
+  assert.equal(d.season, Eibi.previousSeason(now));
+});
+
+test("GET /api/eibi: EiBi down is a 502", async () => {
+  up.eibiDown = true;
+  const r = await get("/api/eibi");
   assert.equal(r.status, 502);
 });
 

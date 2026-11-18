@@ -44,6 +44,7 @@ type Config struct {
 	QrzURL       string // https://xmldata.qrz.com/xml/current/
 	QrzLogURL    string // https://logbook.qrz.com/api
 	PotaURL      string // https://api.pota.app/spot/activator
+	EibiURL      string // http://www.eibispace.de/dx/
 	UpdateURL    string // GitHub's latest-release API for Band Watch
 	UpdateAssets string // where release files may come from (tests only; default Band Watch's GitHub releases)
 	TestHooks    bool   // /api/test/reset and /api/test/advance
@@ -58,6 +59,7 @@ func defaultConfig() Config {
 		QrzURL:    "https://xmldata.qrz.com/xml/current/",
 		QrzLogURL: "https://logbook.qrz.com/api",
 		PotaURL:   "https://api.pota.app/spot/activator",
+		EibiURL:   "http://www.eibispace.de/dx/",
 		UpdateURL: releasesAPI,
 	}
 }
@@ -267,6 +269,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/xota":
 		data, err = s.getXota()
+	case p == "/api/eibi":
+		d, e := s.getEibi()
+		if e != nil {
+			log.Printf("%s: %v", p, e)
+			sendJSON(w, 502, errJSON("upstream feed unavailable"), nil)
+			return
+		}
+		sendBigJSON(w, r, d, 3600)
+		return
 	case p == "/api/sun":
 		data, err = s.getSun()
 	case p == "/api/spots":

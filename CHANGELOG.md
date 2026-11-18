@@ -1,5 +1,12 @@
 # What's new
 
+## 1.19.0 (18 Nov 2026)
+- **Shortwave stations on air:** a new panel listing the broadcasters on the air right now, from the EiBi
+  shortwave schedule (eibispace.de, free to use in other software). Each shows its frequency, language, country,
+  target area and times. Filter by band (long wave, medium wave, 120 m to 11 m), language or a search; tick
+  **Also starting in the next hour** to see what's coming up. Click a frequency to tune there in AM: your ATS Mini,
+  or whichever radio is connected, follows. The schedule is fetched twice a day.
+
 ## 1.18.0 (18 Nov 2026)
 - **ATS Mini digital readout:** a live readout over the picture of the radio's screen, updated twice a second: a big
   frequency, band, mode, SNR, and an LED-style S-meter with S-units (S7, S9+10…) and dBµV. It follows your Colour

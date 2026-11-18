@@ -13,7 +13,7 @@ const ACCENTS = [
 ];
 const SECTIONS = [
   ["hero", "Best band"], ["clock", "World clock"], ["lookup", "Callsign lookup"], ["solar", "Solar conditions"], ["bands", "Bands table"],
-  ["monitor", "Band monitor"], ["map", "Map"], ["scope", "Band scope"], ["listen", "Listen"], ["decode", "FT8 / FT4 decoder"], ["plan", "UK band plan"],
+  ["monitor", "Band monitor"], ["map", "Map"], ["scope", "Band scope"], ["listen", "Listen"], ["sked", "Shortwave stations"], ["decode", "FT8 / FT4 decoder"], ["plan", "UK band plan"],
   ["sun", "Sunspots"], ["activity", "Band activity"],
 ];
 const DEFAULT_SETTINGS = {
@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.19.0", "Shortwave stations on air now, from the EiBi schedule: click one to tune your ATS Mini or radio"],
   ["1.18.0", "ATS Mini: a live digital readout (frequency, S-meter, SNR) over the picture of its screen"],
   ["1.17.0", "Malahit DSP2 support (10 kHz to 2 GHz); ATS Mini live screen fixed for firmware before 2.41; shows which USB port is in use"],
   ["1.16.0", "Own windows: press ⧉ on the scope, map, Listen, ATS Mini and other parts to put them on another screen"],
