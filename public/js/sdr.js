@@ -269,9 +269,12 @@ async function sdrStart() {
   sdrSetStatus(`Connecting to rtl_tcp at ${sdr.addr}…`);
   try {
     // The page asked for sound with a click, so the browser lets it play.
-    sdr.ctx = new AudioContext({ sampleRate: SdrDsp.AUDIO_RATE });
-    await sdr.ctx.audioWorklet.addModule("/js/sdr-worklet.js?v=1.8.0");
-    sdr.node = new AudioWorkletNode(sdr.ctx, "bw-sdr-player", { outputChannelCount: [2] });
+    // In the window Listen is in (its own, when it went out with the Radio panel): that's where the click was.
+    const W = typeof hostWindowOf === "function" ? hostWindowOf("secListen") : window;
+    sdr.ctxWin = W;
+    sdr.ctx = new W.AudioContext({ sampleRate: SdrDsp.AUDIO_RATE });
+    await sdr.ctx.audioWorklet.addModule(new URL("/js/sdr-worklet.js?v=1.8.0", location.href).href);
+    sdr.node = new W.AudioWorkletNode(sdr.ctx, "bw-sdr-player", { outputChannelCount: [2] });
     sdr.node.connect(sdr.ctx.destination);
     if (sdr.ctx.state === "suspended") await sdr.ctx.resume().catch(() => {});
   } catch (err) {
@@ -416,6 +419,7 @@ function sdrStop(why = "") {
   sdr.abort = null;
   if (sdr.ctx) sdr.ctx.close().catch(() => {});
   sdr.ctx = sdr.node = null;
+  sdr.ctxWin = null;
   sdrSetStatus(why || (wasRunning ? "Stopped." : ""));
   if (wasRunning && typeof drawScope === "function") { renderScopeSrc(); drawScope(); }
   const m = $("rtlMeter");

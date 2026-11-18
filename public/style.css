@@ -529,3 +529,54 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .rigface .pnspec{border-radius:10px 10px 0 0}
 .popwin #secPanel .pnwf{height:clamp(150px,30vh,420px)}
 .popwin #secPanel .pnspec{height:clamp(120px,20vh,260px)}
+
+/* 1.22.0: everything 3D and sharp (Light, Dark and "Match my device"; High contrast and Night stay flat).
+   Each part sits on a raised card with a crisp lit top edge; buttons stand up on a lip and press in; boxes you type
+   in and screens (map, scope, receiver) are set into the card. */
+:root:not([data-theme="contrast"]):not([data-theme="night"]){--edge-hi:rgba(255,255,255,.85);--edge-lo:rgba(10,40,55,.20);--lip:rgba(10,40,55,.28);--card-top:#ffffff;--card-bot:#f2f8fa}
+/* Dark: written more specifically than the light values above, so they win */
+@media (prefers-color-scheme:dark){:root:not([data-theme="contrast"]):not([data-theme="night"]):not([data-theme="light"]):not([data-theme="dark"]){--edge-hi:rgba(255,255,255,.10);--edge-lo:rgba(0,0,0,.55);--lip:rgba(0,0,0,.6);--card-top:#16303f;--card-bot:#10232f}}
+:root[data-theme="dark"]:not([data-theme="contrast"]):not([data-theme="night"]):not([data-theme="light"]){--edge-hi:rgba(255,255,255,.10);--edge-lo:rgba(0,0,0,.55);--lip:rgba(0,0,0,.6);--card-top:#16303f;--card-bot:#10232f}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+/* Raised cards */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .panel,:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > .cols > section,:root:not([data-theme="contrast"]):not([data-theme="night"]) body.popwin > .panel,:root:not([data-theme="contrast"]):not([data-theme="night"]) .hero{
+  padding:14px 16px;border-radius:14px;
+  background:linear-gradient(180deg,var(--card-top),var(--card-bot));
+  border:1px solid var(--line);border-top-color:var(--edge-hi);border-bottom-color:var(--edge-lo);
+  box-shadow:inset 0 1px 0 var(--edge-hi),0 1px 0 var(--edge-lo),0 3px 0 var(--lip),0 10px 22px var(--shade)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .hero{padding:22px 18px 18px;margin-bottom:22px}
+/* Sharp headings: a fine embossed edge */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(h1,h2,h3){text-shadow:0 1px 0 var(--edge-hi),0 -1px 0 var(--edge-lo);letter-spacing:.005em}
+/* Buttons stand up on a lip, and press in */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button){
+  background-image:linear-gradient(180deg,var(--gloss),transparent 55%),linear-gradient(180deg,var(--card-top),var(--card-bot));
+  border-color:var(--line);border-top-color:var(--edge-hi);border-bottom-color:var(--edge-lo);
+  box-shadow:inset 0 1px 0 var(--edge-hi),0 2px 0 var(--lip),0 3px 6px var(--shade);
+  transition:transform .06s,box-shadow .06s,filter .1s}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button):active{
+  transform:translateY(2px);box-shadow:inset 0 1px 2px var(--shade),0 0 0 var(--lip)}
+/* Lit buttons keep their colour, with the gloss and the lip */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on,.lk button,.qc .go){
+  background-image:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.06) 52%,rgba(0,0,0,.06));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 0 color-mix(in srgb,var(--cool) 55%,#000),0 4px 10px color-mix(in srgb,var(--cool) 35%,transparent)}
+/* Typing boxes and drop-downs are set into the card */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(input[type=text],input[type=search],input[type=number],input[type=url],input:not([type]),select,textarea):not(.pnentry){
+  border-color:var(--line);border-top-color:var(--edge-lo);border-bottom-color:var(--edge-hi);
+  box-shadow:inset 0 2px 4px var(--shade),0 1px 0 var(--edge-hi)}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) #secPanel select{border-color:#0d1216;border-bottom-color:#56646e}
+/* Screens set into the card: the map, the band scope, the receiver, the ATS Mini picture */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) :is(#scope,.map,#lsFrame,.atsscreen,.stmap,.planchart){
+  border-radius:10px;border:1px solid var(--edge-lo);border-bottom-color:var(--edge-hi);
+  box-shadow:inset 0 3px 10px var(--shade),0 1px 0 var(--edge-hi)}
+/* Table headings: a raised strip */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) thead th{background:linear-gradient(180deg,var(--card-top),var(--card-bot));border-bottom:1px solid var(--edge-lo);box-shadow:inset 0 1px 0 var(--edge-hi)}
+/* The header bar */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) header{padding:12px 16px 14px;margin-bottom:6px;border-radius:0 0 14px 14px;
+  background:linear-gradient(180deg,var(--card-top),var(--card-bot));box-shadow:inset 0 -1px 0 var(--edge-hi),0 2px 0 var(--lip),0 8px 18px var(--shade)}
+/* The Radio panel already has its own metal face: no card round it */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .wrap > #secPanel,:root:not([data-theme="contrast"]):not([data-theme="night"]) body.popwin > #secPanel{background:none;border:0;box-shadow:none;padding:0}
+/* The big band name: crisp and solid, not washed out */
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .hero .big span{text-shadow:none;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--cool) 88%,#fff) 0%,var(--cool) 55%,color-mix(in srgb,var(--cool) 78%,#000) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 var(--lip)) drop-shadow(0 6px 10px color-mix(in srgb,var(--cool) 30%,transparent))}
+:root:not([data-theme="contrast"]):not([data-theme="night"]) .hero .big{text-shadow:0 2px 0 var(--edge-hi),0 3px 6px var(--shade)}

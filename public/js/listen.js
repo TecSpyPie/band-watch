@@ -168,7 +168,10 @@ function startListening() {
     if (live && listen.win && !listen.win.closed) {
       listen.win.postMessage(`tune ${listen.kHz}${listen.mode}`, "*");
     } else {
-      listen.win = window.open(url, "bandwatch-receiver", "popup,width=1100,height=760");
+      // From the window Listen is in, where the click was (browsers block windows opened from another one)
+      const host = typeof hostWindowOf === "function" ? hostWindowOf("secListen") : window;
+      listen.win = host.open(url, "bandwatch-receiver", "popup,width=1100,height=760");
+      listen.winHost = host;
       if (!listen.win) {
         $("lsErr").innerHTML = `Your browser blocked the receiver window. <a href="${esc(url)}" target="bandwatch-receiver" rel="noopener">Open it here</a>.`;
         return;

@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.22.0", "Listen goes with the popped-out radio and plays there; everything looks 3D and sharp"],
   ["1.21.0", "Radio panel: a waterfall under the spectrum, Pop out into its own window, and a 3D glossy look"],
   ["1.20.0", "Radio panel: big frequency display, S-meter, close-up spectrum, band and mode keys and a tuning knob"],
   ["1.19.0", "Shortwave stations on air now, from the EiBi schedule: click one to tune your ATS Mini or radio"],

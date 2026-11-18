@@ -1415,6 +1415,33 @@ test("RTL-SDR: connects to rtl_tcp, tunes, plays and shows the waterfall; click 
   assert.deepEqual(errors.filter((e) => !/request failed: .*\/api\/sdr\/stream/.test(e)), []);
 });
 
+test("radio panel popped out: Listen goes with it, and the RTL-SDR's sound starts in that window", { skip }, async (t) => {
+  const fake = await startStreamingRtlTcp();
+  t.after(() => { for (const s of fake.state.sockets) s.destroy(); fake.server.close(); });
+  const { page, errors } = await openPage(t);
+  await page.selectOption("#lsRx", "rtl");
+  await page.fill("#rtlAddr", `127.0.0.1:${fake.port}`);
+  await page.press("#rtlAddr", "Enter");
+  const [win] = await Promise.all([page.waitForEvent("popup"), page.click("#pnPop")]);
+  await win.waitForSelector("#secPanel #pnKnob");
+  await win.waitForSelector("#secListen #lsGo");
+  assert.equal(await page.$("#secListen"), null, "Listen went with the radio");
+  assert.match(await page.textContent("body"), /Listen is in the Radio panel window/);
+  // Listen, pressed in the radio's window: the sound is made in that window
+  await win.click("#pnListen");
+  await page.waitForFunction(() => /Connected: R828D/.test($("rtlStatus").textContent)); // $() finds it in the radio's window
+  assert.equal(await page.evaluate(() => sdr.ctxWin !== window && sdr.ctxWin === popWins.get("secPanel").win), true);
+  await page.waitForFunction(() => sdr.ctx && sdr.ctx.state === "running", null, { timeout: 5000 });
+  assert.equal(await win.textContent("#pnListen"), "Stop listening");
+  // Back to the main window: that window's sound stops, and says how to start it here
+  await win.click("#pnPop");
+  await page.waitForSelector("#secListen #lsGo");
+  await page.waitForFunction(() => !sdr.running);
+  assert.match(await page.textContent("#rtlStatus"), /press Listen to hear it here/);
+  assert.ok(await page.isVisible("#secListen .popbtn"), "Listen's own window button is back");
+  assert.deepEqual(errors.filter((e) => !/request failed: .*\/api\/sdr\/stream/.test(e)), []); // the stream closed on purpose
+});
+
 test("RTL-SDR: clear messages when rtl_tcp isn't running, or the address is wrong", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.selectOption("#lsRx", "rtl");

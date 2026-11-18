@@ -1,5 +1,15 @@
 # What's new
 
+## 1.22.0 (18 Nov 2026)
+- **Listen goes with the Radio panel:** when you pop the radio out, the Listen panel goes into the same window, under
+  it. Pressing **Listen** there now starts the sound (your RTL-SDR, or a receiver playing inside Band Watch) in that
+  window. Before, browsers wouldn't start sound from a click in another window, so nothing played until the radio
+  was back. Bringing the radio back stops that window's sound and says to press Listen again.
+- **Everything 3D and sharp:** every part of Band Watch now sits on a raised card with a crisp lit edge; buttons stand
+  up and press in; the boxes you type in, the map, the band scope and the receiver are set into the card; table
+  headings and the top bar are raised; headings and the big band name are crisper. High contrast and Night stay
+  flat, for reading.
+
 ## 1.21.0 (18 Nov 2026)
 - **Radio panel: waterfall and Pop out.** A waterfall now runs under the panel's spectrum, like the scope on a real
   radio: live from your RTL-SDR (about ten rows a second), or built from the stations spotted there. Click it to

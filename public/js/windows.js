@@ -6,7 +6,16 @@ const POP_PARTS = [
   ["secBands", "Bands"], ["secMap", "Map"], ["secScope", "Band scope"], ["secListen", "Listen"], ["secPanel", "Radio panel"], ["secAts", "ATS Mini"], ["secSked", "Shortwave stations"],
   ["secDecode", "Decoder"], ["secXota", "POTA"], ["secWanted", "Wanted"], ["secLog", "Logbook"], ["secActivity", "Band activity"],
 ];
-const popWins = new Map(); // part id -> { win, holder }
+const popWins = new Map(); // part id -> { win, holder, doc, extras: [{ id, holder }] }
+// Parts that go along in the same window: Listen goes with the Radio panel, so its sound plays where you click.
+const POP_WITH = { secPanel: ["secListen"] };
+
+/** The window a part is in now: the main one, or its own. Sound and new windows start from there, because
+ * browsers only let a click start sound (or open a window) in the window that was clicked. */
+function hostWindowOf(id) {
+  const el = typeof $ === "function" ? $(id) : document.getElementById(id);
+  return (el && el.ownerDocument && el.ownerDocument.defaultView) || window;
+}
 
 function popPlaces() {
   try { return JSON.parse(load("bw-windows") || "{}") || {}; } catch { return {}; }
@@ -58,8 +67,23 @@ ${popStyles()}
   backBtn.onclick = () => popBack(id);
   el.before(holder);
   doc.body.appendChild(doc.adoptNode(el));
+  // Parts that come along (Listen with the radio), unless they're already in a window of their own
+  const extras = [];
+  for (const xid of POP_WITH[id] || []) {
+    const x = document.getElementById(xid);
+    if (!x || popWins.has(xid)) continue;
+    const xl = (POP_PARTS.find(([pid]) => pid === xid) || [, xid])[1];
+    const xh = document.createElement("div");
+    xh.className = "pophold small muted";
+    xh.innerHTML = `<b>${esc(xl)}</b> is in the ${esc(label)} window. <button type="button" class="lbtn">Show it</button>`;
+    xh.querySelector("button").onclick = () => win.focus();
+    x.before(xh);
+    x.querySelector(".popbtn") && (x.querySelector(".popbtn").hidden = true); // it goes back with the radio
+    doc.body.appendChild(doc.adoptNode(x));
+    extras.push({ id: xid, holder: xh });
+  }
   popDocs.add(doc);
-  popWins.set(id, { win, holder, doc });
+  popWins.set(id, { win, holder, doc, extras });
   doc.getElementById("popBack").onclick = () => popBack(id);
   // Remember where it was put (another screen, say) for next time
   const remember = () => {
@@ -81,9 +105,22 @@ function popBack(id, closing = false) {
   const p = popWins.get(id);
   if (!p) return;
   popWins.delete(id);
+  // Sound that was started in that window stops with it: say so, so Listen can be pressed again here.
+  if (typeof sdr !== "undefined" && sdr.running && sdr.ctxWin === p.win && typeof sdrStop === "function") {
+    sdrStop("Moved back to the main window: press Listen to hear it here.");
+  }
+  if (typeof listen !== "undefined" && listen.win && listen.winHost === p.win) listen.win = null;
   const el = p.doc.getElementById(id);
   if (el) p.holder.replaceWith(document.adoptNode(el));
   else p.holder.remove();
+  for (const x of p.extras || []) {
+    const xe = p.doc.getElementById(x.id);
+    if (xe) {
+      x.holder.replaceWith(document.adoptNode(xe));
+      const b = xe.querySelector(".popbtn");
+      if (b) b.hidden = false;
+    } else x.holder.remove();
+  }
   popDocs.delete(p.doc);
   if (!closing) { try { p.win.close(); } catch { /* closed */ } }
   window.dispatchEvent(new Event("resize"));
