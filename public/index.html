@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.17.0">
-<link rel="stylesheet" href="/listen.css?v=1.17.0">
+<link rel="stylesheet" href="/style.css?v=1.18.0">
+<link rel="stylesheet" href="/listen.css?v=1.18.0">
 </head>
 <body>
 <div class="wrap">
@@ -189,7 +189,14 @@
       <button type="button" class="lbtn" id="atsPort" title="Pick which USB port the ATS Mini is on. The browser's list shows the COM number, e.g. USB Serial Device (COM4).">Choose port</button>
     </div>
     <div class="atsview">
-      <canvas id="atsScreen" width="320" height="170" role="img" aria-label="The ATS Mini's screen"></canvas>
+      <div class="atsscreen">
+        <canvas id="atsScreen" width="320" height="170" role="img" aria-label="The ATS Mini's screen"></canvas>
+        <div id="atsOverlay" class="atsov" hidden>
+          <div class="atsov-row"><span id="atsOvBand"></span><span id="atsOvMode"></span><span id="atsOvSnr"></span></div>
+          <div id="atsOvFreq" class="atsov-freq"></div>
+          <div class="atsov-row"><div class="atsov-meter"><div id="atsOvBar"></div></div><span id="atsOvS" class="atsov-s"></span></div>
+        </div>
+      </div>
       <p class="small muted" id="atsScreenMsg">Connect the ATS Mini to see its screen here.</p>
     </div>
     <div class="atsbtns" role="group" aria-label="ATS Mini buttons">
@@ -214,6 +221,8 @@
     </div>
     <div class="optrow small">
       <label><input type="checkbox" id="atsLive" checked> Live screen</label>
+      <label><input type="checkbox" id="atsReadout" checked> Digital readout</label>
+      <label>at <select id="atsReadoutAt"><option value="bottom">the bottom</option><option value="top">the top</option></select></label>
       <button type="button" class="lbtn" id="atsSave">Save picture</button>
     </div>
   </section>
@@ -723,31 +732,31 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.17.0"></script>
-<script src="/js/bandplan.js?v=1.17.0"></script>
-<script src="/js/core.js?v=1.17.0"></script>
-<script src="/js/modes.js?v=1.17.0"></script>
-<script src="/js/map.js?v=1.17.0"></script>
-<script src="/js/scope.js?v=1.17.0"></script>
-<script src="/js/monitor.js?v=1.17.0"></script>
-<script src="/js/lookup.js?v=1.17.0"></script>
-<script src="/js/worldclock.js?v=1.17.0"></script>
-<script src="/js/locator.js?v=1.17.0"></script>
-<script src="/js/activity.js?v=1.17.0"></script>
-<script src="/js/qrz.js?v=1.17.0"></script>
-<script src="/js/hovercard.js?v=1.17.0"></script>
-<script src="/js/station.js?v=1.17.0"></script>
-<script src="/js/sdr-dsp.js?v=1.17.0"></script>
-<script src="/js/sdr.js?v=1.17.0"></script>
-<script src="/js/listen.js?v=1.17.0"></script>
-<script src="/js/rig.js?v=1.17.0"></script>
-<script src="/js/xota.js?v=1.17.0"></script>
-<script src="/js/logbook.js?v=1.17.0"></script>
-<script src="/js/wanted.js?v=1.17.0"></script>
-<script src="/js/decoders.js?v=1.17.0"></script>
-<script src="/js/sun.js?v=1.17.0"></script>
-<script src="/js/options.js?v=1.17.0"></script>
-<script src="/js/windows.js?v=1.17.0"></script>
-<script src="/js/app.js?v=1.17.0"></script>
+<script src="/js/install.js?v=1.18.0"></script>
+<script src="/js/bandplan.js?v=1.18.0"></script>
+<script src="/js/core.js?v=1.18.0"></script>
+<script src="/js/modes.js?v=1.18.0"></script>
+<script src="/js/map.js?v=1.18.0"></script>
+<script src="/js/scope.js?v=1.18.0"></script>
+<script src="/js/monitor.js?v=1.18.0"></script>
+<script src="/js/lookup.js?v=1.18.0"></script>
+<script src="/js/worldclock.js?v=1.18.0"></script>
+<script src="/js/locator.js?v=1.18.0"></script>
+<script src="/js/activity.js?v=1.18.0"></script>
+<script src="/js/qrz.js?v=1.18.0"></script>
+<script src="/js/hovercard.js?v=1.18.0"></script>
+<script src="/js/station.js?v=1.18.0"></script>
+<script src="/js/sdr-dsp.js?v=1.18.0"></script>
+<script src="/js/sdr.js?v=1.18.0"></script>
+<script src="/js/listen.js?v=1.18.0"></script>
+<script src="/js/rig.js?v=1.18.0"></script>
+<script src="/js/xota.js?v=1.18.0"></script>
+<script src="/js/logbook.js?v=1.18.0"></script>
+<script src="/js/wanted.js?v=1.18.0"></script>
+<script src="/js/decoders.js?v=1.18.0"></script>
+<script src="/js/sun.js?v=1.18.0"></script>
+<script src="/js/options.js?v=1.18.0"></script>
+<script src="/js/windows.js?v=1.18.0"></script>
+<script src="/js/app.js?v=1.18.0"></script>
 </body>
 </html>

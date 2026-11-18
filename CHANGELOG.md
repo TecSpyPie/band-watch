@@ -1,5 +1,10 @@
 # What's new
 
+## 1.18.0 (18 Nov 2026)
+- **ATS Mini digital readout:** a live readout over the picture of the radio's screen, updated twice a second: a big
+  frequency, band, mode, SNR, and an LED-style S-meter with S-units (S7, S9+10…) and dBµV. It follows your Colour
+  choice; put it at the top or bottom of the picture, or untick **Digital readout** to hide it.
+
 ## 1.17.0 (17 Nov 2026)
 - **Malahit DSP2 support:** pick **Malahit** in Settings > Radio control, press Connect radio and choose its
   **Malahit CAT** port. Band Watch tunes it from 10 kHz to 2 GHz (HF, and VHF/UHF like 2 m FM) when you click a spot,

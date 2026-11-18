@@ -385,3 +385,18 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .popwin .popbtn{display:none}
 .pophold{border:1px dashed var(--line);border-radius:8px;padding:8px 10px;margin:8px 0}
 .popbtn.inrow{float:none;margin:0 0 0 6px}
+
+/* ATS Mini: live digital readout over its screen picture */
+.atsscreen{position:relative;max-width:480px;container-type:inline-size}
+.atsscreen #atsScreen{max-width:none}
+.atsov{position:absolute;left:1px;right:1px;bottom:1px;padding:4px 10px 6px;border-radius:0 0 7px 7px;
+  background:rgba(0,0,0,.66);color:var(--atsov-main,#fff);font-variant-numeric:tabular-nums;pointer-events:none}
+.atsov.top{top:1px;bottom:auto;border-radius:7px 7px 0 0}
+.atsov-row{display:flex;gap:12px;align-items:center;font-size:max(11px,3.6cqw);color:var(--atsov-head,#9cf);font-weight:600}
+.atsov-row #atsOvSnr{margin-left:auto}
+.atsov-freq{font:700 max(20px,9cqw)/1.05 ui-monospace,"Cascadia Mono",Consolas,monospace;letter-spacing:.02em;
+  text-shadow:0 0 6px color-mix(in srgb,var(--atsov-main,#fff) 45%,transparent)}
+.atsov-meter{flex:1;height:max(8px,2.6cqw);background:#222;border-radius:2px;overflow:hidden}
+.atsov-meter div{height:100%;width:0;transition:width .35s;
+  background:repeating-linear-gradient(90deg,var(--atsov-bar,#4c4) 0 6px,transparent 6px 8px)}
+.atsov-s{min-width:4.5em;text-align:right}

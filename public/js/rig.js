@@ -612,12 +612,12 @@ function setupRig() {
 
 /* ---------- ATS Mini: its screen, and its buttons ---------- */
 
-const atsShot = { live: true, bright: 100, contrast: 100, colour: "blue" };
+const atsShot = { live: true, bright: 100, contrast: 100, colour: "blue", readout: true, readoutAt: "bottom" };
 // The drawn screen's colours: [heading, frequency]
 const ATS_COLOURS = { blue: ["#9cf", "#fff"], green: ["#7e7", "#bfb"], amber: ["#fc6", "#ffd28a"], white: ["#ddd", "#fff"] };
 
 function atsSaveView() {
-  store("bw-ats", { live: atsShot.live, bright: atsShot.bright, contrast: atsShot.contrast, colour: atsShot.colour });
+  store("bw-ats", { live: atsShot.live, bright: atsShot.bright, contrast: atsShot.contrast, colour: atsShot.colour, readout: atsShot.readout, readoutAt: atsShot.readoutAt });
 }
 
 /** Brightness and contrast for the picture (the radio's own light is the Light buttons). */
@@ -627,6 +627,43 @@ function atsApplyView() {
   if ($("atsBright")) $("atsBright").value = String(atsShot.bright);
   if ($("atsContrast")) $("atsContrast").value = String(atsShot.contrast);
   if ($("atsColour")) $("atsColour").value = atsShot.colour;
+  if ($("atsReadout")) $("atsReadout").checked = atsShot.readout;
+  if ($("atsReadoutAt")) $("atsReadoutAt").value = atsShot.readoutAt;
+  const ov = $("atsOverlay");
+  if (ov) {
+    const [head, main] = ATS_COLOURS[atsShot.colour] || ATS_COLOURS.blue;
+    ov.style.setProperty("--atsov-head", head);
+    ov.style.setProperty("--atsov-main", main);
+    ov.classList.toggle("top", atsShot.readoutAt === "top");
+  }
+  atsReadout();
+}
+
+/** S-units from the signal in dBµV (HF: S9 = 50 µV = 34 dBµV, 6 dB an S-unit). */
+function atsSUnits(dbuv) {
+  const over = dbuv - 34;
+  if (over > 0) return `S9+${Math.round(over / 10) * 10 || ""}`.replace(/\+$/, "");
+  return `S${Math.max(0, Math.min(9, Math.round(9 + over / 6)))}`;
+}
+
+/** The digital readout over the live picture: frequency, band, mode, S-meter and SNR. */
+function atsReadout() {
+  const ov = $("atsOverlay");
+  if (!ov) return;
+  const a = rig.ats;
+  const show = atsShot.readout && atsShot.live && rig.connected && rig.kind === "atsmini" && !!a.lastLine;
+  ov.hidden = !show;
+  if (!show) return;
+  const fm = rig.modeName === "FM";
+  $("atsOvFreq").textContent = fm ? `${(rig.hz / 1e6).toFixed(2)} MHz` : `${fmtRigHz(rig.hz)} MHz`;
+  $("atsOvBand").textContent = a.bandName;
+  $("atsOvMode").textContent = rig.modeName;
+  $("atsOvSnr").textContent = `SNR ${a.snr} dB`;
+  $("atsOvS").textContent = `${atsSUnits(a.rssi)} · ${a.rssi} dBµV`;
+  // S0 to S9 fills 60 %, S9+60 the rest
+  const pct = a.rssi <= 34 ? Math.max(0, (9 + (a.rssi - 34) / 6) / 9) * 60 : 60 + Math.min(40, ((a.rssi - 34) / 60) * 40);
+  $("atsOvBar").style.width = `${pct.toFixed(1)}%`;
+  $("atsOvBar").style.setProperty("--atsov-bar", a.rssi > 34 ? "#e64" : a.rssi > 20 ? "#4c4" : "#cc4");
 }
 
 /** Bytes from the ATS Mini: text lines, and (after "c") a picture of its screen as a binary RGB565 BMP. */
@@ -807,6 +844,7 @@ function renderAts() {
     ? (a.lastLine ? `${fmtRigHz(rig.hz)} MHz ${rig.modeName} · ${a.bandName} · Signal ${a.rssi} dBµV, SNR ${a.snr} dB${a.version ? ` · firmware ${a.version}` : ""}` : "Connected, waiting for the radio…")
     : rig.busy ? "Connecting…" : "Not connected";
   $("atsConnect").textContent = rig.connected ? "Disconnect" : "Connect";
+  atsReadout();
   for (const b of sec.querySelectorAll("[data-ats]")) b.disabled = !rig.connected;
   $("atsScreenMsg").textContent = !rig.connected
     ? (rig.error || "Connect the ATS Mini to see its screen here. On the radio, set Settings > USB Port to Ad hoc first.")
@@ -821,11 +859,15 @@ function setupAts() {
     if (Number.isFinite(s.bright)) atsShot.bright = Math.max(50, Math.min(160, s.bright));
     if (Number.isFinite(s.contrast)) atsShot.contrast = Math.max(50, Math.min(200, s.contrast));
     if (ATS_COLOURS[s.colour]) atsShot.colour = s.colour;
+    if (typeof s.readout === "boolean") atsShot.readout = s.readout;
+    if (s.readoutAt === "top" || s.readoutAt === "bottom") atsShot.readoutAt = s.readoutAt;
   } catch { /* defaults */ }
   atsApplyView();
   $("atsBright").addEventListener("input", () => { atsShot.bright = Number($("atsBright").value); atsApplyView(); atsSaveView(); });
   $("atsContrast").addEventListener("input", () => { atsShot.contrast = Number($("atsContrast").value); atsApplyView(); atsSaveView(); });
   $("atsColour").addEventListener("change", () => { atsShot.colour = ATS_COLOURS[$("atsColour").value] ? $("atsColour").value : "blue"; atsApplyView(); atsSaveView(); });
+  $("atsReadout").addEventListener("change", () => { atsShot.readout = $("atsReadout").checked; atsApplyView(); atsSaveView(); });
+  $("atsReadoutAt").addEventListener("change", () => { atsShot.readoutAt = $("atsReadoutAt").value === "top" ? "top" : "bottom"; atsApplyView(); atsSaveView(); });
   $("atsViewReset").addEventListener("click", () => { Object.assign(atsShot, { bright: 100, contrast: 100, colour: "blue" }); atsApplyView(); atsSaveView(); });
   $("atsLive").checked = atsShot.live;
   $("atsLive").addEventListener("change", () => {

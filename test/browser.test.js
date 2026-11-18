@@ -2704,6 +2704,19 @@ test("ATS Mini panel: shows the radio's screen, its buttons work, and a drawn sc
   // Tuning still works with the screen live
   await page.evaluate(() => tuneTo(14074, "usb", { quiet: true }));
   await page.waitForFunction(() => window.__radio.band === 22 && window.__radio.hz === 14074000, null, { timeout: 10000 });
+  // The digital readout over the picture: frequency, band, mode, S-meter (28 dBµV = S8) and SNR
+  await page.waitForFunction(() => !document.getElementById("atsOverlay").hidden && document.getElementById("atsOvFreq").textContent === "14.074.000 MHz", null, { timeout: 5000 });
+  assert.equal(await page.textContent("#atsOvBand"), "20M");
+  assert.equal(await page.textContent("#atsOvMode"), "USB");
+  assert.equal(await page.textContent("#atsOvS"), "S8 · 28 dBµV");
+  assert.equal(await page.textContent("#atsOvSnr"), "SNR 9 dB");
+  assert.equal(await page.evaluate(() => [atsSUnits(34), atsSUnits(44), atsSUnits(70), atsSUnits(0)].join(" ")), "S9 S9+10 S9+40 S3");
+  if (process.env.ATS_SHOT) { await new Promise((r) => setTimeout(r, 500)); await (await page.$("#secAts")).screenshot({ path: process.env.ATS_SHOT.replace(".png", "-readout.png") }); }
+  await page.selectOption("#atsReadoutAt", "top");
+  assert.equal(await page.$eval("#atsOverlay", (e) => e.classList.contains("top")), true);
+  await page.uncheck("#atsReadout");
+  assert.equal(await page.isVisible("#atsOverlay"), false);
+  await page.check("#atsReadout");
   // Drawn screen
   await page.uncheck("#atsLive");
   const shots = await page.evaluate(() => window.__radio.shots);
@@ -2715,7 +2728,7 @@ test("ATS Mini panel: shows the radio's screen, its buttons work, and a drawn sc
   await page.$eval("#atsBright", (e) => { e.value = "70"; e.dispatchEvent(new Event("input")); });
   await page.$eval("#atsContrast", (e) => { e.value = "150"; e.dispatchEvent(new Event("input")); });
   assert.equal(await page.$eval("#atsScreen", (c) => c.style.filter), "brightness(70%) contrast(150%)");
-  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-ats"))), { live: false, bright: 70, contrast: 150, colour: "amber" });
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-ats"))), { live: false, bright: 70, contrast: 150, colour: "amber", readout: true, readoutAt: "top" });
   await page.click('[data-ats="L"]');
   await page.waitForFunction(() => window.__radio.sent.includes("L"));
   if (process.env.ATS_SHOT) { await new Promise((r) => setTimeout(r, 400)); await (await page.$("#secAts")).screenshot({ path: process.env.ATS_SHOT.replace(".png", "-drawn.png") }); }
