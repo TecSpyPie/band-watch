@@ -18,7 +18,10 @@ const KNOB_DEG_PER_STEP = 12; // turn the knob this far for one step
 const panel = {
   bands: {}, span: 10, angle: 0, drag: null, pending: null, flush: null, meterTimer: null, shown: false,
   needle: -54, // where the drawn needle is, eased towards the reading
+  fall: [], // waterfall rows, newest first: { lo, hi, levels } (MHz), so they stay put when you retune
+  lastRow: 0, lastLive: 0,
 };
+const PN_FALL_ROWS = 150;
 
 function loadPanel() {
   try {
@@ -112,6 +115,9 @@ function renderPanel() {
     : listen.open ? "Tuning the receiver in Listen. Connect your radio to move its dial too."
       : "Tune here and your radio follows once it's connected (Connect radio, at the top). Press Listen to hear the band from an online receiver.";
   $("pnListen").textContent = listen.open ? "Stop listening" : "Listen";
+  const popped = typeof popWins !== "undefined" && popWins.has("secPanel");
+  $("pnPop").textContent = popped ? "Back in Band Watch" : "Pop out ⧉";
+  $("pnPop").setAttribute("aria-pressed", String(popped));
   $("pnListen").setAttribute("aria-pressed", String(listen.open));
   drawPanelMeter();
   drawPanelSpectrum();
@@ -218,6 +224,14 @@ function drawPanelSpectrum() {
     }
     src = sp.length ? `${sp.length} station${sp.length === 1 ? "" : "s"} spotted here in the last ${WINDOW_MIN} min` : "No stations spotted within this span";
   }
+  // A waterfall row: every time the RTL-SDR has new samples, or every two seconds from the spots.
+  const now = Date.now();
+  if (src.startsWith("Live") ? now - panel.lastRow > 90 : now - panel.lastRow > 2000) {
+    panel.lastRow = now;
+    panel.fall.unshift({ lo, hi, levels: Float32Array.from(levels) });
+    if (panel.fall.length > PN_FALL_ROWS) panel.fall.length = PN_FALL_ROWS;
+  }
+  drawPanelFall(lo, hi);
   // The trace
   const grad = g.createLinearGradient(0, 0, 0, base);
   grad.addColorStop(0, trace); grad.addColorStop(1, "rgba(69,224,245,0.05)");
@@ -240,6 +254,64 @@ function drawPanelSpectrum() {
   g.textAlign = "left"; g.fillText((lo * 1000).toFixed(1), 2, H - 3);
   g.textAlign = "right"; g.fillText((hi * 1000).toFixed(1), W - 2, H - 3);
   g.textAlign = "center"; g.fillStyle = dim; g.fillText(src, W / 2, H - 3);
+}
+
+/* ---------- The waterfall ---------- */
+
+// Dark blue for nothing, through cyan and yellow, to red for the strongest signals.
+const PN_FALL_COLOURS = [[4, 12, 30], [10, 40, 110], [20, 140, 200], [80, 230, 240], [255, 220, 90], [255, 90, 60]];
+function pnFallColour(v) {
+  const x = Math.max(0, Math.min(1, v)) * (PN_FALL_COLOURS.length - 1);
+  const i = Math.min(PN_FALL_COLOURS.length - 2, Math.floor(x)), t = x - i;
+  const a = PN_FALL_COLOURS[i], b = PN_FALL_COLOURS[i + 1];
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+}
+
+/** Draw the waterfall for the span lo..hi (MHz): each row where it was heard, so old rows slide when you retune. */
+function drawPanelFall(lo, hi) {
+  const cv = $("pnWf");
+  if (!cv) return;
+  const W = Math.max(60, Math.min(500, Math.floor((cv.clientWidth || 600) / 2)));
+  const R = PN_FALL_ROWS;
+  if (cv.width !== W || cv.height !== R) { cv.width = W; cv.height = R; }
+  const g = cv.getContext("2d");
+  const img = g.createImageData(W, R);
+  const d = img.data;
+  const bg = PN_FALL_COLOURS[0];
+  for (let y = 0; y < R; y++) {
+    const row = panel.fall[y];
+    for (let x = 0; x < W; x++) {
+      let c = bg;
+      if (row) {
+        const f = lo + ((x + 0.5) / W) * (hi - lo);
+        const k = Math.floor(((f - row.lo) / (row.hi - row.lo)) * row.levels.length);
+        if (k >= 0 && k < row.levels.length) c = pnFallColour(Math.sqrt(row.levels[k])); // sqrt: weak signals show up
+      }
+      const o = (y * W + x) * 4;
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  // The dial
+  g.fillStyle = "rgba(255,90,78,.9)";
+  g.fillRect(Math.floor(W / 2), 0, 1, R);
+}
+
+/** New samples from the RTL-SDR: redraw the spectrum and add to the waterfall, about ten times a second. */
+function panelLiveFeed() {
+  if (!$("pnSpec")) return;
+  const inPopup = !document.contains($("secPanel"));
+  if (document.hidden || (!panel.shown && !inPopup)) return;
+  const now = Date.now();
+  if (now - panel.lastLive < 90) return;
+  panel.lastLive = now;
+  drawPanelSpectrum();
+}
+
+/** Put the radio in a window of its own (on another screen, say), or bring it back. */
+function panelPopToggle() {
+  if (typeof popOut !== "function") return;
+  if (popWins.has("secPanel")) popBack("secPanel"); else popOut("secPanel", "Radio panel");
 }
 
 /* ---------- The knob ---------- */
@@ -320,14 +392,16 @@ function setupPanel() {
     if (listen.open) stopListening(); else startListening();
     renderPanel();
   });
-  // Click the spectrum to tune there.
-  $("pnSpec").addEventListener("click", (e) => {
-    const r = $("pnSpec").getBoundingClientRect();
+  // Click the spectrum or the waterfall to tune there.
+  const clickTune = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
     const half = panel.span / 2;
     const kHz = listen.kHz - half + ((e.clientX - r.left) / r.width) * panel.span;
     const st = listen.step >= 0.5 ? 0.1 : 0.01;
     panelTune(Math.round(kHz / st) * st);
-  });
+  };
+  $("pnSpec").addEventListener("click", clickTune);
+  $("pnWf").addEventListener("click", clickTune);
   // Freq entry: click the display and type a frequency in kHz or MHz.
   $("pnFreq").addEventListener("click", () => {
     $("pnEntry").hidden = false;
@@ -345,6 +419,10 @@ function setupPanel() {
   });
   $("pnEntry").addEventListener("blur", () => { $("pnEntry").hidden = true; });
   setupPanelKnob();
+  // Pop out: on computers (phones and tablets can't open a part in its own window).
+  const canPop = typeof popOut === "function" && typeof window.open === "function" && !matchMedia("(pointer: coarse)").matches;
+  $("pnPop").hidden = !canPop;
+  $("pnPop").addEventListener("click", panelPopToggle);
 
   // Only ask the radio for its S-meter while the panel is on screen.
   if ("IntersectionObserver" in window) {
@@ -363,5 +441,7 @@ function setupPanel() {
   // Redraw the spectrum when the spots change or the RTL-SDR has new samples.
   setInterval(() => { if (!document.hidden && (panel.shown || !document.contains($("secPanel")))) drawPanelSpectrum(); }, 1000);
   window.addEventListener("resize", () => { drawPanelMeter(); drawPanelSpectrum(); });
+  // Its own window has its own size: redraw when that changes.
+  window.addEventListener("resize", () => { if (typeof popWins !== "undefined" && popWins.has("secPanel")) { const w = popWins.get("secPanel").win; if (w && !w.__pn) { w.__pn = true; w.addEventListener("resize", () => { drawPanelMeter(); drawPanelSpectrum(); }); } } });
   renderPanel();
 }

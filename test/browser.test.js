@@ -1950,6 +1950,41 @@ test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS
   await rp.locator("#secPanel").screenshot({ path: require("path").join(dir, "radio-panel.png") });
 });
 
+test("radio panel: the waterfall fills under the spectrum, and Pop out puts the radio in its own window", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.evaluate(() => document.getElementById("secPanel").scrollIntoView());
+  // From the spots, a waterfall row every two seconds
+  await page.waitForFunction(() => panel.fall.length >= 2, null, { timeout: 8000 });
+  assert.ok(await page.evaluate(() => panel.fall[0].levels.length > 50 && Math.abs((panel.fall[0].hi - panel.fall[0].lo) - panel.span / 1000) < 1e-9));
+  // Clicking the waterfall tunes, like the spectrum
+  await page.evaluate(() => tuneTo(14200, "usb", { quiet: true }));
+  const wb = await page.locator("#pnWf").boundingBox();
+  await page.mouse.click(wb.x + wb.width * 0.25, wb.y + wb.height / 2);
+  await page.waitForFunction(() => Math.abs(listen.kHz - 14197.5) < 0.11);
+  // Pop out
+  assert.equal(await page.textContent("#pnPop"), "Pop out ⧉");
+  const [win] = await Promise.all([page.waitForEvent("popup"), page.click("#pnPop")]);
+  await win.waitForSelector("#secPanel #pnKnob");
+  assert.equal(await page.$("#secPanel"), null, "moved out of the main window");
+  assert.match(await page.textContent(".pophold"), /Radio panel is in its own window/);
+  // It still works in its window: a band key tunes Band Watch
+  await win.click('#pnBands button[data-band="40"]');
+  await page.waitForFunction(() => listen.kHz === 7100);
+  assert.equal(await win.textContent("#pnFreq"), "7.100.00");
+  assert.equal(await win.textContent("#pnPop"), "Back in Band Watch");
+  // And comes back
+  await win.click("#pnPop");
+  await page.waitForSelector("#secPanel #pnKnob");
+  assert.equal(await page.textContent("#pnPop"), "Pop out ⧉");
+  // Closing its window brings it back too, with the key's label right
+  const [win2] = await Promise.all([page.waitForEvent("popup"), page.click("#pnPop")]);
+  await win2.waitForSelector("#secPanel #pnKnob");
+  await win2.close();
+  await page.waitForSelector("#secPanel #pnKnob");
+  assert.equal(await page.textContent("#pnPop"), "Pop out ⧉");
+  assert.deepEqual(errors, []);
+});
+
 test("radio panel with an FT-991A: its mode name, a live S-meter, and the knob tunes the radio", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true"));

@@ -73,6 +73,7 @@ ${popStyles()}
   win.addEventListener("pagehide", () => { remember(); popBack(id, true); });
   window.dispatchEvent(new Event("resize")); // canvases redraw at their new size
   win.dispatchEvent(new Event("resize"));
+  if (id === "secPanel" && typeof renderPanel === "function") renderPanel(); // its Pop out key
 }
 
 /** Put a part back in the main window (closing its window unless it's already closing). */
@@ -86,6 +87,7 @@ function popBack(id, closing = false) {
   popDocs.delete(p.doc);
   if (!closing) { try { p.win.close(); } catch { /* closed */ } }
   window.dispatchEvent(new Event("resize"));
+  if (id === "secPanel" && typeof renderPanel === "function") renderPanel(); // its Pop out key
 }
 
 function setupWindows() {

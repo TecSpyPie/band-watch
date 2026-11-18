@@ -27,8 +27,8 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **Malahit DSP2:** tuned over its Malahit CAT USB port (Kenwood TS-480 commands), 10 kHz to 2 GHz
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
 - **POTA:** live park activators on a list, the map and the scope, with alerts
-- **Radio panel:** the front of a transceiver on screen: big frequency display, live S-meter, close-up spectrum, band
-  and mode keys and a tuning knob; your radio follows
+- **Radio panel:** the front of a transceiver on screen: big frequency display, live S-meter, close-up spectrum and waterfall, band
+  and mode keys and a tuning knob; pop it out into its own window; your radio follows
 - **Shortwave stations on air:** what's broadcasting right now from the EiBi schedule; click one to tune your radio
 - **Logbook:** one-click logging from decodes, activators and lookups; ADIF export for LoTW, eQSL and Club Log, and **Send to QRZ** straight into your QRZ logbook
 - **Wanted alerts:** callsigns, prefixes and grid squares you need, and new grid squares not in your log

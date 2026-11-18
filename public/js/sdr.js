@@ -372,6 +372,7 @@ async function readSdrStream(reader) {
     if (now - sdr.lastScope > FALL_SPEEDS[sdr.speed] && typeof scopeLiveFeed === "function") {
       sdr.lastScope = now;
       scopeLiveFeed();
+      if (typeof panelLiveFeed === "function") panelLiveFeed(); // the Radio panel's spectrum and waterfall
     }
     if (now - sdr.lastSpec > FALL_SPEEDS[sdr.speed] && chunk.length >= 4100) {
       sdr.lastSpec = now;

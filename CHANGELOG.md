@@ -1,5 +1,13 @@
 # What's new
 
+## 1.21.0 (18 Nov 2026)
+- **Radio panel: waterfall and Pop out.** A waterfall now runs under the panel's spectrum, like the scope on a real
+  radio: live from your RTL-SDR (about ten rows a second), or built from the stations spotted there. Click it to
+  tune. **Pop out ⧉** on the panel puts the whole radio in a window of its own, to move onto another screen; it gets
+  a bigger spectrum and waterfall there, and **Back in Band Watch** brings it home.
+- **A more 3D, glossy radio:** a brushed-metal face with screws in the corners and a deeper case, glass over the
+  meter and the display, shiny keys that stand up and press in, and a ridged tuning knob with a shine on its cap.
+
 ## 1.20.0 (18 Nov 2026)
 - **Radio panel:** Band Watch as the front of a transceiver. A big glowing frequency display (click it to type a
   frequency, like 14.2 or 7074), an analogue S-meter with a needle, a close-up spectrum around the dial (live from

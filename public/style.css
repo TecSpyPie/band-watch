@@ -413,7 +413,7 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 /* 1.20.0: the Radio panel, made to look like the front of a transceiver (dark in every colour scheme, like a real
    radio's display). High contrast keeps it plain. */
 #secPanel{--pn-ink:#dff6ff;--pn-dim:#7f9aa6;--pn-red:#ff5a4e;--pn-needle:#ffd166;--pn-trace:#45e0f5;--pn-pass:rgba(255,209,102,.16);--pn-lcd:#9ff3ff}
-.rigface{display:grid;grid-template-columns:minmax(200px,280px) minmax(0,1fr);grid-template-areas:"meter lcd" "spec spec" "bands bands" "ctl dial";gap:10px 14px;padding:14px;border-radius:14px;
+.rigface{display:grid;grid-template-columns:minmax(200px,280px) minmax(0,1fr);grid-template-areas:"meter lcd" "spec spec" "wf wf" "bands bands" "ctl dial";gap:10px 14px;padding:14px;border-radius:14px;
   background:linear-gradient(180deg,#26313a,#151c22 60%,#10161b);border:1px solid #3a4852;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.35);color:var(--pn-ink)}
 .pnmeterbox{grid-area:meter;position:relative;background:radial-gradient(120% 120% at 50% 100%,#1b2a33,#0b1217);border:1px solid #33434d;border-radius:10px;box-shadow:inset 0 2px 8px rgba(0,0,0,.6)}
 .pnmeter{display:block;width:100%;height:118px}
@@ -451,8 +451,81 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .pnknobdot::before{content:"";position:absolute;left:50%;top:9%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--pn-needle);box-shadow:0 0 8px var(--pn-needle)}
 .pnarrow{min-width:2.4em;font-size:1rem}
 @media (max-width:700px){
-  .rigface{grid-template-columns:minmax(0,1fr);grid-template-areas:"lcd" "meter" "spec" "bands" "ctl" "dial";padding:10px}
+  .rigface{grid-template-columns:minmax(0,1fr);grid-template-areas:"lcd" "meter" "spec" "wf" "bands" "ctl" "dial";padding:10px}
   .pnknob{width:104px;height:104px}
 }
 :root[data-theme="contrast"] .rigface{background:var(--surface);border:2px solid var(--text);box-shadow:none}
 :root[data-theme="contrast"] .pnfreq{text-shadow:none}
+
+/* 1.20.1: a more 3D front panel. A brushed-metal face with corner screws, glass over the meter and display,
+   keys that stand up and press in, and a ridged knob that sits in a recess. High contrast stays flat. */
+:root:not([data-theme="contrast"]) .rigface{position:relative;
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,#3a4651 0%,#232c34 18%,#161d23 70%,#0f1418 100%);
+  border:1px solid #57636d;border-top-color:#7d8a94;border-bottom-color:#0a0e11;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -3px 0 rgba(0,0,0,.45),inset 0 0 0 4px #1b232a,inset 0 0 0 5px #3b4752,
+    0 2px 0 #0b0f12,0 6px 0 #070a0c,0 18px 34px rgba(0,0,0,.55)}
+/* Corner screws */
+:root:not([data-theme="contrast"]) .rigface::before,:root:not([data-theme="contrast"]) .rigface::after{content:"";position:absolute;top:7px;width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#c9d2d8,#6c7780 45%,#2b3238 80%);box-shadow:0 1px 1px rgba(0,0,0,.7),inset 0 0 0 1px rgba(0,0,0,.35);
+  background-image:linear-gradient(45deg,transparent 44%,rgba(0,0,0,.55) 45% 55%,transparent 56%),radial-gradient(circle at 35% 30%,#c9d2d8,#6c7780 45%,#2b3238 80%)}
+:root:not([data-theme="contrast"]) .rigface::before{left:7px}
+:root:not([data-theme="contrast"]) .rigface::after{right:7px}
+/* Glass: the meter, the display and the scope sit behind it, set into the panel */
+:root:not([data-theme="contrast"]) :is(.pnmeterbox,.pnlcd,.pnspec){position:relative;border:1px solid #0a0f12;border-bottom-color:#4a5862;border-right-color:#33414b;
+  box-shadow:inset 0 3px 10px rgba(0,0,0,.85),inset 0 -1px 0 rgba(255,255,255,.06),0 1px 0 rgba(255,255,255,.10)}
+:root:not([data-theme="contrast"]) .pnmeterbox::after,:root:not([data-theme="contrast"]) .pnlcd::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.05) 28%,transparent 42%,transparent 100%)}
+:root:not([data-theme="contrast"]) .pnmeterbox{background:radial-gradient(130% 120% at 50% 105%,#24363f,#0c1419 70%)}
+:root:not([data-theme="contrast"]) .pnfreq{text-shadow:0 0 14px rgba(69,224,245,.55),0 0 2px rgba(159,243,255,.9),0 2px 0 rgba(0,0,0,.6)}
+/* Keys: raised, with a lip, that sink when pressed or lit */
+:root:not([data-theme="contrast"]) .pnkey{border:1px solid #0d1216;border-top-color:#6b7a85;
+  background:linear-gradient(180deg,#56656f 0%,#3a4751 45%,#2a343c 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -2px 0 rgba(0,0,0,.35),0 3px 0 #11171b,0 4px 6px rgba(0,0,0,.55);
+  transform:translateY(0);transition:transform .06s,box-shadow .06s,filter .1s}
+:root:not([data-theme="contrast"]) .pnkey:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.3),0 1px 0 #11171b,0 2px 3px rgba(0,0,0,.5)}
+:root:not([data-theme="contrast"]) .pnkey[aria-pressed="true"]{transform:translateY(2px);border-color:#0b3a44;border-top-color:#b8f6ff;
+  background:linear-gradient(180deg,#a6f4ff 0%,#4fd8ec 50%,#22b4cb 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 0 rgba(0,0,0,.2),0 1px 0 #0b3a44,0 0 12px rgba(69,224,245,.55)}
+:root:not([data-theme="contrast"]) .pnlisten[aria-pressed="true"]{border-top-color:#fff1c4;background:linear-gradient(180deg,#ffeab0,#f6c35d 55%,#e3a637);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 0 #6a4a10,0 0 12px rgba(255,209,102,.55)}
+:root:not([data-theme="contrast"]) .pnsel select{border:1px solid #0d1216;border-bottom-color:#56646e;box-shadow:inset 0 2px 4px rgba(0,0,0,.6)}
+/* The knob: a ridged skirt (knurling), a domed cap with a light on top, set into a recess in the panel */
+:root:not([data-theme="contrast"]) .pnknob{
+  background:
+    radial-gradient(circle at 50% 50%,transparent 61%,rgba(0,0,0,.35) 62%,transparent 66%),
+    repeating-conic-gradient(from 0deg,#5c6a74 0deg 3deg,#252e35 3deg 6deg),
+    radial-gradient(circle at 35% 30%,#7b8994,#2a333a 70%);
+  box-shadow:0 0 0 7px #10161a,0 0 0 8px #48545e,inset 0 0 0 1px rgba(0,0,0,.6),0 10px 18px rgba(0,0,0,.65),0 3px 0 #070a0c,
+    inset 0 4px 6px rgba(255,255,255,.18),inset 0 -8px 14px rgba(0,0,0,.6)}
+:root:not([data-theme="contrast"]) .pnknob::after{inset:18%;
+  background:radial-gradient(circle at 38% 30%,#9aa7b0 0%,#56636d 25%,#2a333a 62%,#161c21 100%);
+  box-shadow:0 4px 8px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.15),inset 0 2px 2px rgba(255,255,255,.35),inset 0 -4px 8px rgba(0,0,0,.5)}
+:root:not([data-theme="contrast"]) .pnknobdot::before{top:24%;width:10px;height:10px;margin-left:-5px;
+  background:radial-gradient(circle at 40% 35%,#fff4c8,#ffd166 45%,#c48a1a);box-shadow:0 0 10px rgba(255,209,102,.9),inset 0 -1px 1px rgba(0,0,0,.4)}
+:root:not([data-theme="contrast"]) .pndial{padding:6px 0}
+/* Glossy: a shine across the whole radio front, the keys and the knob, and a deeper case so it reads as a box. */
+:root:not([data-theme="contrast"]) .rigface{
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 0 -3px 0 rgba(0,0,0,.45),inset 0 0 0 4px #1b232a,inset 0 0 0 5px #3b4752,
+    0 1px 0 #2a333b,0 2px 0 #222a31,0 3px 0 #1c232a,0 4px 0 #171d23,0 5px 0 #12181d,0 6px 0 #0e1317,0 7px 0 #0a0e11,
+    0 10px 10px rgba(0,0,0,.35),0 22px 40px rgba(0,0,0,.55)}
+:root:not([data-theme="contrast"]) .rigface > .pnshine{position:absolute;inset:0;border-radius:inherit;pointer-events:none;overflow:hidden}
+:root:not([data-theme="contrast"]) .rigface > .pnshine::before{content:"";position:absolute;left:-10%;right:-10%;top:-60%;height:95%;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04) 60%,transparent);border-radius:0 0 50% 50% / 0 0 30% 30%}
+:root:not([data-theme="contrast"]) .pnkey{
+  background:linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.10) 48%,rgba(255,255,255,0) 52%),linear-gradient(180deg,#56656f 0%,#3a4751 45%,#2a343c 100%)}
+:root:not([data-theme="contrast"]) .pnkey[aria-pressed="true"]{
+  background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.18) 48%,rgba(255,255,255,0) 52%),linear-gradient(180deg,#a6f4ff 0%,#4fd8ec 50%,#22b4cb 100%)}
+:root:not([data-theme="contrast"]) .pnlisten[aria-pressed="true"]{
+  background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.18) 48%,rgba(255,255,255,0) 52%),linear-gradient(180deg,#ffeab0,#f6c35d 55%,#e3a637)}
+:root:not([data-theme="contrast"]) .pnmode{background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.1) 50%,transparent 52%),var(--pn-needle);box-shadow:0 0 10px rgba(255,209,102,.45)}
+:root:not([data-theme="contrast"]) .pnsrc.on{background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.1) 50%,transparent 52%),#45e0f5;box-shadow:0 0 8px rgba(69,224,245,.5)}
+/* A highlight on the knob's cap that stays put while the knob turns, like light on a shiny knob */
+:root:not([data-theme="contrast"]) .pnknob::before{content:"";position:absolute;inset:18%;z-index:2;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse 60% 38% at 40% 24%,rgba(255,255,255,.55),rgba(255,255,255,.12) 55%,transparent 70%)}
+.pnshine{position:absolute;inset:0;pointer-events:none;border-radius:inherit}
+.pnwf{grid-area:wf;display:block;width:100%;height:150px;margin-top:-6px;border-radius:0 0 10px 10px;image-rendering:auto;cursor:crosshair;background:#040c1e;
+  border:1px solid #0a0f12;border-top:0;box-shadow:inset 0 3px 10px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.10)}
+.rigface .pnspec{border-radius:10px 10px 0 0}
+.popwin #secPanel .pnwf{height:clamp(150px,30vh,420px)}
+.popwin #secPanel .pnspec{height:clamp(120px,20vh,260px)}
