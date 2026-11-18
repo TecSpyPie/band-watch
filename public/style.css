@@ -195,7 +195,7 @@ dialog .optgrid input[type=range]{display:block;padding:0;border:0;background:no
 dialog .secs label{display:flex;gap:6px;align-items:center;margin:0;color:var(--text)}
 dialog .secs input{display:inline-block;width:auto;margin:0;accent-color:var(--cool)}
 dialog.wide{width:min(560px,calc(100vw - 24px))}
-[data-hide~="listen"] #secListen,[data-hide~="sked"] #secSked,[data-hide~="plan"] #secPlan,[data-hide~="sun"] #secSun{display:none!important}
+[data-hide~="listen"] #secListen,[data-hide~="sked"] #secSked,[data-hide~="panel"] #secPanel,[data-hide~="plan"] #secPlan,[data-hide~="sun"] #secSun{display:none!important}
 
 /* Background picture (Settings > Background) */
 :root{--sun1:#ffd36b;--sun2:#e8892a;--seg-cw:#9aa7a9;--seg-data:#7cc3ce;--seg-all:#e9c27a;--seg-beacon:#b48ad8;--seg-fm:#e48a5c;--seg-sat:#9cc78a;--seg-none:repeating-linear-gradient(45deg,#c9c9c9 0 4px,#ececec 4px 8px)}
@@ -409,3 +409,50 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .atsov-meter div{height:100%;width:0;transition:width .35s;
   background:repeating-linear-gradient(90deg,var(--atsov-bar,#4c4) 0 6px,transparent 6px 8px)}
 .atsov-s{min-width:4.5em;text-align:right}
+
+/* 1.20.0: the Radio panel, made to look like the front of a transceiver (dark in every colour scheme, like a real
+   radio's display). High contrast keeps it plain. */
+#secPanel{--pn-ink:#dff6ff;--pn-dim:#7f9aa6;--pn-red:#ff5a4e;--pn-needle:#ffd166;--pn-trace:#45e0f5;--pn-pass:rgba(255,209,102,.16);--pn-lcd:#9ff3ff}
+.rigface{display:grid;grid-template-columns:minmax(200px,280px) minmax(0,1fr);grid-template-areas:"meter lcd" "spec spec" "bands bands" "ctl dial";gap:10px 14px;padding:14px;border-radius:14px;
+  background:linear-gradient(180deg,#26313a,#151c22 60%,#10161b);border:1px solid #3a4852;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.35);color:var(--pn-ink)}
+.pnmeterbox{grid-area:meter;position:relative;background:radial-gradient(120% 120% at 50% 100%,#1b2a33,#0b1217);border:1px solid #33434d;border-radius:10px;box-shadow:inset 0 2px 8px rgba(0,0,0,.6)}
+.pnmeter{display:block;width:100%;height:118px}
+.pns{position:absolute;right:10px;bottom:6px;font:600 .85rem ui-monospace,Consolas,monospace;color:var(--pn-needle)}
+.pnlcd{grid-area:lcd;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:8px 14px;border-radius:10px;background:linear-gradient(180deg,#0b1d26,#07131a);border:1px solid #2c4b58;box-shadow:inset 0 2px 10px rgba(0,0,0,.7),0 0 0 1px rgba(69,224,245,.06);min-width:0}
+.pnlcdtop{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--pn-dim)}
+.pnsrc{padding:0 8px;border-radius:999px;border:1px solid #39525d}
+.pnsrc.on{color:#06222b;background:#45e0f5;border-color:#45e0f5}
+.pnfreqrow{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.pnfreq{all:unset;cursor:text;font:700 clamp(2rem,5.5vw,3.4rem)/1.1 ui-monospace,"Cascadia Mono",Consolas,monospace;letter-spacing:.02em;color:var(--pn-lcd);text-shadow:0 0 12px rgba(69,224,245,.45);font-variant-numeric:tabular-nums}
+.pnfreq:focus-visible{outline:2px solid var(--pn-needle);outline-offset:4px;border-radius:4px}
+.pnmode{font:700 1rem system-ui,sans-serif;padding:1px 10px;border-radius:6px;color:#06222b;background:var(--pn-needle)}
+.pnmode:empty{display:none}
+.pnentry{font:600 1.1rem ui-monospace,Consolas,monospace;padding:4px 8px;border-radius:6px;border:1px solid #45e0f5;background:#04121a;color:var(--pn-lcd);max-width:16em}
+.pnspec{grid-area:spec;display:block;width:100%;height:120px;border-radius:10px;background:linear-gradient(180deg,#07141b,#0a1a22);border:1px solid #2c4b58;box-shadow:inset 0 2px 10px rgba(0,0,0,.7);cursor:crosshair}
+.pnkeys{display:flex;flex-wrap:wrap;gap:6px}
+#pnBands{grid-area:bands}
+.pnkey{font:600 .85rem system-ui,sans-serif;min-width:2.6em;padding:6px 10px;border-radius:7px;cursor:pointer;color:var(--pn-ink);border:1px solid #475864;
+  background:linear-gradient(180deg,#3b4a55,#25303a);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 4px rgba(0,0,0,.4)}
+.pnkey:hover{filter:brightness(1.15)}
+.pnkey:active{transform:translateY(1px)}
+.pnkey[aria-pressed="true"]{color:#06222b;border-color:#45e0f5;background:linear-gradient(180deg,#8ff0ff,#2fc6dd);box-shadow:0 0 10px rgba(69,224,245,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.pnkey:focus-visible,.pnknob:focus-visible{outline:2px solid var(--pn-needle);outline-offset:2px}
+.pnctl{grid-area:ctl;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;align-content:center}
+.pnsel{display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--pn-dim)}
+.pnsel select{background:#1c262e;color:var(--pn-ink);border:1px solid #475864;border-radius:6px;padding:4px}
+.pnlisten[aria-pressed="true"]{color:#2a1a00;background:linear-gradient(180deg,#ffe29a,#f0b44c);border-color:#ffd166;box-shadow:0 0 10px rgba(255,209,102,.5)}
+.pndial{grid-area:dial;display:flex;align-items:center;justify-content:center;gap:14px}
+.pnknob{position:relative;width:120px;height:120px;border-radius:50%;cursor:grab;touch-action:none;flex:none;
+  background:radial-gradient(circle at 35% 30%,#6b7a85 0%,#3a4650 28%,#1b232a 70%,#0e1418 100%);
+  box-shadow:0 6px 16px rgba(0,0,0,.6),inset 0 2px 3px rgba(255,255,255,.25),inset 0 -6px 12px rgba(0,0,0,.6),0 0 0 6px #1a2229,0 0 0 7px #3a4852}
+.pnknob:active{cursor:grabbing}
+.pnknob::after{content:"";position:absolute;inset:22%;border-radius:50%;background:radial-gradient(circle at 40% 35%,#55636e,#20292f 70%);box-shadow:inset 0 1px 2px rgba(255,255,255,.2),0 1px 4px rgba(0,0,0,.6)}
+.pnknobdot{position:absolute;inset:0;z-index:1;pointer-events:none}
+.pnknobdot::before{content:"";position:absolute;left:50%;top:9%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--pn-needle);box-shadow:0 0 8px var(--pn-needle)}
+.pnarrow{min-width:2.4em;font-size:1rem}
+@media (max-width:700px){
+  .rigface{grid-template-columns:minmax(0,1fr);grid-template-areas:"lcd" "meter" "spec" "bands" "ctl" "dial";padding:10px}
+  .pnknob{width:104px;height:104px}
+}
+:root[data-theme="contrast"] .rigface{background:var(--surface);border:2px solid var(--text);box-shadow:none}
+:root[data-theme="contrast"] .pnfreq{text-shadow:none}

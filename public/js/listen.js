@@ -125,6 +125,7 @@ function renderListen() {
   $("lsStop").hidden = !listen.open;
   $("lsFrame").hidden = isRtl || !(listen.open && playsInside());
   if (typeof dcRenderTune === "function") dcRenderTune();
+  if (typeof renderPanel === "function") renderPanel(); // the Radio panel shows the same dial
 }
 
 /** Tune to a frequency (kHz) and mode. Retunes an open receiver; opens one if asked to. */

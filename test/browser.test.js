@@ -1942,11 +1942,49 @@ test("screenshots for the README", { skip: (!process.env.SHOTS_DIR && "set SHOTS
   await rp.goto(base + "/");
   await rp.waitForFunction(() => rig.connected && rig.hz === 14074000);
   await rp.locator("header").screenshot({ path: require("path").join(dir, "radio-connected.png") });
+  await rp.evaluate(() => { window.__radio.sm = 150; document.getElementById("secPanel").scrollIntoView(); });
+  await rp.waitForFunction(() => document.getElementById("pnS").textContent === "S9+10");
+  await rp.waitForTimeout(800); // the needle settles
+  await rp.evaluate(() => document.getElementById("toast").classList.remove("on"));
+  await rp.waitForTimeout(400);
+  await rp.locator("#secPanel").screenshot({ path: require("path").join(dir, "radio-panel.png") });
+});
+
+test("radio panel with an FT-991A: its mode name, a live S-meter, and the knob tunes the radio", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true"));
+  await page.reload();
+  await page.waitForFunction(() => rig.connected && rig.hz === 7074000);
+  await page.evaluate(() => document.getElementById("secPanel").scrollIntoView());
+  await page.waitForFunction(() => document.getElementById("pnSrc").textContent === "FT-991A");
+  assert.equal(await page.textContent("#pnMode"), "DATA-USB", "the radio's own name for the mode");
+  // The S-meter: asked for while the panel is on screen. 150 on the FT-991A's 0-255 scale is S9+10.
+  await page.evaluate(() => { window.__radio.sm = 150; });
+  await page.waitForFunction(() => document.getElementById("pnS").textContent === "S9+10");
+  assert.ok(await page.evaluate(() => window.__radio.sent.includes("SM0")));
+  await page.evaluate(() => { window.__radio.sm = 46; }); // S3 (52 would round to S4)
+  await page.waitForFunction(() => document.getElementById("pnS").textContent === "S3");
+  assert.equal(await page.evaluate(() => [yaesuMeterDb(0), yaesuMeterDb(130), yaesuMeterDb(255), icomMeterDb(120), sUnits(-12), sUnits(20)].join()), "-54,0,60,0,S7,S9+20");
+  // Turning the knob quickly: the radio ends up where the knob stopped, without a flood of commands
+  await page.focus("#pnKnob");
+  const before = await page.evaluate(() => window.__radio.sent.filter((c) => /^FA\d{9}$/.test(c)).length);
+  for (let i = 0; i < 20; i++) await page.keyboard.press("ArrowUp");
+  await page.waitForFunction(() => window.__radio.hz === 7094000);
+  const sent = await page.evaluate((n) => window.__radio.sent.filter((c) => /^FA\d{9}$/.test(c)).length - n, before);
+  assert.ok(sent < 20, `${sent} tuning commands for 20 steps`);
+  // A band key tunes the radio too
+  await page.click('#pnBands button[data-band="20"]');
+  await page.waitForFunction(() => window.__radio.hz === 14200000 && window.__radio.mode === "2");
+  assert.equal(await page.textContent("#pnNote"), "");
+  // Disconnected: the needle rests and the reading goes
+  await page.click("#rigBtn");
+  await page.waitForFunction(() => !rig.connected && document.getElementById("pnS").textContent === "" && document.getElementById("pnSrc").textContent === "Not connected");
+  assert.deepEqual(errors, []);
 });
 
 /* A pretend FT-991A on a pretend COM port, through Web Serial, for the radio control tests. */
 const FAKE_FT991A = `(() => {
-  const radio = window.__radio = { hz: 7074000, mode: "C", sent: [], opened: null, granted: ${"__GRANTED__"} };
+  const radio = window.__radio = { hz: 7074000, mode: "C", sm: 0, sent: [], opened: null, granted: ${"__GRANTED__"} };
   let push = null;
   const answer = (s) => push && push(new TextEncoder().encode(s));
   let pending = "";
@@ -1964,6 +2002,7 @@ const FAKE_FT991A = `(() => {
           if (cmd === "ID") answer("ID0670;");
           else if (cmd === "FA") answer("FA" + String(radio.hz).padStart(9, "0") + ";");
           else if (cmd === "MD0") answer("MD0" + radio.mode + ";");
+          else if (cmd === "SM0") answer("SM0" + String(radio.sm).padStart(3, "0") + ";");
           else if (/^FA\\d{9}$/.test(cmd)) radio.hz = Number(cmd.slice(2));
           else if (/^MD0[0-9A-E]$/.test(cmd)) radio.mode = cmd[3];
           else answer("?;");
@@ -1979,6 +2018,62 @@ const FAKE_FT991A = `(() => {
     addEventListener() {},
   } });
 })();`;
+
+test("radio panel: band and mode keys, the knob, typing a frequency, the band stack", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.evaluate(() => document.getElementById("secPanel").scrollIntoView());
+  assert.equal(await page.textContent("#pnSrc"), "Not connected");
+  // Band key: 40 m goes to 7.100 LSB the first time
+  await page.click('#pnBands button[data-band="40"]');
+  await page.waitForFunction(() => listen.kHz === 7100 && listen.mode === "lsb");
+  assert.equal(await page.textContent("#pnFreq"), "7.100.00");
+  assert.equal(await page.textContent("#pnMode"), "LSB");
+  assert.equal(await page.getAttribute('#pnBands button[data-band="40"]', "aria-pressed"), "true");
+  // The knob: arrow keys step by the tuning step (1 kHz), Page Up by ten
+  await page.focus("#pnKnob");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  await page.waitForFunction(() => listen.kHz === 7102);
+  await page.keyboard.press("PageDown");
+  await page.waitForFunction(() => listen.kHz === 7092);
+  assert.equal(await page.getAttribute("#pnKnob", "aria-valuetext"), "7,092 kHz LSB");
+  // Step 100 Hz, and the scroll wheel
+  await page.selectOption("#pnStep", "0.1");
+  assert.equal(await page.evaluate(() => listen.step), 0.1);
+  await page.hover("#pnKnob");
+  await page.mouse.wheel(0, -100);
+  await page.waitForFunction(() => listen.kHz === 7092.1);
+  // Dragging the knob round a quarter turn clockwise: 90° / 12° = 7 steps up
+  const box = await page.locator("#pnKnob").boundingBox();
+  const cx = box.x + box.width / 2, cy = box.y + box.height / 2, R = box.width / 2 - 10;
+  await page.mouse.move(cx, cy - R);
+  await page.mouse.down();
+  for (let i = 1; i <= 9; i++) { const a = -Math.PI / 2 + (i / 9) * (Math.PI / 2); await page.mouse.move(cx + R * Math.cos(a), cy + R * Math.sin(a)); }
+  await page.mouse.up();
+  await page.waitForFunction(() => Math.abs(listen.kHz - 7092.8) < 1e-6, null, { timeout: 3000 });
+  // A mode key
+  await page.click('#pnModes button[data-mode="cw"]');
+  await page.waitForFunction(() => listen.mode === "cw");
+  // Type a frequency: in MHz or kHz
+  await page.click("#pnFreq");
+  await page.fill("#pnEntry", "14.2");
+  await page.press("#pnEntry", "Enter");
+  await page.waitForFunction(() => listen.kHz === 14200);
+  assert.equal(await page.isHidden("#pnEntry"), true);
+  // Band stack: back on 40 m, the panel remembers 7.0928 CW
+  await page.click('#pnBands button[data-band="40"]');
+  await page.waitForFunction(() => Math.abs(listen.kHz - 7092.8) < 1e-6 && listen.mode === "cw");
+  await page.click('#pnBands button[data-band="20"]');
+  await page.waitForFunction(() => listen.kHz === 14200);
+  // Clicking the spectrum tunes there: the right-hand edge is +5 kHz
+  const sb = await page.locator("#pnSpec").boundingBox();
+  await page.mouse.click(sb.x + sb.width * 0.75, sb.y + sb.height / 2);
+  await page.waitForFunction(() => Math.abs(listen.kHz - 14202.5) < 0.11);
+  // Remembered
+  assert.ok(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-panel"))).bands["40"]);
+  assert.match(await page.textContent("#pnNote"), /your radio follows once it's connected/);
+  assert.deepEqual(errors, []);
+});
 
 test("radio control: Band Watch tunes a Yaesu FT-991A over USB, and follows its dial", { skip }, async (t) => {
   const { page, errors } = await openPage(t);

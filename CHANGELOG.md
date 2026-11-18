@@ -1,5 +1,13 @@
 # What's new
 
+## 1.20.0 (18 Nov 2026)
+- **Radio panel:** Band Watch as the front of a transceiver. A big glowing frequency display (click it to type a
+  frequency, like 14.2 or 7074), an analogue S-meter with a needle, a close-up spectrum around the dial (live from
+  your RTL-SDR, or drawn from the stations spotted there; click it to tune), band keys that remember where you were
+  on each band, mode keys, a tuning step and span, and a tuning knob you can drag round, scroll, or turn with the
+  arrow keys. Your radio follows it, and so does Listen. The S-meter is read from the FT-991A (and other Yaesus),
+  Icom radios and the ATS Mini. There's no transmit button: Band Watch only tunes and listens.
+
 ## 1.19.0 (18 Nov 2026)
 - **Shortwave stations on air:** a new panel listing the broadcasters on the air right now, from the EiBi
   shortwave schedule (eibispace.de, free to use in other software). Each shows its frequency, language, country,

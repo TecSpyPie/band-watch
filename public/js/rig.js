@@ -58,6 +58,7 @@ const rig = {
   ...RIG_DEFAULTS,
   port: null, writer: null, reader: null, connected: false, busy: false,
   hz: 0, modeName: "", listenMode: "", data: false, model: "", buf: "", bytes: [], poll: null, lastSet: 0, error: "",
+  meter: null, meterAt: 0, // the S-meter: dB above or below S9 (S9 = 0, S1 = -48, S9+60 = 60), and when it was read
   ats: null,
 };
 
@@ -243,6 +244,7 @@ function atsLine(line) {
   a.bandName = f[4];
   a.mode = mode;
   a.rssi = Number(f[10]);
+  if (Number.isFinite(a.rssi)) rigSetMeter(a.rssi - 34); // dBµV: S9 is about 34 dBµV on the SI4732
   a.snr = Number(f[11]);
   a.seq = f[14];
   rig.model = "ATS Mini";
@@ -286,9 +288,44 @@ function rigSetState(hz, modeName, listenMode) {
   if (changed) rigFromRadio();
 }
 
-/** Yaesu answers: FA (frequency), MD0 (mode), ID (model), ?; (didn't understand). */
+/* ---------- S-meter ----------
+   Asked for by the Radio panel while it's on screen. Each make counts differently; all are turned into dB
+   from S9 (6 dB per S-unit below it). Kenwood-style radios and the Malahit use scales that differ by model,
+   so their meter isn't read. */
+
+/** The command that asks for the S-meter, or "" if this radio's meter can't be read. */
+function rigMeterCommand() {
+  if (!rig.connected) return "";
+  if (rig.kind === "yaesu") return "SM0;";
+  if (rig.kind === "icom") return civFrame(0x15, 0x02);
+  return ""; // the ATS Mini sends its signal level by itself; Kenwood-style and Malahit: not read
+}
+/** Can Band Watch show this radio's S-meter? */
+function rigHasMeter() {
+  return rig.connected && (rig.kind === "yaesu" || rig.kind === "icom" || rig.kind === "atsmini");
+}
+/** Yaesu SM0 reading (0-255; S9 at 130, S9+60 at 255) -> dB from S9. */
+function yaesuMeterDb(raw) {
+  return raw <= 130 ? (raw / 130) * 54 - 54 : ((raw - 130) / 125) * 60;
+}
+/** Icom 15 02 reading (0-255; S9 at 120, S9+60 at 241) -> dB from S9. */
+function icomMeterDb(raw) {
+  return raw <= 120 ? (raw / 120) * 54 - 54 : Math.min(60, ((raw - 120) / 121) * 60);
+}
+function rigSetMeter(db) {
+  rig.meter = Math.max(-54, Math.min(60, db));
+  rig.meterAt = Date.now();
+}
+/** dB from S9 -> "S7", "S9", "S9+20". */
+function sUnits(db) {
+  if (db > 2) return `S9+${Math.round(db / 10) * 10}`.replace(/\+0$/, "");
+  return `S${Math.max(0, Math.min(9, Math.round(9 + db / 6)))}`;
+}
+
+/** Yaesu answers: FA (frequency), MD0 (mode), ID (model), SM0 (S-meter), ?; (didn't understand). */
 function rigYaesuAnswer(ans) {
-  if (/^FA\d{8,9}$/.test(ans)) rigSetState(Number(ans.slice(2)));
+  if (/^SM0\d{3}$/.test(ans)) rigSetMeter(yaesuMeterDb(Number(ans.slice(3))));
+  else if (/^FA\d{8,9}$/.test(ans)) rigSetState(Number(ans.slice(2)));
   else if (/^MD0[0-9A-E]$/.test(ans)) rigSetState(null, RIG_MODES[ans[3]] || "", RIG_LISTEN_MODE[ans[3]] || "");
   else if (/^ID\d{4}$/.test(ans)) rig.model = YAESU_IDS[ans.slice(2)] || "";
 }
@@ -318,6 +355,10 @@ function rigIcomFrame(f) {
   if ((cmd === 0x03 || cmd === 0x00) && f.length >= 11) rigSetState(civFreqHz(f.slice(5, 10)));
   else if ((cmd === 0x04 || cmd === 0x01) && f.length >= 7) { rig.icMode = f[5]; rigIcomMode(); }
   else if (cmd === 0x1a && f[5] === 0x06 && f.length >= 8) { rig.data = f[6] === 1; rigIcomMode(); }
+  else if (cmd === 0x15 && f[5] === 0x02 && f.length >= 9) {
+    const bcd = (b) => (b >> 4) * 10 + (b & 15);
+    rigSetMeter(icomMeterDb(bcd(f[6]) * 100 + bcd(f[7])));
+  }
 }
 
 function rigIcomMode() {
@@ -479,6 +520,7 @@ async function rigClose() {
 async function rigDisconnect() {
   await rigClose();
   rig.hz = 0;
+  rig.meter = null;
   rig.modeName = "";
   rig.listenMode = "";
   rig.data = false;
@@ -557,6 +599,7 @@ function renderRig() {
     : "Use DATA-USB on FT8, FT4, WSPR and other digital frequencies";
   for (const [id, k] of [["optRigFollow", "follow"], ["optRigRead", "read"], ["optRigData", "dataMode"], ["optRigAuto", "autoConnect"]]) if ($(id)) $(id).checked = rig[k];
   renderAts();
+  if (typeof renderPanel === "function") renderPanel();
 }
 
 async function rigReconnect() {

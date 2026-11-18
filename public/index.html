@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.19.0">
-<link rel="stylesheet" href="/listen.css?v=1.19.0">
+<link rel="stylesheet" href="/style.css?v=1.20.0">
+<link rel="stylesheet" href="/listen.css?v=1.20.0">
 </head>
 <body>
 <div class="wrap">
@@ -115,6 +115,44 @@
       </div>
     </section>
   </div>
+
+  <section class="panel" id="secPanel" aria-labelledby="pnTitle">
+    <div class="phead">
+      <h2 id="pnTitle">Radio panel</h2>
+      <span class="small muted">Tune from here: your radio and Listen follow</span>
+    </div>
+    <div class="rigface">
+      <div class="pnmeterbox">
+        <canvas id="pnMeter" class="pnmeter" aria-hidden="true"></canvas>
+        <span class="pns" id="pnS" aria-live="off"></span>
+      </div>
+      <div class="pnlcd">
+        <div class="pnlcdtop"><span class="pnsrc" id="pnSrc">Not connected</span><span id="pnBand"></span></div>
+        <div class="pnfreqrow">
+          <button type="button" class="pnfreq" id="pnFreq" title="Click to type a frequency">0.000.00</button>
+          <span class="pnmode" id="pnMode"></span>
+        </div>
+        <label class="sr-only" for="pnEntry">Frequency in kHz or MHz</label>
+        <input id="pnEntry" class="pnentry" type="text" inputmode="decimal" placeholder="kHz or MHz, then Enter" hidden autocomplete="off">
+      </div>
+      <canvas id="pnSpec" class="pnspec" title="Click to tune there" aria-label="Close-up spectrum around the dial: click to tune there"></canvas>
+      <div class="pnkeys" id="pnBands" role="group" aria-label="Bands"></div>
+      <div class="pnctl">
+        <div class="pnkeys" id="pnModes" role="group" aria-label="Mode"></div>
+        <label class="pnsel">Step <select id="pnStep"></select></label>
+        <label class="pnsel">Span <select id="pnSpan"></select></label>
+        <button type="button" class="pnkey pnlisten" id="pnListen" aria-pressed="false">Listen</button>
+      </div>
+      <div class="pndial">
+        <button type="button" class="pnkey pnarrow" id="pnDown" aria-label="Tune down one step">◀</button>
+        <div class="pnknob" id="pnKnob" role="slider" tabindex="0" aria-label="Tuning knob: drag round, scroll, or use the arrow keys" aria-valuemin="10" aria-valuemax="2000000" aria-valuenow="0">
+          <span class="pnknobdot" id="pnKnobDot" aria-hidden="true"></span>
+        </div>
+        <button type="button" class="pnkey pnarrow" id="pnUp" aria-label="Tune up one step">▶</button>
+      </div>
+    </div>
+    <p class="small muted" id="pnNote" role="status"></p>
+  </section>
 
   <section class="panel listen" id="secListen" aria-labelledby="lsTitle">
     <div class="phead lshead" id="lsHead">
@@ -749,33 +787,34 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.19.0"></script>
-<script src="/js/bandplan.js?v=1.19.0"></script>
-<script src="/js/core.js?v=1.19.0"></script>
-<script src="/js/modes.js?v=1.19.0"></script>
-<script src="/js/map.js?v=1.19.0"></script>
-<script src="/js/scope.js?v=1.19.0"></script>
-<script src="/js/monitor.js?v=1.19.0"></script>
-<script src="/js/lookup.js?v=1.19.0"></script>
-<script src="/js/worldclock.js?v=1.19.0"></script>
-<script src="/js/locator.js?v=1.19.0"></script>
-<script src="/js/activity.js?v=1.19.0"></script>
-<script src="/js/qrz.js?v=1.19.0"></script>
-<script src="/js/hovercard.js?v=1.19.0"></script>
-<script src="/js/station.js?v=1.19.0"></script>
-<script src="/js/sdr-dsp.js?v=1.19.0"></script>
-<script src="/js/sdr.js?v=1.19.0"></script>
-<script src="/js/listen.js?v=1.19.0"></script>
-<script src="/js/rig.js?v=1.19.0"></script>
-<script src="/js/xota.js?v=1.19.0"></script>
-<script src="/js/eibi-data.js?v=1.19.0"></script>
-<script src="/js/eibi.js?v=1.19.0"></script>
-<script src="/js/logbook.js?v=1.19.0"></script>
-<script src="/js/wanted.js?v=1.19.0"></script>
-<script src="/js/decoders.js?v=1.19.0"></script>
-<script src="/js/sun.js?v=1.19.0"></script>
-<script src="/js/options.js?v=1.19.0"></script>
-<script src="/js/windows.js?v=1.19.0"></script>
-<script src="/js/app.js?v=1.19.0"></script>
+<script src="/js/install.js?v=1.20.0"></script>
+<script src="/js/bandplan.js?v=1.20.0"></script>
+<script src="/js/core.js?v=1.20.0"></script>
+<script src="/js/modes.js?v=1.20.0"></script>
+<script src="/js/map.js?v=1.20.0"></script>
+<script src="/js/scope.js?v=1.20.0"></script>
+<script src="/js/monitor.js?v=1.20.0"></script>
+<script src="/js/lookup.js?v=1.20.0"></script>
+<script src="/js/worldclock.js?v=1.20.0"></script>
+<script src="/js/locator.js?v=1.20.0"></script>
+<script src="/js/activity.js?v=1.20.0"></script>
+<script src="/js/qrz.js?v=1.20.0"></script>
+<script src="/js/hovercard.js?v=1.20.0"></script>
+<script src="/js/station.js?v=1.20.0"></script>
+<script src="/js/sdr-dsp.js?v=1.20.0"></script>
+<script src="/js/sdr.js?v=1.20.0"></script>
+<script src="/js/listen.js?v=1.20.0"></script>
+<script src="/js/rig.js?v=1.20.0"></script>
+<script src="/js/xota.js?v=1.20.0"></script>
+<script src="/js/eibi-data.js?v=1.20.0"></script>
+<script src="/js/eibi.js?v=1.20.0"></script>
+<script src="/js/panel.js?v=1.20.0"></script>
+<script src="/js/logbook.js?v=1.20.0"></script>
+<script src="/js/wanted.js?v=1.20.0"></script>
+<script src="/js/decoders.js?v=1.20.0"></script>
+<script src="/js/sun.js?v=1.20.0"></script>
+<script src="/js/options.js?v=1.20.0"></script>
+<script src="/js/windows.js?v=1.20.0"></script>
+<script src="/js/app.js?v=1.20.0"></script>
 </body>
 </html>
