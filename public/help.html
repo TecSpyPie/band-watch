@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.24.0">
+<link rel="stylesheet" href="/style.css?v=1.24.1">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -166,11 +166,13 @@
 
   <section class="panel" id="clearrx" aria-labelledby="hCrx">
     <h2 id="hCrx">ClearRX: cleaner radio sound</h2>
-    <p><b>ClearRX by M3VRV</b> is a radio audio processor that comes with Band Watch for Windows. It's a program of its own,
-      with its own icon on your desktop. It takes the sound from your radio and plays it back cleaned up: less hiss, no
+    <p><b>ClearRX by M3VRV</b> is a radio audio processor for Windows that works with Band Watch. It's a program of its own,
+      a separate download. It takes the sound from your radio and plays it back cleaned up: less hiss, no
       whistles, and a steady volume.</p>
     <ol>
-      <li>Open <b>ClearRX by M3VRV</b> from the desktop (or the Start menu, in the Band Watch folder).</li>
+      <li>Download <b>ClearRX-Windows.zip</b> from the latest release on GitHub
+        (github.com/TecSpyPie/band-watch/releases/latest) and unzip it into <b>C:\BandWatch\ClearRX</b>.
+        Double-click <b>ClearRX.exe</b>. (The next Band Watch update adds a desktop icon for it.)</li>
       <li>In <b>Sound from</b>, pick where your radio's sound comes in: for the IC-7300 or FT-991A it's the radio's
         <b>USB Audio CODEC</b>; otherwise the PC's line-in, or your mixer or sound card.</li>
       <li>In <b>Play to</b>, pick your speakers or headphones (not the radio's USB sound, or you'd send it back to the radio).</li>

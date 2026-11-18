@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.24.1", "ClearRX is a separate download (ClearRX-Windows.zip), so the Band Watch installer stays clean"],
   ["1.24.0", "New: ClearRX by M3VRV, a radio audio processor of its own, linked to Band Watch's RTL-SDR sound"],
   ["1.23.0", "A Help guide (the Help button at the top), and step-by-step set-up for the Icom IC-7300"],
   ["1.22.0", "Listen goes with the popped-out radio and plays there; everything looks 3D and sharp"],

@@ -162,6 +162,8 @@ jobs:
           - **Windows:** `BandWatch-Setup.exe`: run it and answer Yes. It installs to `C:\BandWatch`
             for you only, no administrator rights needed.
           - **Windows with Smart App Control on:** `BandWatch-Windows.zip`, then `install.bat`.
+          - **ClearRX by M3VRV** (radio audio processor, Windows): `ClearRX-Windows.zip`: unzip it (for example into
+            `C:\BandWatch\ClearRX`) and run `ClearRX.exe`.
           - **Phone, tablet or any browser:** https://band-watch.ample.run
 
           Check a download with `SHA256SUMS.txt`.
@@ -171,8 +173,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$TAG" --target "$GITHUB_SHA" --title "Band Watch ${TAG#v}" --notes-file notes.md \
-            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/SHA256SUMS.txt \
+            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/ClearRX-Windows.zip dist/SHA256SUMS.txt \
             dist/rtl-sdr-blog-*-source.tar.gz \
           || gh release upload "$TAG" --clobber \
-            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/SHA256SUMS.txt \
+            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/ClearRX-Windows.zip dist/SHA256SUMS.txt \
             dist/rtl-sdr-blog-*-source.tar.gz

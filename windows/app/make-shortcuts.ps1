@@ -15,8 +15,11 @@ $stop = Join-Path $InstallDir "stop-bandwatch.bat"
 $icon = Join-Path $InstallDir "bandwatch.ico"
 # ClearRX by M3VRV, the radio audio processor: a program of its own that comes with Band Watch
 $crxName = "ClearRX by M3VRV"
-$crxExe = Join-Path $InstallDir "ClearRX.exe"
-$crxIcon = Join-Path $InstallDir "clearrx.ico"
+# (a separate download: unzipped into the ClearRX folder inside Band Watch's, or next to BandWatch.exe)
+$crxDir = Join-Path $InstallDir "ClearRX"
+if (-not (Test-Path (Join-Path $crxDir "ClearRX.exe"))) { $crxDir = $InstallDir }
+$crxExe = Join-Path $crxDir "ClearRX.exe"
+$crxIcon = Join-Path $crxDir "clearrx.ico"
 
 if ($Remove) {
   Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $desktop "$name.lnk"), (Join-Path $startupDir "$name.lnk"), (Join-Path $desktop "$crxName.lnk")

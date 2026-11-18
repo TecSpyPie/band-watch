@@ -26,6 +26,7 @@ if not exist "%SRC%BandWatch.exe" (
 rem ---------- Stop a copy that is already running (any version) ----------
 call "%SRC%app\stop-bandwatch.bat" quiet
 if exist "%DEST%\ClearRX.exe" "%DEST%\ClearRX.exe" --stop >nul 2>nul
+if exist "%DEST%\ClearRX\ClearRX.exe" "%DEST%\ClearRX\ClearRX.exe" --stop >nul 2>nul
 
 rem ---------- Copy the app ----------
 echo   Installing to %DEST%

@@ -1,5 +1,11 @@
 # What's new
 
+## 1.24.1 (19 Nov 2026)
+- **ClearRX is now its own download** (`ClearRX-Windows.zip` on the release page), not inside the Band Watch
+  installer. Microsoft Defender wrongly flagged the 1.24.0 installer as unwanted software, most likely because
+  ClearRX.exe is new and not signed yet; this way a false alarm on ClearRX can't stop Band Watch installing.
+  Unzip it into `C:\BandWatch\ClearRX` and run `ClearRX.exe`; Band Watch's installer then adds its shortcuts.
+
 ## 1.24.0 (18 Nov 2026)
 - **New: ClearRX by M3VRV**, a radio audio processor that comes with Band Watch for Windows. It's a program of its
   own (its own desktop icon and window), made for ham radio: it takes the sound from your radio's USB sound card,
