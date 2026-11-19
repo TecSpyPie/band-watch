@@ -134,5 +134,8 @@ export them with their SOTA reference in ADIF.
 ## Licence
 
 MIT, see [LICENSE](LICENSE). Data: spots from [PSK Reporter](https://pskreporter.info), park activators from [POTA](https://pota.app), shortwave schedules from [EiBi](http://www.eibispace.de/) (Eike Bierwirth), solar and
-space weather from [NOAA SWPC](https://www.swpc.noaa.gov). Please keep refresh rates modest:
+space weather from [NOAA SWPC](https://www.swpc.noaa.gov), satellite orbits from [CelesTrak](https://celestrak.org)
+(worked out with [satellite.js](https://github.com/shashwatak/satellite-js), MIT).
+
+Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md): ideas as Issues, code as pull requests. Please keep refresh rates modest:
 PSK Reporter is run by a volunteer.
