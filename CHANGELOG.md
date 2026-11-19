@@ -1,6 +1,7 @@
 # What's new
 
 ## Unreleased
+- **Decoders fixes (receive only).** The results window now shows RTTY text the same way it shows CW; the text box replaces the table for CW and RTTY, goes away for other modes, learns the mode even if opened late, and follows Clear. Starting a decoder from the sound input no longer says "Waiting for the next cycle" for CW and RTTY (which have no cycles); SSTV and APRS get their own wording.
 - **Antenna A/B (analysis only).** A new panel to compare two antennas, or before and after a change, using real WSPR
   reports of your own callsign. Press **Now on antenna A / B** whenever you switch (or type the times), name the antennas,
   then **Compare**: reports come from wspr.live straight to your browser (one lookup per click, up to 7 days). Only

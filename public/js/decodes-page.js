@@ -18,6 +18,14 @@
     return esc(w);
   };
 
+  // CW and RTTY show a text box instead of the table.
+  function setMode(mode) {
+    const text = DcWording.isText(mode);
+    $("dwCw").hidden = !text;
+    $("dwTab").hidden = text;
+    if (!text) $("dwCw").textContent = "";
+  }
+
   const COLS = ["time", "mode", "snr", "dt", "freq", "rf", "msg"];
 
   function render() {
@@ -51,13 +59,24 @@
   ch.onmessage = (e) => {
     const m = e.data || {};
     if (m.type === "cw") {
-      $("dwCw").hidden = false;
+      setMode("CW");
       $("dwCw").textContent = m.text || "";
       $("dwCw").scrollTop = $("dwCw").scrollHeight;
       $("dwStatus").textContent = `CW: ${m.wpm} WPM on a ${m.tone} Hz tone`;
       return;
     }
-    if (m.type === "all") rows = Array.isArray(m.rows) ? m.rows.slice() : [];
+    if (m.type === "rtty") {
+      setMode("RTTY");
+      $("dwCw").textContent = m.text || "";
+      $("dwCw").scrollTop = $("dwCw").scrollHeight;
+      $("dwStatus").textContent = m.locked ? "RTTY: a signal is coming in." : "RTTY: waiting for a signal…";
+      return;
+    }
+    if (m.type === "all") {
+      rows = Array.isArray(m.rows) ? m.rows.slice() : [];
+      if (typeof m.mode === "string") setMode(m.mode);
+      if (DcWording.isText(m.mode)) { $("dwCw").textContent = m.text || ""; $("dwCw").scrollTop = $("dwCw").scrollHeight; }
+    }
     else if (m.type === "cycle") rows = [...(m.rows || []), ...rows].slice(0, 3000);
     if (m.status) $("dwStatus").textContent = m.status;
     render();

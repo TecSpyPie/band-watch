@@ -71,7 +71,7 @@ async function dcStart() {
       dc.node.port.onmessage = (e) => decoderFeed(e.data, dc.ctx.sampleRate);
       srcNode.connect(dc.node);
       listDcDevices(); // labels become available once allowed
-      dcSetStatus("Listening to the sound input. Waiting for the next cycle…");
+      dcSetStatus(DcWording.micStart(dc.mode));
     } catch (err) {
       dcStop();
       dcSetStatus(err && err.name === "NotAllowedError" ? "Band Watch wasn't allowed to use the sound input." : `Couldn't open the sound input (${err.message}).`);
@@ -107,6 +107,7 @@ function onDecoderMessage(m) {
     dc.rttyText = (dc.rttyText + (m.text || "")).slice(-4000);
     dc.rttyLocked = Boolean(m.locked);
     renderRtty();
+    if (m.text && dc.channel) dc.channel.postMessage({ type: "rtty", text: dc.rttyText, locked: dc.rttyLocked });
     dcSetStatus(m.locked ? "RTTY: a signal is coming in." : "RTTY: waiting for a signal…");
   }
   else if (m.type === "rtty-tone") {
@@ -300,6 +301,13 @@ function renderDc() {
   renderDcRows();
 }
 
+/** Tell the results window everything: rows, status, the mode and the CW / RTTY text (it may have opened late). */
+function dcBroadcastAll() {
+  if (!dc.channel) return;
+  const text = dc.mode === "CW" ? dc.cwText : dc.mode === "RTTY" ? dc.rttyText : "";
+  dc.channel.postMessage({ type: "all", rows: dc.rows, status: dc.status, mode: dc.mode, text });
+}
+
 function openDecodesWindow() {
   const w = window.open("/decodes", "bw-decodes", "popup,width=780,height=720");
   if (!w) dcSetStatus("Your browser blocked the results window: allow pop-ups for Band Watch.");
@@ -320,7 +328,7 @@ function setupDecoders() {
   if ("BroadcastChannel" in window) {
     dc.channel = new BroadcastChannel("bw-decodes");
     dc.channel.onmessage = (e) => {
-      if (e.data && e.data.type === "hello") dc.channel.postMessage({ type: "all", rows: dc.rows, status: dc.status, mode: dc.mode });
+      if (e.data && e.data.type === "hello") dcBroadcastAll();
       if (e.data && e.data.type === "clear") { dc.rows = []; renderDcRows(); }
     };
   }
@@ -329,6 +337,7 @@ function setupDecoders() {
     saveDc();
     if (dc.running) { dcStop(); dcStart(); }
     renderDc();
+    dcBroadcastAll();
   });
   $("dcSrc").addEventListener("change", () => {
     dc.src = $("dcSrc").value === "mic" ? "mic" : "rtl";
@@ -352,7 +361,7 @@ function setupDecoders() {
     if (dc.mode === "SSTV" && typeof rigDataOn === "function") setTimeout(rigDataOn, 400);
   });
   $("dcCqOnly").addEventListener("change", () => { dc.cqOnly = $("dcCqOnly").checked; saveDc(); renderDcRows(); });
-  $("dcClear").addEventListener("click", () => { dc.rows = []; dc.cwText = ""; dc.rttyText = ""; renderCw(); renderRtty(); renderDcRows(); if (dc.channel) dc.channel.postMessage({ type: "all", rows: [], status: dc.status, mode: dc.mode }); });
+  $("dcClear").addEventListener("click", () => { dc.rows = []; dc.cwText = ""; dc.rttyText = ""; renderCw(); renderRtty(); renderDcRows(); dcBroadcastAll(); });
   const rttyChanged = () => {
     const r = dc.rtty;
     r.baud = Number($("rttyBaud").value) || 45.45;
@@ -369,7 +378,7 @@ function setupDecoders() {
     if (!dc.worker || dc.mode !== "RTTY") { dcSetStatus("Press Start decoding first, with the signal coming in."); return; }
     dc.worker.postMessage({ type: "rtty-find" });
   });
-  $("rttyClear").addEventListener("click", () => { dc.rttyText = ""; renderRtty(); });
+  $("rttyClear").addEventListener("click", () => { dc.rttyText = ""; renderRtty(); dcBroadcastAll(); });
   $("dcWindow").addEventListener("click", openDecodesWindow);
   if (typeof DcCols !== "undefined" && $("dcColsBox")) {
     DcCols.menu($("dcColsBox"), DC_COLS, renderDcRows);
