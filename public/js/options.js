@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.32.0", "Send SSTV pictures (any mode, your text on it, preview, countdown), and band checks against the whole UK band plan for all transmitting"],
   ["1.31.0", "SSTV pictures: all the common analogue modes (Martin, Scottie, Robot, PD, Wraase, Pasokon), auto start from the VIS code, slant fix, gallery"],
   ["1.30.0", "Transmit FT8 and FT4 from the Decoder: Reply, Call CQ, automatic QSO messages, Log QSO, Tune and Level, with Enable TX and Stop TX for safety"],
   ["1.29.0", "Click a satellite (map, list or passes) for its card: identifiers, where it is, orbit, a sky chart of the pass, frequencies and next passes"],

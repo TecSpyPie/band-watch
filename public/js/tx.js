@@ -46,22 +46,59 @@ function txPttCmd(on) {
   return "";
 }
 
-/** Why Band Watch can't transmit right now, in plain words, or "" if it can. */
-function txProblem() {
-  if (dc.mode !== "FT8" && dc.mode !== "FT4") return "Set the decoder's Mode to FT8 or FT4.";
+// Band plan segments Band Watch never transmits data or pictures in.
+const TX_NOT_IN = { none: "has no UK amateur allocation", beacon: "is for beacons only", cw: "is for CW only in the band plan" };
+
+/** Is a signal from lo to hi kHz, bwHz wide, somewhere Band Watch may transmit it? "" if so, or why not. */
+function txBandProblem(lo, hi, bwHz, what) {
+  if (typeof PLAN_BANDS === "undefined" || !PLAN_BANDS.some((b) => lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi)) {
+    return `${lo.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
+  }
+  // Every part of the signal must be in a segment that allows it (60 m has gaps with no UK allocation, say).
+  for (let k = lo; ; k = Math.min(hi, k + 0.02)) {
+    const s = planSegment(k);
+    if (!s || k < s.from - 1e-9 || k > s.to + 1e-9) return `${k.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
+    if (TX_NOT_IN[s.type]) return `${k.toFixed(3)} kHz ${TX_NOT_IN[s.type]}: Band Watch won't send ${what} there.`;
+    if (s.bw > 0 && s.bw < bwHz) return `${s.from}–${s.to} kHz is for signals up to ${s.bw} Hz wide in the band plan, and ${what} is about ${bwHz} Hz wide: move to a wider part of the band.`;
+    if (k >= hi) break;
+  }
+  return "";
+}
+
+/** Why Band Watch can't transmit right now, in plain words, or "" if it can. kind: "ft" (FT8/FT4) or "sstv". */
+function txProblem(kind = dc.mode === "SSTV" ? "sstv" : "ft") {
+  if (kind === "ft" && dc.mode !== "FT8" && dc.mode !== "FT4") return "Set the decoder's Mode to FT8 or FT4.";
   if (!app.myCall) return "Enter your callsign first (Your callsign, at the top).";
   if (!/^[A-R]{2}\d{2}$/.test(txMyGrid())) return "Enter your locator first (Your locator, at the top).";
   if (!rig.connected) return "Connect your radio first (Connect radio): Band Watch switches it to transmit over the cable.";
   if (!TX_KINDS.includes(rig.kind)) return `${typeof rigLabel === "function" ? rigLabel() : "This radio"} is a receiver: it can't transmit.`;
   if (!rig.hz) return "Waiting for the radio to say its frequency…";
-  if (rig.listenMode !== "usb") return "Put the radio in USB (DATA-USB): click the Tune to FT8 button with the radio connected.";
-  if (rig.kind === "yaesu" && rig.modeName !== "DATA-USB") {
-    return "Put the radio in DATA-USB, so it takes its sound from the USB cable and not the microphone: click Tune to FT8 (Settings > Radio: tick the data-mode box), or press MODE on the radio.";
+  const sb = rig.listenMode;
+  if (kind === "ft" && sb !== "usb") return "Put the radio in USB (DATA-USB): click the Tune to FT8 button with the radio connected.";
+  if (kind === "sstv" && sb !== "usb" && sb !== "lsb") return "Put the radio in USB or LSB (DATA-USB / DATA-LSB): click Tune to SSTV with the radio connected.";
+  if (rig.kind === "yaesu" && rig.modeName !== (sb === "lsb" ? "DATA-LSB" : "DATA-USB")) {
+    return `Put the radio in ${sb === "lsb" ? "DATA-LSB" : "DATA-USB"}, so it takes its sound from the USB cable and not the microphone: click Tune to ${kind === "ft" ? "FT8" : "SSTV"} (Settings > Radio: tick the data-mode box), or press MODE on the radio.`;
   }
-  const lo = rig.hz / 1000 + tx.hz / 1000;
-  const hi = lo + (TX_BW_HZ[dc.mode] || 50) / 1000;
-  const inBand = typeof PLAN_BANDS !== "undefined" && PLAN_BANDS.some((b) => lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi);
-  if (!inBand) return `${lo.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
+  const dial = rig.hz / 1000;
+  let lo, hi, bw, what;
+  if (kind === "ft") {
+    bw = TX_BW_HZ[dc.mode] || 50; lo = dial + tx.hz / 1000; hi = lo + bw / 1000; what = dc.mode;
+  } else {
+    // SSTV audio is 1100-2300 Hz (VIS bits to white): above the dial on USB, below it on LSB.
+    bw = 1300; what = "SSTV";
+    if (sb === "usb") { lo = dial + 1.05; hi = dial + 2.35; } else { lo = dial - 2.35; hi = dial - 1.05; }
+  }
+  const band = txBandProblem(lo, hi, bw, what);
+  if (band) {
+    // FT8/FT4: a lower TX audio frequency may keep the signal inside (60 m FT8 on 5357 kHz, say).
+    if (kind === "ft") {
+      for (let hz = Math.floor((tx.hz - 1) / 50) * 50; hz >= 200; hz -= 50) {
+        const l = dial + hz / 1000;
+        if (!txBandProblem(l, l + bw / 1000, bw, what)) return `${band} Setting TX audio to ${hz} Hz or below would fit.`;
+      }
+    }
+    return band;
+  }
   if (!tx.dev) return "Choose the radio's sound in Sound to the radio (for the FT-991A: USB Audio CODEC).";
   return "";
 }
@@ -118,6 +155,7 @@ function txUnkey() {
   const was = tx.on || tx.tuning;
   tx.on = false;
   tx.tuning = false;
+  tx.sending = null;
   if (rig.connected && TX_KINDS.includes(rig.kind)) {
     rigWrite(txPttCmd(false));
     setTimeout(() => { if (!tx.on && !tx.tuning) rigWrite(txPttCmd(false)); }, 300);
@@ -191,8 +229,53 @@ function txOfferLog(clicked = false) {
   if (!clicked && typeof showToast === "function") showToast(`QSO with ${s.their}`, "It's in the logbook form: check it and save.");
 }
 
+/* ---------- SSTV ---------- */
+
+/** Put the radio in its data mode (DATA-USB / DATA-LSB, USB-D, DATA on), so it takes its sound from the cable. */
+function rigDataOn() {
+  if (!rig.connected) return;
+  const lsb = rig.listenMode === "lsb";
+  if (rig.kind === "yaesu") rigWrite(`MD0${lsb ? "8" : "C"};`);
+  else if (rig.kind === "kenwood") rigWrite("DA1;");
+  else if (rig.kind === "icom") rigWrite(civFrame(0x1a, 0x06, 1, 1));
+}
+
+/** Send an SSTV picture now: mode (Sstv.MODES[…]) and its pixels. Enable TX must be on; it's off again afterwards. */
+async function txSendSstv(md, rgba, label = "") {
+  if (!tx.enabled) { tx.note = "Switch Enable TX on first, then Send picture."; renderTx(); return false; }
+  if (tx.on || tx.tuning) return false;
+  const problem = txProblem("sstv");
+  if (problem) { txHalt(problem); return false; }
+  let ctx;
+  try { ctx = await txAudio(); } catch (e) { txHalt(`Couldn't open the radio's sound (${e.message || e}).`); return false; }
+  tx.on = true;
+  const samples = Sstv.encode(md, rgba, { rate: ctx.sampleRate, amp: tx.level / 100 });
+  if (!tx.enabled || !tx.on) { txUnkey(); return false; }
+  const lead = 0.15; // the radio needs a moment to switch to transmit
+  const secs = samples.length / ctx.sampleRate;
+  txKey();
+  tx.src = txPlay(ctx, samples, lead);
+  tx.sending = { what: `SSTV ${md.name}`, until: Date.now() + (lead + secs) * 1000 };
+  tx.src.onended = () => txSstvDone();
+  tx.offTimer = setTimeout(() => { if (tx.on) txSstvDone(); }, (lead + secs + 0.5) * 1000);
+  tx.log.unshift({ at: Date.now(), text: `SSTV ${md.name}${label ? `: ${label}` : ""}`, mode: "SSTV" });
+  tx.log = tx.log.slice(0, 30);
+  tx.note = "";
+  renderTx();
+  return true;
+}
+
+function txSstvDone() {
+  if (!tx.on) return;
+  txUnkey();
+  tx.enabled = false; // one picture per Enable TX
+  tx.note = "Picture sent. Enable TX is off again.";
+  renderTx();
+}
+
 /** Called every 100 ms: start the next over when its slot comes round. */
 function txTick() {
+  if (dc.mode !== "FT8" && dc.mode !== "FT4") return;
   if (!tx.enabled || tx.on || tx.tuning || !tx.state || !tx.state.tx) return;
   const p = txProto();
   const now = Date.now();
@@ -231,7 +314,8 @@ async function txSetEnabled(on) {
   try { await txAudio(); } catch (e) { tx.note = `Couldn't open the radio's sound (${e.message || e}).`; renderTx(); return; }
   tx.enabled = true;
   tx.note = "";
-  if (!tx.state || !tx.state.tx) tx.note = "Click Call CQ, or Reply on a decode, to start a QSO.";
+  if (dc.mode === "SSTV") tx.note = "Ready: click Send picture.";
+  else if (!tx.state || !tx.state.tx) tx.note = "Click Call CQ, or Reply on a decode, to start a QSO.";
   renderTx();
 }
 
@@ -277,6 +361,20 @@ async function txTune() {
 
 /* ---------- On screen ---------- */
 
+/** The red TRANSMITTING bar, with a countdown while a picture goes out. */
+function txRenderOnAir() {
+  const el = $("txOnAir");
+  if (!el) return;
+  el.hidden = !(tx.on || tx.tuning);
+  let t = "";
+  if (tx.tuning) t = "TRANSMITTING: tune tone";
+  else if (tx.on && tx.sending) {
+    const s = Math.max(0, Math.round((tx.sending.until - Date.now()) / 1000));
+    t = `TRANSMITTING: ${tx.sending.what} · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")} to go`;
+  } else if (tx.on) t = `TRANSMITTING: ${tx.log[0] ? tx.log[0].text : ""}`;
+  el.textContent = t;
+}
+
 function renderTxNext(start) {
   const el = $("txNext");
   if (!el) return;
@@ -289,9 +387,11 @@ function renderTxNext(start) {
 function renderTx() {
   const box = $("dcTx");
   if (!box) return;
-  const show = dc.mode === "FT8" || dc.mode === "FT4";
+  const ft = dc.mode === "FT8" || dc.mode === "FT4";
+  const show = ft || dc.mode === "SSTV";
   box.hidden = !show;
   if (!show) return;
+  box.querySelectorAll(".txft").forEach((e) => { e.hidden = !ft; });
   const problem = txProblem();
   $("txEnable").textContent = tx.enabled ? "TX enabled" : "Enable TX";
   $("txEnable").classList.toggle("on", tx.enabled);
@@ -303,8 +403,7 @@ function renderTx() {
   $("txHz").value = String(tx.hz);
   $("txLevel").value = String(tx.level);
   $("txLevelVal").textContent = `${tx.level}%`;
-  $("txOnAir").hidden = !(tx.on || tx.tuning);
-  $("txOnAir").textContent = tx.tuning ? "TRANSMITTING: tune tone" : tx.on ? `TRANSMITTING: ${tx.log[0] ? tx.log[0].text : ""}` : "";
+  txRenderOnAir();
   const s = tx.state;
   const qso = s && s.their
     ? `QSO with <b>${callLink(s.their)}</b>${s.theirGrid ? ` (${esc(s.theirGrid)})` : ""}: sent ${esc(s.sent || "–")}, got ${esc(s.got || "–")}${s.complete ? ' · <span class="txok">complete</span>' : ""}`
@@ -348,6 +447,6 @@ function setupTx() {
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", txListDevices);
   txListDevices();
   tx.tickTimer = setInterval(txTick, 100);
-  setInterval(() => { if (!tx.on) renderTx(); }, 1000);
+  setInterval(() => { if (!tx.on) renderTx(); else txRenderOnAir(); }, 1000);
   renderTx();
 }

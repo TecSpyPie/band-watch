@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.31.0">
-<link rel="stylesheet" href="/listen.css?v=1.31.0">
+<link rel="stylesheet" href="/style.css?v=1.32.0">
+<link rel="stylesheet" href="/listen.css?v=1.32.0">
 </head>
 <body>
 <div class="wrap">
@@ -316,10 +316,10 @@
       <div class="dcrow">
         <button type="button" class="txen" id="txEnable" aria-pressed="false" title="The one switch that lets Band Watch transmit. Off every time Band Watch starts.">Enable TX</button>
         <button type="button" class="txhalt" id="txHalt" title="Stop transmitting at once (or press Esc)">Stop TX</button>
-        <button type="button" class="ghost" id="txCq">Call CQ</button>
+        <button type="button" class="ghost txft" id="txCq">Call CQ</button>
         <button type="button" class="ghost" id="txTune" title="A steady tone for 10 seconds, to set the level">Tune</button>
-        <button type="button" class="ghost" id="txLog" title="Put this QSO in the logbook: call, grid, reports, frequency and mode">Log QSO</button>
-        <label class="small txlvl">TX audio <input type="number" id="txHz" min="200" max="3000" step="10" style="width:5.5em"> Hz</label>
+        <button type="button" class="ghost txft" id="txLog" title="Put this QSO in the logbook: call, grid, reports, frequency and mode">Log QSO</button>
+        <label class="small txlvl txft">TX audio <input type="number" id="txHz" min="200" max="3000" step="10" style="width:5.5em"> Hz</label>
       </div>
       <div class="dcrow">
         <label class="grow">Sound to the radio <select id="txDev"><option value="">Choose…</option></select></label>
@@ -327,11 +327,11 @@
       </div>
       <p class="small muted" id="txDevNote"></p>
       <p class="txonair" id="txOnAir" role="status" hidden></p>
-      <p class="small" id="txNext" aria-live="polite"></p>
-      <p class="small" id="txQso" aria-live="polite"></p>
+      <p class="small txft" id="txNext" aria-live="polite"></p>
+      <p class="small txft" id="txQso" aria-live="polite"></p>
       <p class="small" id="txNote" role="status"></p>
       <ol class="txsent small" id="txSent" aria-label="Sent"></ol>
-      <details class="small muted txhelp">
+      <details class="small muted txhelp txft">
         <summary>How to transmit, and keeping it clean</summary>
         <ol>
           <li>Connect your radio (Connect radio), then click <b>Tune to FT8</b> so it's on the FT8 frequency in DATA-USB.</li>
@@ -360,6 +360,35 @@
       </div>
       <h3 class="dctxh" style="margin-top:12px">Gallery</h3>
       <div class="sstvgallery" id="sstvGallery"></div>
+      <details class="sstvsend" id="sstvSend">
+        <summary><b>Send a picture</b></summary>
+        <div class="sstvmain">
+          <canvas id="sstvOut" class="sstvpic" width="320" height="256" role="img" aria-label="The picture that will be sent, with your text on it"></canvas>
+          <div class="sstvside">
+            <div class="dcrow">
+              <label class="grow">Picture <input type="file" id="sstvFile" accept="image/*"></label>
+              <button type="button" class="ghost" id="sstvUseRx" title="Use the picture shown above (the last one received, or one from the gallery)">Use the picture above</button>
+            </div>
+            <div class="dcrow">
+              <label>Mode <select id="sstvTxMode"></select></label>
+              <label class="small">Fit <select id="sstvFit"><option value="cover">Fill (crop the edges)</option><option value="contain">Whole picture (bars)</option></select></label>
+            </div>
+            <div class="dcrow">
+              <label class="grow">Text at the top <input type="text" id="sstvTop" maxlength="40" spellcheck="false"></label>
+            </div>
+            <div class="dcrow">
+              <label class="grow">Text at the bottom <input type="text" id="sstvBottom" maxlength="40" spellcheck="false"></label>
+            </div>
+            <div class="dcrow">
+              <button type="button" id="sstvSendBtn">Send picture</button>
+              <span class="small muted" id="sstvSendInfo"></span>
+            </div>
+            <p class="small muted">Switch <b>Enable TX</b> on in the Transmit box first; it goes off again after each picture.
+              Put your callsign on the picture. SSTV is sent in DATA-USB (DATA-LSB below 10 MHz): click <b>Tune to SSTV</b>,
+              and set the level with <b>Tune</b> as for FT8. <b>Stop TX</b> or <b>Esc</b> stops at once.</p>
+          </div>
+        </div>
+      </details>
     </div>
     <div class="dccw" id="dcCw" hidden>
       <div class="small muted" id="dcCwInfo"></div>
@@ -912,44 +941,44 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.31.0"></script>
-<script src="/js/bandplan.js?v=1.31.0"></script>
-<script src="/js/core.js?v=1.31.0"></script>
-<script src="/js/modes.js?v=1.31.0"></script>
-<script src="/js/map.js?v=1.31.0"></script>
-<script src="/js/scope.js?v=1.31.0"></script>
-<script src="/js/monitor.js?v=1.31.0"></script>
-<script src="/js/lookup.js?v=1.31.0"></script>
-<script src="/js/worldclock.js?v=1.31.0"></script>
-<script src="/js/locator.js?v=1.31.0"></script>
-<script src="/js/activity.js?v=1.31.0"></script>
-<script src="/js/qrz.js?v=1.31.0"></script>
-<script src="/js/hovercard.js?v=1.31.0"></script>
-<script src="/js/station.js?v=1.31.0"></script>
-<script src="/js/sdr-dsp.js?v=1.31.0"></script>
-<script src="/js/sdr.js?v=1.31.0"></script>
-<script src="/js/rxfx.js?v=1.31.0"></script>
-<script src="/js/clearrx-link.js?v=1.31.0"></script>
-<script src="/js/listen.js?v=1.31.0"></script>
-<script src="/js/rig.js?v=1.31.0"></script>
-<script src="/js/rigrx.js?v=1.31.0"></script>
-<script src="/js/xota.js?v=1.31.0"></script>
-<script src="/js/satmath.js?v=1.31.0"></script>
-<script src="/js/sats.js?v=1.31.0"></script>
-<script src="/js/eibi-data.js?v=1.31.0"></script>
-<script src="/js/eibi.js?v=1.31.0"></script>
-<script src="/js/panel.js?v=1.31.0"></script>
-<script src="/js/logbook.js?v=1.31.0"></script>
-<script src="/js/wanted.js?v=1.31.0"></script>
-<script src="/js/decoders.js?v=1.31.0"></script>
-<script src="/js/ft8.js?v=1.31.0"></script>
-<script src="/js/ftxtx.js?v=1.31.0"></script>
-<script src="/js/tx.js?v=1.31.0"></script>
-<script src="/js/sstv.js?v=1.31.0"></script>
-<script src="/js/sstvui.js?v=1.31.0"></script>
-<script src="/js/sun.js?v=1.31.0"></script>
-<script src="/js/options.js?v=1.31.0"></script>
-<script src="/js/windows.js?v=1.31.0"></script>
-<script src="/js/app.js?v=1.31.0"></script>
+<script src="/js/install.js?v=1.32.0"></script>
+<script src="/js/bandplan.js?v=1.32.0"></script>
+<script src="/js/core.js?v=1.32.0"></script>
+<script src="/js/modes.js?v=1.32.0"></script>
+<script src="/js/map.js?v=1.32.0"></script>
+<script src="/js/scope.js?v=1.32.0"></script>
+<script src="/js/monitor.js?v=1.32.0"></script>
+<script src="/js/lookup.js?v=1.32.0"></script>
+<script src="/js/worldclock.js?v=1.32.0"></script>
+<script src="/js/locator.js?v=1.32.0"></script>
+<script src="/js/activity.js?v=1.32.0"></script>
+<script src="/js/qrz.js?v=1.32.0"></script>
+<script src="/js/hovercard.js?v=1.32.0"></script>
+<script src="/js/station.js?v=1.32.0"></script>
+<script src="/js/sdr-dsp.js?v=1.32.0"></script>
+<script src="/js/sdr.js?v=1.32.0"></script>
+<script src="/js/rxfx.js?v=1.32.0"></script>
+<script src="/js/clearrx-link.js?v=1.32.0"></script>
+<script src="/js/listen.js?v=1.32.0"></script>
+<script src="/js/rig.js?v=1.32.0"></script>
+<script src="/js/rigrx.js?v=1.32.0"></script>
+<script src="/js/xota.js?v=1.32.0"></script>
+<script src="/js/satmath.js?v=1.32.0"></script>
+<script src="/js/sats.js?v=1.32.0"></script>
+<script src="/js/eibi-data.js?v=1.32.0"></script>
+<script src="/js/eibi.js?v=1.32.0"></script>
+<script src="/js/panel.js?v=1.32.0"></script>
+<script src="/js/logbook.js?v=1.32.0"></script>
+<script src="/js/wanted.js?v=1.32.0"></script>
+<script src="/js/decoders.js?v=1.32.0"></script>
+<script src="/js/ft8.js?v=1.32.0"></script>
+<script src="/js/ftxtx.js?v=1.32.0"></script>
+<script src="/js/tx.js?v=1.32.0"></script>
+<script src="/js/sstv.js?v=1.32.0"></script>
+<script src="/js/sstvui.js?v=1.32.0"></script>
+<script src="/js/sun.js?v=1.32.0"></script>
+<script src="/js/options.js?v=1.32.0"></script>
+<script src="/js/windows.js?v=1.32.0"></script>
+<script src="/js/app.js?v=1.32.0"></script>
 </body>
 </html>

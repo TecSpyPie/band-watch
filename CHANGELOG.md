@@ -1,5 +1,16 @@
 # What's new
 
+## 1.32.0 (19 Nov 2026)
+- **Send SSTV pictures.** In SSTV mode, **Send a picture**: choose a picture (or use the one received), the mode
+  (any of the 19), how it fits, and text for the top and bottom (your callsign must be on it). The preview is exactly
+  what goes out; the red bar counts down while it's sent. Same safety as FT8: nothing goes out unless **Enable TX** is
+  on (and it goes off again after each picture), **Stop TX** / **Esc** stop at once, and the radio unkeys itself at
+  the end. **Tune to SSTV** now also puts the radio in its data mode (DATA-USB / DATA-LSB).
+- **Safer band checks for FT8 and FT4 too.** Band Watch now checks every part of a signal against the UK band plan,
+  not just the band's edges: it won't transmit in gaps with no UK allocation (60 m has several: FT8 on 5357 kHz with
+  1500 Hz audio would be at 5358.5 kHz, outside the UK block, and Band Watch says what TX audio setting would fit),
+  in beacon or CW-only segments, or in a segment narrower than the signal (SSTV stays out of the 500 Hz data segments).
+
 ## 1.31.0 (19 Nov 2026)
 - **SSTV pictures.** A new decoder mode, **SSTV (pictures)**, receives slow-scan TV in all the common analogue modes:
   Martin M1/M2, Scottie S1/S2/DX, Robot 36/72, PD 50/90/120/160/180/240/290, Wraase SC2-180 and Pasokon P3/P5/P7.

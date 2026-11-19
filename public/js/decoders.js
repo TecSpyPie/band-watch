@@ -45,7 +45,7 @@ async function dcStart() {
   dc.running = true;
   dc.rate = 0;
   if (dc.mode === "CW") dc.cwText = "";
-  dc.worker = new Worker("/js/ft8-worker.js?v=1.31.0");
+  dc.worker = new Worker("/js/ft8-worker.js?v=1.32.0");
   dc.worker.onmessage = (e) => onDecoderMessage(e.data);
   dc.worker.onerror = (e) => { dcStop(); dcSetStatus(`The decoder stopped: ${e.message}`); };
   if (dc.src === "mic") {
@@ -54,7 +54,7 @@ async function dcStart() {
       if (dc.device) constraints.deviceId = { exact: dc.device };
       dc.stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
       dc.ctx = new AudioContext();
-      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.31.0");
+      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.32.0");
       const srcNode = dc.ctx.createMediaStreamSource(dc.stream);
       dc.node = new AudioWorkletNode(dc.ctx, "bw-capture");
       dc.node.port.onmessage = (e) => decoderFeed(e.data, dc.ctx.sampleRate);
@@ -274,6 +274,8 @@ function setupDecoders() {
     if (!k) return;
     if (RECEIVERS[listen.rx].kind !== "rtl") { listen.rx = "rtl"; saveListen(); }
     tuneTo(k, dcTuneMode(), { quiet: true });
+    // SSTV isn't in the band plan's data segments, so ask for the radio's data mode (DATA-USB/LSB) ourselves.
+    if (dc.mode === "SSTV" && typeof rigDataOn === "function") setTimeout(rigDataOn, 400);
   });
   $("dcCqOnly").addEventListener("change", () => { dc.cqOnly = $("dcCqOnly").checked; saveDc(); renderDcRows(); });
   $("dcClear").addEventListener("click", () => { dc.rows = []; dc.cwText = ""; renderCw(); renderDcRows(); if (dc.channel) dc.channel.postMessage({ type: "all", rows: [], status: dc.status, mode: dc.mode }); });

@@ -60,6 +60,10 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .sstvgallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .sstvthumb{margin:0}
 .sstvthumb img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:4px;cursor:zoom-in;background:#000}
+.sstvsend{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.sstvsend summary{cursor:pointer;margin-bottom:8px}
+.sstvsend input[type=text]{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%}
+.sstvsend input[type=file]{font:inherit;font-size:.875rem;max-width:100%}
 .sstvthumb figcaption{display:flex;justify-content:space-between;gap:6px;font-size:.75rem;color:var(--muted);margin-top:3px}
 /* Transmit (FT8/FT4) */
 .dctx{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:10px 0}

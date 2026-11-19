@@ -113,8 +113,110 @@ function sstvTuneKHz() {
   return f || null;
 }
 
+/* ---------- Sending a picture ---------- */
+
+const sstvtx = { img: null, mode: "Martin M1", fit: "cover", top: "", bottom: "" };
+
+function sstvTxLoad() {
+  try {
+    const s = JSON.parse(load("bw-sstvtx") || "{}");
+    if (Sstv.MODES[s.mode]) sstvtx.mode = s.mode;
+    if (s.fit === "cover" || s.fit === "contain") sstvtx.fit = s.fit;
+    if (typeof s.top === "string") sstvtx.top = s.top.slice(0, 40);
+    if (typeof s.bottom === "string") sstvtx.bottom = s.bottom.slice(0, 40);
+  } catch { /* defaults */ }
+}
+const sstvTxSave = () => store("bw-sstvtx", { mode: sstvtx.mode, fit: sstvtx.fit, top: sstvtx.top, bottom: sstvtx.bottom });
+
+/** Your callsign, so the default text names you. */
+const sstvDefaultTop = () => `CQ ${app.myCall || "MY CALL"}`;
+const sstvDefaultBottom = () => `${(typeof grid4 === "function" && grid4()) || ""} · Band Watch`.replace(/^ · /, "");
+
+/** Draw what will be sent: the picture fitted to the mode's size, and the text on it. */
+function sstvRenderOut() {
+  const cv = $("sstvOut");
+  if (!cv) return;
+  const md = Sstv.MODES[sstvtx.mode];
+  cv.width = md.width; cv.height = md.height;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#000"; g.fillRect(0, 0, md.width, md.height);
+  const img = sstvtx.img;
+  if (img) {
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    const s = sstvtx.fit === "cover" ? Math.max(md.width / iw, md.height / ih) : Math.min(md.width / iw, md.height / ih);
+    const w = iw * s, h = ih * s;
+    g.drawImage(img, (md.width - w) / 2, (md.height - h) / 2, w, h);
+  } else {
+    // No picture chosen yet: a simple card
+    const grad = g.createLinearGradient(0, 0, md.width, md.height);
+    grad.addColorStop(0, "#0b4f6c"); grad.addColorStop(1, "#01baef");
+    g.fillStyle = grad; g.fillRect(0, 0, md.width, md.height);
+  }
+  const size = Math.max(12, Math.round(md.height / 9));
+  g.font = `700 ${size}px Barlow, Arial, sans-serif`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.lineJoin = "round";
+  const text = (t, y) => {
+    if (!t) return;
+    g.lineWidth = Math.max(3, size / 6);
+    g.strokeStyle = "rgba(0,0,0,.85)";
+    g.strokeText(t, md.width / 2, y, md.width * 0.94);
+    g.fillStyle = "#fff";
+    g.fillText(t, md.width / 2, y, md.width * 0.94);
+  };
+  text(sstvtx.top, size * 0.85);
+  text(sstvtx.bottom, md.height - size * 0.85);
+  const secs = Math.round(Sstv.seconds(md) + 0.91); // with the VIS header
+  $("sstvSendInfo").textContent = `${md.name}: ${md.width}×${md.height}, takes ${Math.floor(secs / 60)} min ${String(secs % 60).padStart(2, "0")} s.`;
+}
+
+async function sstvSendNow() {
+  const md = Sstv.MODES[sstvtx.mode];
+  sstvRenderOut();
+  const data = $("sstvOut").getContext("2d").getImageData(0, 0, md.width, md.height).data;
+  if (!sstvtx.top.includes(app.myCall || "\u0000") && !sstvtx.bottom.includes(app.myCall || "\u0000")) {
+    $("sstvSendInfo").textContent = "Put your callsign on the picture (in the top or bottom text) before sending it.";
+    return;
+  }
+  await txSendSstv(md, new Uint8ClampedArray(data), sstvtx.top);
+}
+
+function setupSstvSend() {
+  sstvTxLoad();
+  if (!sstvtx.top) sstvtx.top = sstvDefaultTop();
+  if (!sstvtx.bottom) sstvtx.bottom = sstvDefaultBottom();
+  $("sstvTxMode").innerHTML = Object.keys(Sstv.MODES).map((n) => `<option>${esc(n)}</option>`).join("");
+  $("sstvTxMode").value = sstvtx.mode;
+  $("sstvFit").value = sstvtx.fit;
+  $("sstvTop").value = sstvtx.top;
+  $("sstvBottom").value = sstvtx.bottom;
+  $("sstvTxMode").addEventListener("change", () => { sstvtx.mode = $("sstvTxMode").value; sstvTxSave(); sstvRenderOut(); });
+  $("sstvFit").addEventListener("change", () => { sstvtx.fit = $("sstvFit").value; sstvTxSave(); sstvRenderOut(); });
+  $("sstvTop").addEventListener("input", () => { sstvtx.top = $("sstvTop").value; sstvTxSave(); sstvRenderOut(); });
+  $("sstvBottom").addEventListener("input", () => { sstvtx.bottom = $("sstvBottom").value; sstvTxSave(); sstvRenderOut(); });
+  $("sstvFile").addEventListener("change", () => {
+    const f = $("sstvFile").files && $("sstvFile").files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => { sstvtx.img = img; sstvRenderOut(); };
+    img.onerror = () => { $("sstvSendInfo").textContent = "That file isn't a picture Band Watch can open."; };
+    img.src = url;
+  });
+  $("sstvUseRx").addEventListener("click", () => {
+    const img = new Image();
+    img.onload = () => { sstvtx.img = img; sstvRenderOut(); };
+    img.src = sstvCanvas().toDataURL("image/png");
+  });
+  $("sstvSendBtn").addEventListener("click", sstvSendNow);
+  $("sstvSend").addEventListener("toggle", sstvRenderOut);
+  sstvRenderOut();
+}
+
 function setupSstv() {
   if (!$("dcSstv")) return;
+  setupSstvSend();
   sstvLoadGallery();
   $("sstvNowMode").innerHTML = Object.keys(Sstv.MODES).map((n) => `<option>${esc(n)}</option>`).join("");
   $("sstvNowMode").value = load("bw-sstvmode") || "Scottie S1";

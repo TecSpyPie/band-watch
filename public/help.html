@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.31.0">
+<link rel="stylesheet" href="/style.css?v=1.32.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -263,6 +263,15 @@
         <b class="btn">Stop picture</b> keeps what has arrived.</li>
       <li>The <b>Gallery</b> keeps your last 16 pictures in this browser. Click one to see it big; <b>Save</b> downloads it as a PNG.</li>
     </ul>
+    <h3>Sending a picture</h3>
+    <ol>
+      <li>Open <b>Send a picture</b>. Choose a <b>Picture</b> (or <b class="btn">Use the picture above</b>), the <b>Mode</b>,
+        and the text for the top and bottom. Your callsign must be on the picture. The preview is exactly what will be sent.</li>
+      <li>Click <b class="btn">Tune to SSTV</b> with your radio connected (DATA-USB, or DATA-LSB below 10 MHz), and set the
+        level with <b class="btn">Tune</b> as for FT8.</li>
+      <li>Switch <b class="btn">Enable TX</b> on, then <b class="btn">Send picture</b>. The red bar counts down;
+        <b class="btn">Stop TX</b> or <b>Esc</b> stops at once. Enable TX goes off again after each picture.</li>
+    </ol>
   </section>
 
   <section class="panel" id="transmit" aria-labelledby="hTx">
