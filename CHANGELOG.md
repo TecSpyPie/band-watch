@@ -1,6 +1,12 @@
 # What's new
 
 ## Unreleased
+- **Antenna A/B (analysis only).** A new panel to compare two antennas, or before and after a change, using real WSPR
+  reports of your own callsign. Press **Now on antenna A / B** whenever you switch (or type the times), name the antennas,
+  then **Compare**: reports come from wspr.live straight to your browser (one lookup per click, up to 7 days). Only
+  receivers that heard you on both antennas on the same band are compared, with the average SNR difference per band, by
+  direction and by distance, and a warning when there are fewer than 10. Band Watch never transmits or controls the radio
+  for this. PSK Reporter (FT8) reports are not in this version.
 - **RTTY decoder (receive only).** The Decoders panel has a new mode, **RTTY (radioteletype)**: 45.45 baud and 170 Hz
   shift as standard (50 and 75 baud, 425 and 850 Hz shift too), Baudot letters and figures, in a scrolling text box with
   Clear. Set the lower tone (2125 Hz mark / 2295 Hz space by default) or click **Find the tones**; **Reverse** swaps mark and

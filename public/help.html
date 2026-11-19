@@ -51,6 +51,7 @@
       <li><a href="#shortwave">Shortwave stations on air</a></li>
       <li><a href="#decoders">Decoders: FT8, FT4, WSPR, CW</a></li>
       <li><a href="#rtty">RTTY (radioteletype)</a></li>
+      <li><a href="#antab">Antenna A/B: compare two antennas</a></li>
       <li><a href="#pota">Parks on the air (POTA)</a></li>
       <li><a href="#wanted">Wanted alerts</a></li>
       <li><a href="#logbook">Logbook</a></li>
@@ -402,6 +403,36 @@
         as most amateur software sends it. If the numbers after a space come out as letters, untick it.</li>
       <li>Short bursts of garbage before and after a signal are normal. Poor signals lose letters; that's RTTY.</li>
     </ul>
+  </section>
+
+  <section class="panel" id="antab" aria-labelledby="hAntab">
+    <h2 id="hAntab">Antenna A/B: compare two antennas</h2>
+    <p>This panel compares two antennas (or the same antenna before and after a change) using what other stations
+      actually heard of <b>your own WSPR signal</b>. It only <b>reads reports</b>: it never controls your radio and never
+      transmits. You send WSPR with your own software and switch antennas yourself. Your callsign (top of the page) must be set.</p>
+    <ol>
+      <li>Give the antennas names (say Dipole and Vertical). Start sending WSPR on the first one with your usual WSPR software.</li>
+      <li>Press <b class="btn">Now on antenna A</b> when you start. When you swap, press <b class="btn">Now on antenna B</b>, and so on.
+        Each press ends the last period and starts a new one. <b class="btn">Stop logging</b> ends it. Forgot to press? Use
+        <b>Add a period by typing the times</b> (UTC), and delete any wrong period from the list.</li>
+      <li><b>Swap often: every 10 to 20 minutes</b>, A then B then A then B, for a few hours. Band and ionosphere conditions
+        change all the time, so one long run on A and then one on B proves little.</li>
+      <li>Press <b class="btn">Compare</b>. Band Watch asks wspr.live (a free public WSPR database) for the reports of your callsign.
+        It makes one request per click and looks at 7 days at most.</li>
+    </ol>
+    <p><b>How it is made fair.</b> Only a receiving station that heard you on <b>both</b> antennas, on the same band, is
+      compared. For each, Band Watch takes its average signal-to-noise ratio (SNR) on A and on B, then averages the
+      differences. A report counts only if its whole 2-minute slot is inside one period, so a swap in the middle never
+      muddies it. Stations that heard only one antenna are counted but left out.</p>
+    <ul>
+      <li><b>The table</b> shows each band, how many receivers heard both, the average SNR for each antenna and the
+        difference, for example <b>Vertical better by 2.3 dB</b>. About 6 dB is one S-unit; under 1 dB is hard to tell from chance.</li>
+      <li><b>By direction</b> (8 compass sectors from your locator) and <b>by distance</b> show where one antenna does better,
+        for example a vertical often wins far away and a low dipole nearby. Bars to the right favour B, to the left favour A.</li>
+      <li>With <b>fewer than 10</b> receivers matched, Band Watch warns you that the result is shaky. Keep going and compare again.</li>
+    </ul>
+    <p class="small muted">Use the same power, mode and time of day on both antennas. WSPR reports come from
+      <a href="https://wspr.live" target="_blank" rel="noopener noreferrer">wspr.live</a>. FT8 reports (PSK Reporter) are not included yet.</p>
   </section>
 
   <section class="panel" id="pota" aria-labelledby="hPota">

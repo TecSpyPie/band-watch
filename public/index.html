@@ -719,6 +719,42 @@
     <p class="small muted" id="sunNote"></p>
   </section>
 
+  <section class="panel" id="secAnt" aria-labelledby="antTitle">
+    <div class="phead">
+      <h2 id="antTitle">Antenna A/B</h2>
+      <a class="small" href="/help#antab" target="_blank" rel="noopener noreferrer">How to run a fair test</a>
+    </div>
+    <p class="small muted">Compare two antennas (or before and after a change) using real reports of your own WSPR signal. This only
+      reads reports: it never controls your radio and never transmits. You send WSPR with your own software and switch antennas yourself.</p>
+    <div class="antnames">
+      <label>Antenna A <input id="antNameA" maxlength="30" autocomplete="off" placeholder="e.g. Dipole"></label>
+      <label>Antenna B <input id="antNameB" maxlength="30" autocomplete="off" placeholder="e.g. Vertical"></label>
+    </div>
+    <div class="antbtns">
+      <button type="button" class="antbig" id="antOnA" aria-pressed="false">Now on antenna A</button>
+      <button type="button" class="antbig" id="antOnB" aria-pressed="false">Now on antenna B</button>
+      <button type="button" class="ghost" id="antStop">Stop logging</button>
+    </div>
+    <p class="small" id="antStatus" role="status"></p>
+    <ul class="antlist" id="antList"></ul>
+    <details class="antman">
+      <summary>Add a period by typing the times</summary>
+      <div class="antnames">
+        <label>Antenna <select id="antManAnt"><option value="A">A</option><option value="B">B</option></select></label>
+        <label>From (UTC) <input type="datetime-local" id="antManFrom"></label>
+        <label>To (UTC) <input type="datetime-local" id="antManTo"></label>
+        <button type="button" class="ghost" id="antManAdd">Add period</button>
+      </div>
+      <p class="err" id="antManErr" role="alert"></p>
+    </details>
+    <div class="antbtns">
+      <button type="button" id="antGo">Compare</button>
+      <span class="small muted">Looks up WSPR reports of your callsign on wspr.live (up to 7 days).</span>
+    </div>
+    <p class="small antmsg" id="antMsg" role="status"></p>
+    <div id="antOut"></div>
+  </section>
+
   <section class="panel" id="secActivity" aria-labelledby="actTitle">
     <div class="phead">
       <h2 id="actTitle">Band activity</h2>
@@ -1165,6 +1201,7 @@
 <script src="/js/windows.js?v=1.39.0"></script>
 <script src="/js/rotmath.js?v=1.39.0"></script>
 <script src="/js/rotator.js?v=1.39.0"></script>
+<script src="/js/antenna.js?v=1.39.0"></script>
 <script src="/js/dv.js?v=1.39.0"></script>
 <script src="/js/looks.js?v=1.39.0"></script>
 <script src="/js/app.js?v=1.39.0"></script>
