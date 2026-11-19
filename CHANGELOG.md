@@ -12,6 +12,9 @@
   - **Follow a satellite** across its pass (azimuth, and elevation on an az/el rotator); below the horizon it waits
     pointing where the satellite will rise. It only sends a new heading when it has moved 2° or more.
   - The rotator only moves when you ask; **Stop** or **Esc** stops it.
+- **Fix: updating could fail with "couldn't write pthreadVC2.dll … being used by another process".** An rtl_tcp left
+  running from the Band Watch folder (after Band Watch was stopped suddenly) held its files open. The installer now
+  ends that rtl_tcp first; rtl_tcp from anywhere else is left alone.
 
 ## 1.35.0 (19 Nov 2026)
 - **New looks with depth** (Settings > Look; High contrast and Night keep the plain look):

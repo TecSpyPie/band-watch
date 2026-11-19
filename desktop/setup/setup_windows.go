@@ -128,6 +128,8 @@ func runStopScript(script, dest string) {
 		_ = hidden(exec.Command(exe, "--stop")).Run()
 	}
 	_ = hidden(exec.Command("cmd", "/c", script, "quiet")).Run()
+	// An rtl_tcp left running from this folder holds its DLLs open: end it, or the copy fails.
+	_ = hidden(exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", rtlStopScript(dest))).Run()
 }
 
 func makeShortcuts(dest string, startup bool) error {
