@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.25.1", "The Radio panel's S-meter follows the RTL-SDR's signal level (a rough guide) when no radio is connected"],
   ["1.25.0", "Receive controls on the Radio panel: AF/RF gain, AGC, ATT, IPO, NB, DNR and auto notch (Yaesu and Icom)"],
   ["1.24.2", "ClearRX 1.1.0: My radio buttons (RTL-SDR, Yaesu, Icom, ATS Mini, Malahit, Other) pick the right sound input"],
   ["1.24.1", "ClearRX is a separate download (ClearRX-Windows.zip), so the Band Watch installer stays clean"],

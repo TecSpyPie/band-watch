@@ -125,6 +125,16 @@ function renderPanel() {
 
 /* ---------- The analogue meter ---------- */
 
+// The RTL-SDR has no calibrated S-meter, so its channel power (dBFS) is shown against a rough S9.
+const PANEL_RTL_S9_DBFS = -45;
+
+/** What the meter shows: the connected radio's own S-meter, or else the RTL-SDR's level while it plays. */
+function panelMeterReading() {
+  if (typeof rig !== "undefined" && rigHasMeter() && rig.meter != null && Date.now() - rig.meterAt < 5000) return { db: rig.meter, rtl: false };
+  if (typeof sdr !== "undefined" && sdr.running && sdr.demod && sdr.demod.level > -119) return { db: sdr.demod.level - PANEL_RTL_S9_DBFS, rtl: true };
+  return null;
+}
+
 function drawPanelMeter() {
   const cv = $("pnMeter");
   if (!cv) return;
@@ -137,7 +147,8 @@ function drawPanelMeter() {
   const cx = W / 2, cy = H * 1.04, r = Math.min(W * 0.44, H * 0.76);
   const A0 = Math.PI * 1.22, A1 = Math.PI * 1.78; // the arc, left to right
   const at = (db) => A0 + ((Math.max(-54, Math.min(60, db)) + 54) / 114) * (A1 - A0);
-  const live = typeof rig !== "undefined" && rigHasMeter() && rig.meter != null && Date.now() - rig.meterAt < 5000;
+  const reading = panelMeterReading();
+  const live = reading != null;
   const css = (n) => getComputedStyle($("secPanel")).getPropertyValue(n).trim();
   const ink = css("--pn-ink") || "#dff6ff", red = css("--pn-red") || "#ff5a4e", dim = css("--pn-dim") || "#6f8a96";
   g.lineCap = "round";
@@ -160,14 +171,14 @@ function drawPanelMeter() {
   g.textAlign = "left";
   g.fillText("S", 6, H * 0.18);
   // The needle eases towards the reading, like a real meter's damping
-  const target = live ? rig.meter : -54;
+  const target = live ? reading.db : -54;
   panel.needle += (target - panel.needle) * 0.35;
   if (Math.abs(target - panel.needle) < 0.3) panel.needle = target;
   const a = at(panel.needle);
   g.strokeStyle = live ? (css("--pn-needle") || "#ffd166") : dim;
   g.lineWidth = 2.5;
   g.beginPath(); g.moveTo(cx + Math.cos(a) * r * 0.25, cy + Math.sin(a) * r * 0.25); g.lineTo(cx + Math.cos(a) * (r - 2), cy + Math.sin(a) * (r - 2)); g.stroke();
-  $("pnS").textContent = live ? sUnits(rig.meter) : "";
+  $("pnS").textContent = live ? (reading.rtl ? `≈${sUnits(reading.db)} (RTL-SDR)` : sUnits(reading.db)) : "";
   if (Math.abs(target - panel.needle) > 0.3) requestAnimationFrame(drawPanelMeter);
 }
 
