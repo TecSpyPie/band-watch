@@ -447,6 +447,16 @@ table.sattab tr.satup td{background:color-mix(in srgb,var(--warm) 14%,transparen
 .atsbtns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .atspanel .phead{justify-content:flex-start;gap:10px;flex-wrap:wrap}
 .atsview-set label{display:inline-flex;align-items:center;gap:6px;margin-right:10px}
+.atsmem{margin:10px 0 4px}
+.atsmem summary{cursor:pointer;font-weight:600}
+.atsmem-form{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0}
+.atsmem-form label{display:inline-flex;align-items:center;gap:6px}
+.atsmem-form label[hidden]{display:none}
+.atsmem-form #atsMemSlot{width:4.5em}
+.atsmem-form #atsMemFreq{width:11em}
+.atsmem-form #atsMemName{width:8em}
+.atsmemtab tbody tr{cursor:default}
+.atsmem-acts{display:flex;gap:6px;align-items:center}
 
 /* Own windows */
 .popbtn{float:right;font-size:.8em;padding:1px 6px;margin:2px 0 0 6px;position:relative;z-index:1}

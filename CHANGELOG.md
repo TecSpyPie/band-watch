@@ -1,5 +1,12 @@
 # What's new
 
+## Next (not released)
+- **ATS Mini memory slots:** under the ATS Mini panel's buttons, **Memory slots** shows the radio's 99 memory slots
+  (name, frequency, mode, band). Click **Tune** to go to one; **Save what I'm on** puts the frequency you're on in the
+  next free slot, with a name if you like; **Change** and **Clear** edit a slot. Everything is saved in the radio
+  itself. **Save backup file** keeps a copy, and **Load backup file** puts it back (handy after a firmware update).
+  Names need ATS Mini firmware 2.42 or later; older firmware keeps the slots without names.
+
 ## 1.42.0 (26 Nov 2026)
 - **Chat.** A new Chat panel to talk to other Band Watch users: a General room plus one room per band (160 m to 70 cm). Enter your callsign at the top of the page first. Messages are plain text, up to 300 characters; one message every 3 seconds and 12 a minute per address, and the newest 200 per room are kept for 48 hours. Anyone using Band Watch can read them, so don't post anything private. **Hide** next to a callsign hides their messages on your screen only. Chat is on the website, where everyone meets: in the Windows app the panel links to it (a chat on one PC would only ever have you in it). New server route `GET/POST /api/chat` (web version).
 - **Contests this week.** A panel listing contests in the next 8 days from the WA7BNM Contest Calendar, with times in UTC, "On now" and "In 20 min" tags, and a link to each contest's page. New server route `GET /api/contests` in both the Node and the Windows server: fetched at most once every 6 hours and shared by everyone, an older copy served if the calendar can't be reached, and only items that link to the calendar itself.

@@ -232,7 +232,13 @@ function atsStep() {
 /** One line from the ATS Mini: its status (15 fields, every half second) or an error. */
 function atsLine(line) {
   const a = rig.ats;
-  if (/^Error:/i.test(line)) { a.note = `The ATS Mini said: ${line.replace(/^Error:\s*/i, "")}.`; return; }
+  if (/^Error:/i.test(line)) {
+    const said = line.replace(/^Error:\s*/i, "");
+    if (typeof atsMemError === "function" && atsMemError(said)) return; // about a memory slot being saved
+    a.note = `The ATS Mini said: ${said}.`;
+    return;
+  }
+  if (line[0] === "#" && typeof atsMemLine === "function" && atsMemLine(line)) return; // a memory slot
   const f = line.split(",");
   if (f.length < 15 || !/^\d+$/.test(f[0]) || !/^\d+$/.test(f[1])) return;
   const mode = f[5];
@@ -840,6 +846,7 @@ function atsScreenTick() {
   if (rig.kind !== "atsmini" || !rig.connected || !a.lastLine) return;
   if (!atsShot.live) { atsDrawSim(); return; }
   if (a.shotWanted || a.want || document.visibilityState === "hidden" || $("secAts").hidden) return;
+  if (typeof atsMemBusy === "function" && atsMemBusy()) return; // reading or saving memory slots
   if (Date.now() < a.nextShot) return;
   a.nextShot = Date.now() + 1500;
   if (!a.shotCmd) a.shotCmd = Number(a.version) >= 2.41 ? "c" : "C"; // "c" (binary, quicker) came in firmware 2.41
@@ -895,6 +902,7 @@ function renderAts() {
     : rig.busy ? "Connecting…" : "Not connected";
   $("atsConnect").textContent = rig.connected ? "Disconnect" : "Connect";
   atsReadout();
+  if (typeof renderAtsMem === "function") renderAtsMem();
   for (const b of sec.querySelectorAll("[data-ats]")) b.disabled = !rig.connected;
   $("atsScreenMsg").textContent = !rig.connected
     ? (rig.error || "Connect the ATS Mini to see its screen here. On the radio, set Settings > USB Port to Ad hoc first.")
@@ -946,5 +954,6 @@ function setupAts() {
     });
   });
   setInterval(atsScreenTick, 250);
+  if (typeof setupAtsMem === "function") setupAtsMem();
   renderAts();
 }

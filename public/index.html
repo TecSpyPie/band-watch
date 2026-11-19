@@ -293,6 +293,33 @@
       <label>at <select id="atsReadoutAt"><option value="bottom">the bottom</option><option value="top">the top</option></select></label>
       <button type="button" class="lbtn" id="atsSave">Save picture</button>
     </div>
+    <details class="atsmem" id="atsMemBox">
+      <summary>Memory slots</summary>
+      <p class="small muted">The ATS Mini keeps up to 99 favourite frequencies. See them here, click <b>Tune</b> to go to one,
+        or add, change and clear them. Changes are saved in the radio itself.</p>
+      <div class="optrow small">
+        <button type="button" class="lbtn" id="atsMemRead">Read from radio</button>
+        <button type="button" class="lbtn" id="atsMemHere" title="Put the frequency the radio is on now in the boxes below">Save what I'm on</button>
+        <button type="button" class="lbtn" id="atsMemBackup" title="Keep a copy of the slots in a file">Save backup file</button>
+        <button type="button" class="lbtn" id="atsMemRestoreBtn" title="Put the slots from a backup file back in the radio">Load backup file</button>
+        <input type="file" id="atsMemRestore" accept=".txt,text/plain" hidden>
+      </div>
+      <form class="atsmem-form small" id="atsMemForm">
+        <label>Slot <input type="number" id="atsMemSlot" min="1" max="99" step="1" required></label>
+        <label>Frequency <input type="text" id="atsMemFreq" inputmode="decimal" placeholder="kHz, or MHz for FM" required autocomplete="off"></label>
+        <label>Mode <select id="atsMemMode"><option>AM</option><option>LSB</option><option>USB</option><option>FM</option></select></label>
+        <label id="atsMemNameWrap">Name <input type="text" id="atsMemName" maxlength="9" placeholder="up to 9 letters" autocomplete="off"></label>
+        <button type="submit" class="tune" id="atsMemSave">Save to radio</button>
+      </form>
+      <p class="small muted" id="atsMemOldFw" hidden>Names need ATS Mini firmware 2.42 or later; the slots still work without them.</p>
+      <p class="small" id="atsMemMsg" role="status"></p>
+      <div class="lgwrap" id="atsMemTable" hidden>
+        <table class="lgtab atsmemtab">
+          <thead><tr><th>Slot</th><th>Name</th><th>Frequency</th><th>Mode</th><th>Band</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="atsMemRows"></tbody>
+        </table>
+      </div>
+    </details>
   </section>
 
   <section class="panel" id="secSked" aria-labelledby="skTitle">
@@ -1258,6 +1285,8 @@
 <script src="/js/listen.js?v=1.42.0"></script>
 <script src="/js/rig.js?v=1.42.0"></script>
 <script src="/js/rigrx.js?v=1.42.0"></script>
+<script src="/js/atsmem-data.js?v=1.42.0"></script>
+<script src="/js/atsmem.js?v=1.42.0"></script>
 <script src="/js/xota.js?v=1.42.0"></script>
 <script src="/js/satmath.js?v=1.42.0"></script>
 <script src="/js/sats.js?v=1.42.0"></script>

@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node server.js",
     "test:clearrx": "sh clearrx/build.sh test && cd clearrx && go test ./... && cd .. && node --test test/clearrx.test.js",
-    "test": "node --test test/server.test.js test/api.test.js test/sdr-dsp.test.js test/sdr-stall.test.js test/sdr-web.test.js test/round2.test.js test/ft8.test.js test/wspr.test.js test/cw.test.js test/eibi.test.js test/rxfx.test.js test/scope3d.test.js test/rack.test.js test/snr.test.js test/sats.test.js test/ftxtx.test.js test/worker.test.js test/sstv.test.js test/cwtx.test.js test/rotmath.test.js test/aprs.test.js test/dv.test.js test/nav.test.js test/rtty.test.js test/antenna.test.js test/dcwording.test.js test/map.test.js test/support.test.js test/repeaters.test.js test/txbands.test.js test/bandplan.test.js",
+    "test": "node --test test/server.test.js test/api.test.js test/sdr-dsp.test.js test/sdr-stall.test.js test/sdr-web.test.js test/round2.test.js test/ft8.test.js test/wspr.test.js test/cw.test.js test/eibi.test.js test/rxfx.test.js test/scope3d.test.js test/rack.test.js test/snr.test.js test/sats.test.js test/ftxtx.test.js test/worker.test.js test/sstv.test.js test/cwtx.test.js test/rotmath.test.js test/aprs.test.js test/dv.test.js test/nav.test.js test/rtty.test.js test/antenna.test.js test/dcwording.test.js test/map.test.js test/support.test.js test/repeaters.test.js test/txbands.test.js test/bandplan.test.js test/atsmem.test.js",
     "test:browser": "node --test test/browser.test.js",
     "test:go": "cd desktop && go test ./... && cd .. && BW_SERVER=go node --test test/api.test.js test/browser.test.js",
     "build:exe": "sh desktop/build.sh"
