@@ -1,5 +1,16 @@
 # What's new
 
+## 1.33.0 (19 Nov 2026)
+- **Decode table your way** (in the Decoder panel and the Results window, which follow each other):
+  - **Columns and time zone:** tick which columns to show (Time, Mode, dB, DT, Audio Hz, Frequency).
+  - **Frequency** column: the frequency on the air (the radio's dial plus the audio offset), e.g. 7,075.234 kHz.
+    Band Watch now notes the dial with every decode, so **Log** on a decode gets the right frequency too.
+  - **Resize** a column by dragging the edge of its heading (or the arrow keys on a focused edge); Reset column widths.
+  - **Times in UTC, your local time, or any time zone** (all of them), with a clock above the table (and UTC beside it).
+- **Add completed QSOs to the logbook by themselves:** a tick box in the Transmit box. A finished FT8/FT4 QSO goes
+  straight into the logbook (call, grid, both reports, frequency, mode; to QRZ too if that's on), once, with Undo.
+  Log QSO still fills in the form to check first.
+
 ## 1.32.0 (19 Nov 2026)
 - **Send SSTV pictures.** In SSTV mode, **Send a picture**: choose a picture (or use the one received), the mode
   (any of the 19), how it fits, and text for the top and bottom (your callsign must be on it). The preview is exactly

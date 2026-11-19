@@ -15,7 +15,7 @@
 const tx = {
   enabled: false, state: null, on: false, ctx: null, src: null, offTimer: null, tickTimer: null, slotStart: 0,
   dev: "", level: 25, hz: 1500, // saved
-  tuning: false, note: "", log: [], offered: false,
+  tuning: false, note: "", log: [], offered: false, autoLog: false,
 };
 const TX_KINDS = ["yaesu", "icom", "kenwood"];
 const TX_BW_HZ = { FT8: 50, FT4: 90 };
@@ -27,9 +27,10 @@ function loadTx() {
     if (typeof s.dev === "string") tx.dev = s.dev;
     if (Number.isFinite(s.level)) tx.level = Math.max(1, Math.min(100, s.level));
     if (Number.isFinite(s.hz)) tx.hz = Math.max(200, Math.min(3000, Math.round(s.hz)));
+    if (typeof s.autoLog === "boolean") tx.autoLog = s.autoLog;
   } catch { /* defaults */ }
 }
-const saveTx = () => store("bw-tx", { dev: tx.dev, level: tx.level, hz: tx.hz });
+const saveTx = () => store("bw-tx", { dev: tx.dev, level: tx.level, hz: tx.hz, autoLog: tx.autoLog });
 
 const txProto = () => (dc.mode === "FT4" ? Ftx.FT4 : Ftx.FT8);
 const txMyGrid = () => (typeof grid4 === "function" ? grid4() : "");
@@ -217,15 +218,28 @@ function txAfterStep() {
   renderTx();
 }
 
-/** Put the QSO in the logbook form, ready to save: by itself when it's complete, or when you click Log QSO. */
+/** The QSO's details for the logbook. */
+function txQsoForLog() {
+  const s = tx.state;
+  const p = txProto();
+  const kHz = rig.hz ? Math.round((rig.hz / 1000 + tx.hz / 1000) * 100) / 100 : (listen && listen.kHz) || 0;
+  return { call: s.their, grid: s.theirGrid, kHz, mode: p.name, rstS: s.sent, rstR: s.got };
+}
+
+/** A QSO is complete: log it by itself (with "Add completed QSOs to the logbook" on), or fill in the form.
+ *  Log QSO (clicked) always fills in the form, to check before saving. */
 function txOfferLog(clicked = false) {
   const s = tx.state;
   if (!s || !s.their) return;
   tx.offered = true;
+  const f = txQsoForLog();
+  if (!clicked && tx.autoLog && typeof logAddQso === "function") {
+    const q = logAddQso(f);
+    if (q && typeof showToast === "function") showToast(`Logged ${q.call}`, `${q.band || `${q.kHz} kHz`} ${q.mode}, sent ${q.rstS || "–"}, got ${q.rstR || "–"}. Undo is in the logbook.`);
+    if (q) return;
+  }
   if (typeof logPrefill !== "function") return;
-  const p = txProto();
-  const kHz = rig.hz ? Math.round((rig.hz / 1000 + tx.hz / 1000) * 100) / 100 : (listen && listen.kHz) || 0;
-  logPrefill({ call: s.their, grid: s.theirGrid, kHz, mode: p.name, rstS: s.sent, rstR: s.got });
+  logPrefill(f);
   if (!clicked && typeof showToast === "function") showToast(`QSO with ${s.their}`, "It's in the logbook form: check it and save.");
 }
 
@@ -424,6 +438,8 @@ function setupTx() {
   $("txHalt").addEventListener("click", () => { txHalt("Stopped."); if (tx.state) tx.state = { ...tx.state, step: "idle", tx: "" }; renderTx(); });
   $("txCq").addEventListener("click", txCallCq);
   $("txLog").addEventListener("click", () => txOfferLog(true));
+  $("txAutoLog").checked = tx.autoLog;
+  $("txAutoLog").addEventListener("change", () => { tx.autoLog = $("txAutoLog").checked; saveTx(); });
   $("txTune").addEventListener("click", txTune);
   $("txHz").addEventListener("change", () => {
     const v = Math.round(Number($("txHz").value));

@@ -110,6 +110,45 @@ function logSubmit(e) {
   if (isNew && qrzlog.auto && qrzlog.key) qrzSend([q], { quiet: true });
 }
 
+/**
+ * Log a QSO straight away, without the form (an FT8/FT4 QSO Band Watch completed, with "add completed QSOs" on).
+ * f: { call, kHz, mode, rstS, rstR, grid, note }. The same QSO twice (same call, band and mode within 15 minutes)
+ * is only logged once. Returns the logged contact, or null if it couldn't be.
+ */
+function logAddQso(f) {
+  const call = String(f.call || "").toUpperCase();
+  const kHz = Number(f.kHz);
+  if (!LOG_CALL_RE.test(call) || !(kHz >= 100 && kHz <= 1300000)) return null;
+  const now = new Date();
+  const date = utcDate(now), time = utcTime(now);
+  const band = logBand(kHz);
+  const mode = LOG_MODES.includes(f.mode) ? f.mode : "FT8";
+  const minutes = (q) => Date.UTC(+q.date.slice(0, 4), +q.date.slice(4, 6) - 1, +q.date.slice(6), +q.time.slice(0, 2), +q.time.slice(2)) / 60000;
+  const nowMin = minutes({ date, time });
+  const dup = log.qsos.find((q) => q.call === call && q.band === band && q.mode === mode && Math.abs(nowMin - minutes(q)) <= 15);
+  if (dup) return dup;
+  const g = String(f.grid || "").trim();
+  const grid = /^[A-R]{2}\d{2}([A-X]{2})?$/i.test(g) ? g.slice(0, 4).toUpperCase() + g.slice(4).toLowerCase() : "";
+  const q = {
+    id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    call, date, time, kHz: Math.round(kHz * 100) / 100, band, mode,
+    rstS: String(f.rstS || "").slice(0, 8), rstR: String(f.rstR || "").slice(0, 8), grid,
+    name: "", qth: "", ref: "", note: String(f.note || "").slice(0, 200),
+  };
+  log.qsos.unshift(q);
+  log.qsos.sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
+  saveLog();
+  if ($("lgMsg")) {
+    $("lgMsg").innerHTML = `Logged ${esc(call)} on ${esc(band || `${kHz} kHz`)} ${esc(mode)} by itself. <button type="button" class="linkbtn" id="lgUndoAuto">Undo</button>`;
+    $("lgUndoAuto").onclick = () => logDelete(q.id);
+  }
+  renderLog();
+  if (typeof renderXota === "function") renderXota();
+  if (typeof checkWanted === "function") checkWanted();
+  if (typeof qrzlog !== "undefined" && qrzlog.auto && qrzlog.key) qrzSend([q], { quiet: true });
+  return q;
+}
+
 function logEdit(id) {
   const q = log.qsos.find((x) => x.id === id);
   if (!q) return;

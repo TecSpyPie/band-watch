@@ -45,7 +45,7 @@ async function dcStart() {
   dc.running = true;
   dc.rate = 0;
   if (dc.mode === "CW") dc.cwText = "";
-  dc.worker = new Worker("/js/ft8-worker.js?v=1.32.0");
+  dc.worker = new Worker("/js/ft8-worker.js?v=1.33.0");
   dc.worker.onmessage = (e) => onDecoderMessage(e.data);
   dc.worker.onerror = (e) => { dcStop(); dcSetStatus(`The decoder stopped: ${e.message}`); };
   if (dc.src === "mic") {
@@ -54,7 +54,7 @@ async function dcStart() {
       if (dc.device) constraints.deviceId = { exact: dc.device };
       dc.stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
       dc.ctx = new AudioContext();
-      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.32.0");
+      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.33.0");
       const srcNode = dc.ctx.createMediaStreamSource(dc.stream);
       dc.node = new AudioWorkletNode(dc.ctx, "bw-capture");
       dc.node.port.onmessage = (e) => decoderFeed(e.data, dc.ctx.sampleRate);
@@ -103,9 +103,10 @@ function onDecoderMessage(m) {
     if ($("dcProg")) $("dcProg").style.width = `${Math.round(m.into * 100)}%`;
   } else if (m.type === "decodes") {
     const utc = new Date(m.cycle).toISOString().slice(11, 19).replace(/:/g, "");
+    const dial = dcDialNow();
     const rows = m.list
       .sort((a, b) => a.freq - b.freq)
-      .map((d) => ({ utc, cycle: m.cycle, mode: m.mode, snr: d.snr, dt: d.dt, freq: d.freq, text: d.text }));
+      .map((d) => ({ utc, cycle: m.cycle, mode: m.mode, snr: d.snr, dt: d.dt, freq: d.freq, text: d.text, dial }));
     dc.rows = [...rows, ...dc.rows].slice(0, DC_MAX_ROWS);
     dc.lastCycle = m.cycle;
     const when = `${utc.slice(0, 2)}:${utc.slice(2, 4)}:${utc.slice(4)}`;
@@ -117,6 +118,13 @@ function onDecoderMessage(m) {
     if (typeof checkWanted === "function") checkWanted();
     if (typeof txOnDecodes === "function") txOnDecodes(rows);
   }
+}
+
+/** The receiver's dial frequency (kHz) now: the radio's if it's connected, else the RTL-SDR's in Listen; or 0. */
+function dcDialNow() {
+  if (typeof rig !== "undefined" && rig.connected && rig.hz) return rig.hz / 1000;
+  if (dc.src === "rtl" && typeof listen !== "undefined" && listen.kHz > 0) return listen.kHz;
+  return 0;
 }
 
 /** Callsigns in a message as links (QRZ and the station window), CQ and your own call highlighted. */
@@ -144,9 +152,23 @@ const dcRowClass = (r) => {
   return mine ? "dcmine" : /^CQ /.test(r.text) ? "dccq" : "";
 };
 
+const DC_COLS = ["time", "mode", "snr", "dt", "freq", "rf", "msg"];
+
+/** The table's head and widths, from the Columns menu (shared with the Results window). */
+function renderDcHead() {
+  if (!$("dcHead") || typeof DcCols === "undefined") return null;
+  const s = DcCols.get();
+  const h = DcCols.head(s, DC_COLS, `<th><span class="sr-only">Reply and log</span></th>`);
+  $("dcCols").innerHTML = h.colgroup;
+  $("dcHead").innerHTML = h.row;
+  dc.cols = { s, shown: h.shown };
+  return dc.cols;
+}
+
 function renderDcRows() {
   const tb = $("dcRows");
   if (!tb) return;
+  const cols = renderDcHead();
   const rows = dc.cqOnly ? dc.rows.filter((r) => /^CQ /.test(r.text)) : dc.rows;
   let last = null;
   dc.shown = rows.slice(0, 200);
@@ -158,8 +180,10 @@ function renderDcRows() {
       ? `<button type="button" class="linkbtn dclog" data-i="${i}" title="Log a contact with ${esc(who.call)}">Log</button>${typeof workedBefore === "function" && workedBefore(who.call) ? ' <span class="worked" title="Already in your log">✓</span>' : ""}` : "";
     const replyBtn = who && (r.mode === "FT8" || r.mode === "FT4") && typeof txReply === "function"
       ? `<button type="button" class="linkbtn dcreply" data-i="${i}" title="Answer ${esc(who.call)} (switch Enable TX on to transmit)">Reply</button> ` : "";
-    return `<tr class="${dcRowClass(r)}${sep}"><td>${r.utc}</td><td>${r.snr > 0 ? "+" : ""}${r.snr}</td><td>${r.dt.toFixed(1)}</td><td>${r.freq}</td><td class="dcmsg">${dcMessageHtml(r.text)}</td><td>${replyBtn}${logBtn}</td></tr>`;
-  }).join("") || `<tr><td colspan="6" class="muted small">${dc.running ? "Nothing decoded yet." : "Press Start decoding."}</td></tr>`;
+    const body = cols ? DcCols.cells(cols.s, cols.shown, r, dcMessageHtml(r.text))
+      : `<td>${r.utc}</td><td>${r.snr > 0 ? "+" : ""}${r.snr}</td><td>${r.dt.toFixed(1)}</td><td>${r.freq}</td><td class="dcmsg">${dcMessageHtml(r.text)}</td>`;
+    return `<tr class="${dcRowClass(r)}${sep}">${body}<td class="dcact">${replyBtn}${logBtn}</td></tr>`;
+  }).join("") || `<tr><td colspan="${cols ? cols.shown.length + 1 : 6}" class="muted small">${dc.running ? "Nothing decoded yet." : "Press Start decoding."}</td></tr>`;
   $("dcCount").textContent = dc.rows.length ? `${dc.rows.length} decode${dc.rows.length === 1 ? "" : "s"}` : "";
 }
 
@@ -214,6 +238,7 @@ function renderDc() {
   $("dcCw").hidden = !cw;
   if ($("dcSstv")) $("dcSstv").hidden = !sstv;
   $("dcTable").hidden = cw || sstv;
+  if ($("dcTools")) $("dcTools").hidden = cw || sstv;
   $("dcCqRow").hidden = cw || sstv || dc.mode === "WSPR";
   if (sstv && typeof sstvRenderInfo === "function") sstvRenderInfo();
   renderCw();
@@ -238,7 +263,7 @@ function setupDecoders() {
     const r = dc.shown[Number(b.dataset.i)];
     const who = r && dcStation(r.text);
     if (!who) return;
-    const dial = listen.kHz; // where the receiver is tuned
+    const dial = r.dial || listen.kHz; // where the receiver was tuned when it was decoded
     logPrefill({ call: who.call, grid: who.grid, kHz: Math.round((dial + r.freq / 1000) * 100) / 100, mode: r.mode || dc.mode,
       rstR: `${r.snr >= 0 ? "+" : "-"}${String(Math.abs(r.snr)).padStart(2, "0")}`, rstS: "" });
   });
@@ -280,6 +305,15 @@ function setupDecoders() {
   $("dcCqOnly").addEventListener("change", () => { dc.cqOnly = $("dcCqOnly").checked; saveDc(); renderDcRows(); });
   $("dcClear").addEventListener("click", () => { dc.rows = []; dc.cwText = ""; renderCw(); renderDcRows(); if (dc.channel) dc.channel.postMessage({ type: "all", rows: [], status: dc.status, mode: dc.mode }); });
   $("dcWindow").addEventListener("click", openDecodesWindow);
+  if (typeof DcCols !== "undefined" && $("dcColsBox")) {
+    DcCols.menu($("dcColsBox"), DC_COLS, renderDcRows);
+    DcCols.resizable($("dcTab"), (id, w) => { DcCols.saveWidth(id, w); renderDcRows(); });
+    const tick = () => { if ($("dcClock")) $("dcClock").textContent = DcCols.clock(DcCols.get()); };
+    tick();
+    setInterval(tick, 1000);
+    // Changed in the Results window: follow it here.
+    window.addEventListener("storage", (e) => { if (e.key === DcCols.KEY) { DcCols.menu($("dcColsBox"), DC_COLS, renderDcRows); renderDcRows(); tick(); } });
+  }
   if (dc.src === "mic") listDcDevices();
   renderDc();
 }

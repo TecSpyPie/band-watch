@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Decodes · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.32.0">
-<link rel="stylesheet" href="/listen.css?v=1.32.0">
+<link rel="stylesheet" href="/style.css?v=1.33.0">
+<link rel="stylesheet" href="/listen.css?v=1.33.0">
 <style>
   body{margin:0}
   .dw{padding:12px 16px;display:flex;flex-direction:column;height:100vh;box-sizing:border-box}
@@ -24,15 +24,22 @@
     <label class="small dcchk"><input type="checkbox" id="dwCq"> CQ only</label>
     <input type="search" id="dwFind" placeholder="Find a callsign" aria-label="Find a callsign" autocomplete="off">
     <button type="button" class="ghost" id="dwClear">Clear</button>
+    <span class="dcclock" id="dwClock" aria-live="off"></span>
+    <details class="dccols">
+      <summary class="small">Columns and time zone</summary>
+      <div class="dccolsbox" id="dwColsBox"></div>
+    </details>
   </header>
   <div class="dcwrap">
     <pre class="dccwtext" id="dwCw" hidden aria-live="polite"></pre>
-    <table class="dctab">
-      <thead><tr><th>UTC</th><th>Mode</th><th>dB</th><th>DT</th><th>Freq</th><th>Message</th></tr></thead>
+    <table class="dctab" id="dwTab">
+      <colgroup id="dwCols"></colgroup>
+      <thead id="dwHead"></thead>
       <tbody id="dwRows"></tbody>
     </table>
   </div>
 </div>
-<script src="/js/decodes-page.js?v=1.32.0"></script>
+<script src="/js/dccols.js?v=1.33.0"></script>
+<script src="/js/decodes-page.js?v=1.33.0"></script>
 </body>
 </html>

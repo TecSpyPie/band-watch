@@ -18,7 +18,13 @@
     return esc(w);
   };
 
+  const COLS = ["time", "mode", "snr", "dt", "freq", "rf", "msg"];
+
   function render() {
+    const s = DcCols.get();
+    const h = DcCols.head(s, COLS);
+    $("dwCols").innerHTML = h.colgroup;
+    $("dwHead").innerHTML = h.row;
     const find = $("dwFind").value.trim().toUpperCase();
     const list = rows.filter((r) => (!$("dwCq").checked || /^CQ /.test(r.text)) && (!find || r.text.includes(find)));
     let last = null;
@@ -26,9 +32,16 @@
       const mine = myCall && r.text.split(" ").some((w) => w.replace(/^<|>$/g, "").split("/").includes(myCall));
       const cls = (mine ? "dcmine" : /^CQ /.test(r.text) ? "dccq" : "") + (last !== null && r.cycle !== last ? " dcnew" : "");
       last = r.cycle;
-      return `<tr class="${cls}"><td>${r.utc}</td><td>${r.mode}</td><td>${r.snr > 0 ? "+" : ""}${r.snr}</td><td>${r.dt.toFixed(1)}</td><td>${r.freq}</td><td class="dcmsg">${r.text.split(" ").map(word).join(" ")}</td></tr>`;
-    }).join("") || `<tr><td colspan="6" class="muted small">No decodes yet. Start decoding in Band Watch.</td></tr>`;
+      return `<tr class="${cls}">${DcCols.cells(s, h.shown, r, r.text.split(" ").map(word).join(" "))}</tr>`;
+    }).join("") || `<tr><td colspan="${h.shown.length}" class="muted small">No decodes yet. Start decoding in Band Watch.</td></tr>`;
   }
+  const tick = () => { $("dwClock").textContent = DcCols.clock(DcCols.get()); };
+  DcCols.menu($("dwColsBox"), COLS, () => { render(); tick(); });
+  DcCols.resizable($("dwTab"), (id, w) => { DcCols.saveWidth(id, w); render(); });
+  // Changed in Band Watch's main window: follow it here.
+  window.addEventListener("storage", (e) => { if (e.key === DcCols.KEY) { DcCols.menu($("dwColsBox"), COLS, () => { render(); tick(); }); render(); tick(); } });
+  tick();
+  setInterval(tick, 1000);
 
   if (!("BroadcastChannel" in window)) {
     $("dwStatus").textContent = "This browser can't link windows; use the decoder in Band Watch itself.";

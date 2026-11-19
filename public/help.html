@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.32.0">
+<link rel="stylesheet" href="/style.css?v=1.33.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -244,6 +244,9 @@
         <b class="btn">Start decoding</b>.</li>
       <li>Tick <b>CQ only</b> to see just the stations calling CQ. <b class="btn">Log</b> on a line puts that station in the logbook.</li>
       <li><b class="btn">Results window</b> opens the decodes in a window of their own.</li>
+      <li><b>Columns and time zone</b> (above the table): choose the columns, including <b>Frequency</b> (on the air,
+        in kHz), and show times in UTC, your local time or any time zone. Drag a heading's edge to make a column wider.
+        The Results window follows the same choices.</li>
     </ol>
     <figure><img src="/help/ft4-decoder.webp" alt="The decoder panel showing decoded FT4 messages" loading="lazy">
       <figcaption>Decoded messages, newest at the top.</figcaption></figure>

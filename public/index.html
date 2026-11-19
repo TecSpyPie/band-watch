@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.32.0">
-<link rel="stylesheet" href="/listen.css?v=1.32.0">
+<link rel="stylesheet" href="/style.css?v=1.33.0">
+<link rel="stylesheet" href="/listen.css?v=1.33.0">
 </head>
 <body>
 <div class="wrap">
@@ -325,6 +325,7 @@
         <label class="grow">Sound to the radio <select id="txDev"><option value="">Choose…</option></select></label>
         <label class="small txlvl">Level <input type="range" id="txLevel" min="1" max="100" step="1"> <span id="txLevelVal"></span></label>
       </div>
+      <label class="small dcchk txft txautolog"><input type="checkbox" id="txAutoLog"> Add completed QSOs to the logbook by themselves (no need to click Save; Undo is in the logbook)</label>
       <p class="small muted" id="txDevNote"></p>
       <p class="txonair" id="txOnAir" role="status" hidden></p>
       <p class="small txft" id="txNext" aria-live="polite"></p>
@@ -394,9 +395,17 @@
       <div class="small muted" id="dcCwInfo"></div>
       <pre class="dccwtext" id="dcCwText" aria-live="polite"></pre>
     </div>
+    <div class="dctools" id="dcTools">
+      <span class="dcclock" id="dcClock" aria-live="off"></span>
+      <details class="dccols">
+        <summary class="small">Columns and time zone</summary>
+        <div class="dccolsbox" id="dcColsBox"></div>
+      </details>
+    </div>
     <div class="dcwrap" id="dcTable">
-      <table class="dctab">
-        <thead><tr><th>UTC</th><th>dB</th><th>DT</th><th>Freq</th><th>Message</th><th><span class="sr-only">Log</span></th></tr></thead>
+      <table class="dctab" id="dcTab">
+        <colgroup id="dcCols"></colgroup>
+        <thead id="dcHead"></thead>
         <tbody id="dcRows"></tbody>
       </table>
     </div>
@@ -941,44 +950,45 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.32.0"></script>
-<script src="/js/bandplan.js?v=1.32.0"></script>
-<script src="/js/core.js?v=1.32.0"></script>
-<script src="/js/modes.js?v=1.32.0"></script>
-<script src="/js/map.js?v=1.32.0"></script>
-<script src="/js/scope.js?v=1.32.0"></script>
-<script src="/js/monitor.js?v=1.32.0"></script>
-<script src="/js/lookup.js?v=1.32.0"></script>
-<script src="/js/worldclock.js?v=1.32.0"></script>
-<script src="/js/locator.js?v=1.32.0"></script>
-<script src="/js/activity.js?v=1.32.0"></script>
-<script src="/js/qrz.js?v=1.32.0"></script>
-<script src="/js/hovercard.js?v=1.32.0"></script>
-<script src="/js/station.js?v=1.32.0"></script>
-<script src="/js/sdr-dsp.js?v=1.32.0"></script>
-<script src="/js/sdr.js?v=1.32.0"></script>
-<script src="/js/rxfx.js?v=1.32.0"></script>
-<script src="/js/clearrx-link.js?v=1.32.0"></script>
-<script src="/js/listen.js?v=1.32.0"></script>
-<script src="/js/rig.js?v=1.32.0"></script>
-<script src="/js/rigrx.js?v=1.32.0"></script>
-<script src="/js/xota.js?v=1.32.0"></script>
-<script src="/js/satmath.js?v=1.32.0"></script>
-<script src="/js/sats.js?v=1.32.0"></script>
-<script src="/js/eibi-data.js?v=1.32.0"></script>
-<script src="/js/eibi.js?v=1.32.0"></script>
-<script src="/js/panel.js?v=1.32.0"></script>
-<script src="/js/logbook.js?v=1.32.0"></script>
-<script src="/js/wanted.js?v=1.32.0"></script>
-<script src="/js/decoders.js?v=1.32.0"></script>
-<script src="/js/ft8.js?v=1.32.0"></script>
-<script src="/js/ftxtx.js?v=1.32.0"></script>
-<script src="/js/tx.js?v=1.32.0"></script>
-<script src="/js/sstv.js?v=1.32.0"></script>
-<script src="/js/sstvui.js?v=1.32.0"></script>
-<script src="/js/sun.js?v=1.32.0"></script>
-<script src="/js/options.js?v=1.32.0"></script>
-<script src="/js/windows.js?v=1.32.0"></script>
-<script src="/js/app.js?v=1.32.0"></script>
+<script src="/js/install.js?v=1.33.0"></script>
+<script src="/js/bandplan.js?v=1.33.0"></script>
+<script src="/js/core.js?v=1.33.0"></script>
+<script src="/js/modes.js?v=1.33.0"></script>
+<script src="/js/map.js?v=1.33.0"></script>
+<script src="/js/scope.js?v=1.33.0"></script>
+<script src="/js/monitor.js?v=1.33.0"></script>
+<script src="/js/lookup.js?v=1.33.0"></script>
+<script src="/js/worldclock.js?v=1.33.0"></script>
+<script src="/js/locator.js?v=1.33.0"></script>
+<script src="/js/activity.js?v=1.33.0"></script>
+<script src="/js/qrz.js?v=1.33.0"></script>
+<script src="/js/hovercard.js?v=1.33.0"></script>
+<script src="/js/station.js?v=1.33.0"></script>
+<script src="/js/sdr-dsp.js?v=1.33.0"></script>
+<script src="/js/sdr.js?v=1.33.0"></script>
+<script src="/js/rxfx.js?v=1.33.0"></script>
+<script src="/js/clearrx-link.js?v=1.33.0"></script>
+<script src="/js/listen.js?v=1.33.0"></script>
+<script src="/js/rig.js?v=1.33.0"></script>
+<script src="/js/rigrx.js?v=1.33.0"></script>
+<script src="/js/xota.js?v=1.33.0"></script>
+<script src="/js/satmath.js?v=1.33.0"></script>
+<script src="/js/sats.js?v=1.33.0"></script>
+<script src="/js/eibi-data.js?v=1.33.0"></script>
+<script src="/js/eibi.js?v=1.33.0"></script>
+<script src="/js/panel.js?v=1.33.0"></script>
+<script src="/js/logbook.js?v=1.33.0"></script>
+<script src="/js/wanted.js?v=1.33.0"></script>
+<script src="/js/dccols.js?v=1.33.0"></script>
+<script src="/js/decoders.js?v=1.33.0"></script>
+<script src="/js/ft8.js?v=1.33.0"></script>
+<script src="/js/ftxtx.js?v=1.33.0"></script>
+<script src="/js/tx.js?v=1.33.0"></script>
+<script src="/js/sstv.js?v=1.33.0"></script>
+<script src="/js/sstvui.js?v=1.33.0"></script>
+<script src="/js/sun.js?v=1.33.0"></script>
+<script src="/js/options.js?v=1.33.0"></script>
+<script src="/js/windows.js?v=1.33.0"></script>
+<script src="/js/app.js?v=1.33.0"></script>
 </body>
 </html>

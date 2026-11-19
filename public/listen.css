@@ -45,12 +45,30 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab{width:100%;border-collapse:collapse;font:400 .875rem/1.35 ui-monospace,Consolas,monospace}
 .dctab th{position:sticky;top:0;background:var(--surface);text-align:left;font:600 .75rem Barlow,sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
 .dctab td{padding:3px 8px;white-space:nowrap}
-.dctab td:nth-child(2),.dctab td:nth-child(3),.dctab td:nth-child(4){text-align:right}
-.dctab .dcmsg{width:100%}
 .dctab tr.dcnew td{border-top:1px solid var(--line)}
 .dctab tr.dccq{background:rgba(80,200,120,.10)}
 .dctab tr.dcmine{background:rgba(255,90,60,.18)}
 .dctab a.call{color:inherit;text-decoration:underline dotted}
+/* Decode table: columns, resizing, clock */
+.dctools{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin:6px 0}
+.dctools[hidden]{display:none}
+.dcclock{font:600 .9375rem ui-monospace,Consolas,monospace;color:var(--text)}
+.dccols{position:relative}
+.dccols summary{cursor:pointer;color:var(--cool)}
+.dccolsbox{position:absolute;z-index:30;top:100%;left:0;margin-top:4px;min-width:250px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px}
+.dccolset{border:0;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.dccolset legend{margin-bottom:4px;color:var(--muted)}
+.dccolset label{display:flex;align-items:center;gap:6px}
+.dctzrow{display:flex;flex-direction:column;gap:3px}
+.dctzrow select{max-width:100%}
+.dctab{table-layout:fixed}
+.dctab th{position:relative;overflow:hidden;text-overflow:ellipsis}
+.dctab td{overflow:hidden;text-overflow:ellipsis}
+.dctab td.dcmsg{white-space:nowrap}
+.dctab .dcrsz{position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;touch-action:none}
+.dctab .dcrsz:hover,.dctab .dcrsz:focus-visible{background:var(--cool);opacity:.6;outline:none}
+.dctab td.num,.dctab th[data-col=snr],.dctab th[data-col=dt],.dctab th[data-col=freq],.dctab th[data-col=rf]{text-align:right}
+.dctab td.dcact{width:6.5em;white-space:nowrap}
 /* SSTV */
 .dcsstv[hidden]{display:none}
 .sstvmain{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
