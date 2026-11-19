@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.24.2">
+<link rel="stylesheet" href="/style.css?v=1.25.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -130,6 +130,10 @@
       <li><b>Spectrum and waterfall:</b> live from your RTL-SDR when you're listening with it, otherwise drawn from the
         stations spotted on that band. Click either to tune there.</li>
       <li><b>Listen:</b> starts and stops the receiver chosen in the Listen panel.</li>
+      <li><b>Receive controls</b> (Yaesu and Icom radios, when connected): <b>AF gain</b> (the radio's speaker volume)
+        and <b>RF gain</b> sliders, <b>AGC</b> (click to step FAST, MID, SLOW, AUTO), the preamp (<b>IPO</b>, AMP1, AMP2;
+        on an Icom P.AMP), <b>ATT</b>, <b>NB</b> (noise blanker), <b>DNR</b> (noise reduction) and <b>Auto notch</b>.
+        They follow the radio's own knobs within a few seconds.</li>
       <li><b>Pop out ⧉:</b> puts the radio, with Listen underneath, in its own window. Drag it onto another screen.
         <b>Back in Band Watch</b> brings it home.</li>
     </ul>

@@ -1,5 +1,11 @@
 # What's new
 
+## 1.25.0 (19 Nov 2026)
+- **Receive controls on the Radio panel** for Yaesu (FT-991A, FT-710, FTdx10, FTdx101) and Icom (IC-7300, IC-705,
+  IC-7610 and others): **AF gain** and **RF gain** sliders, **AGC** (FAST, MID, SLOW, AUTO), the preamp (IPO, AMP1,
+  AMP2), **ATT**, **NB**, **DNR** and **Auto notch**. Band Watch reads them from the radio when it connects and every
+  few seconds after, so turning the radio's own knobs shows here too. Receive only: nothing here transmits.
+
 ## 1.24.2 (19 Nov 2026)
 - **ClearRX 1.1.0: My radio.** Buttons for **RTL-SDR, Yaesu, Icom, ATS Mini, Malahit and Other / mixer**. Pick
   yours and ClearRX finds its sound input (the radio's USB Audio CODEC, or the line-in for the ATS Mini), sets a good

@@ -2080,9 +2080,74 @@ test("radio panel with an FT-991A: its mode name, a live S-meter, and the knob t
   assert.deepEqual(errors, []);
 });
 
+test("radio panel receive controls with an FT-991A: read back, changed from Band Watch and from the radio", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true"));
+  await page.reload();
+  await page.waitForFunction(() => rig.connected && rig.hz === 7074000);
+  await page.waitForSelector("#pnRx:not([hidden])");
+  // Read back from the radio when it connects
+  await page.waitForFunction(() => document.getElementById("pnRx_afv").textContent === "100");
+  assert.equal(await page.textContent("#pnRx_rfv"), "255");
+  assert.equal(await page.textContent("#pnRx_agc"), "AGC · SLOW");
+  assert.equal(await page.textContent("#pnRx_pre"), "AMP1");
+  assert.equal(await page.getAttribute("#pnRx_nr", "aria-pressed"), "true");
+  assert.equal(await page.getAttribute("#pnRx_att", "aria-pressed"), "false");
+  // Changed here: AGC steps on to AUTO, the preamp to AMP2, NB and auto notch on, DNR off, AF gain to 180
+  await page.click("#pnRx_agc");
+  await page.click("#pnRx_pre");
+  await page.click("#pnRx_nb");
+  await page.click("#pnRx_an");
+  await page.click("#pnRx_nr");
+  await page.fill("#pnRx_af", "180");
+  await page.waitForFunction(() => { const r = window.__radio.rx; return r.GT0 === "4" && r.PA0 === "2" && r.NB0 === "1" && r.BC0 === "1" && r.NR0 === "0" && r.AG0 === "180"; });
+  assert.equal(await page.textContent("#pnRx_agc"), "AGC · AUTO");
+  assert.equal(await page.textContent("#pnRx_afv"), "180");
+  // Changed on the radio (its knobs): Band Watch follows within a few seconds; AUTO-MID still shows AUTO
+  await page.evaluate(() => { Object.assign(window.__radio.rx, { RG0: "120", RA0: "1", GT0: "5" }); });
+  await page.waitForFunction(() => document.getElementById("pnRx_rfv").textContent === "120", null, { timeout: 9000 });
+  assert.equal(await page.getAttribute("#pnRx_att", "aria-pressed"), "true");
+  assert.equal(await page.textContent("#pnRx_agc"), "AGC · AUTO");
+  // Nothing here sends transmit or power commands
+  const sent = await page.evaluate(() => window.__radio.sent);
+  assert.ok(!sent.some((c) => /^(TX|PC|MX|VX|AC)/.test(c)), "no transmit-side commands");
+  if (process.env.SHOT) { await page.evaluate(() => document.getElementById("secPanel").scrollIntoView()); await (await page.$("#secPanel")).screenshot({ path: process.env.SHOT }); }
+  // Disconnected: the controls go
+  await page.click("#rigBtn");
+  await page.waitForSelector("#pnRx[hidden]", { state: "attached" });
+  assert.deepEqual(errors, []);
+});
+
+test("radio panel receive controls with an IC-7300 over CI-V", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ICOM.replace("__ADDR__", "94"));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#optBtn");
+  await page.selectOption("#optRigKind", "icom");
+  await page.click("#optRigConnect");
+  await page.waitForFunction(() => rig.connected && rig.hz === 14074000);
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#pnRx:not([hidden])");
+  await page.waitForFunction(() => document.getElementById("pnRx_afv").textContent === "128");
+  assert.equal(await page.textContent("#pnRx_agc"), "AGC · MID");
+  assert.equal(await page.textContent("#pnRx_pre"), "P.AMP1");
+  assert.equal(await page.getAttribute("#pnRx_an", "aria-pressed"), "true");
+  await page.click("#pnRx_att");
+  await page.click("#pnRx_agc");
+  await page.fill("#pnRx_rf", "200");
+  await page.waitForFunction(() => { const r = window.__radio.rx; return r.att === 0x20 && r.agc === 3 && r.rf === 200; });
+  assert.equal(await page.textContent("#pnRx_agc"), "AGC · SLOW");
+  await page.evaluate(() => { window.__radio.rx.af = 40; window.__radio.rx.nb = 1; });
+  await page.waitForFunction(() => document.getElementById("pnRx_afv").textContent === "40", null, { timeout: 9000 });
+  assert.equal(await page.getAttribute("#pnRx_nb", "aria-pressed"), "true");
+  assert.deepEqual(errors, []);
+});
+
 /* A pretend FT-991A on a pretend COM port, through Web Serial, for the radio control tests. */
 const FAKE_FT991A = `(() => {
-  const radio = window.__radio = { hz: 7074000, mode: "C", sm: 0, sent: [], opened: null, granted: ${"__GRANTED__"} };
+  const radio = window.__radio = { hz: 7074000, mode: "C", sm: 0, sent: [], opened: null, granted: ${"__GRANTED__"},
+    rx: { AG0: "100", RG0: "255", GT0: "3", PA0: "1", RA0: "0", NB0: "0", NR0: "1", BC0: "0" } };
   let push = null;
   const answer = (s) => push && push(new TextEncoder().encode(s));
   let pending = "";
@@ -2103,6 +2168,10 @@ const FAKE_FT991A = `(() => {
           else if (cmd === "SM0") answer("SM0" + String(radio.sm).padStart(3, "0") + ";");
           else if (/^FA\\d{9}$/.test(cmd)) radio.hz = Number(cmd.slice(2));
           else if (/^MD0[0-9A-E]$/.test(cmd)) radio.mode = cmd[3];
+          else if (/^(AG0|RG0|GT0|PA0|RA0|NB0|NR0|BC0)\\d*$/.test(cmd)) {
+            const k = cmd.slice(0, 3), v = cmd.slice(3);
+            if (v) radio.rx[k] = v; else answer(k + radio.rx[k] + ";");
+          }
           else answer("?;");
         }
       } });
@@ -2292,7 +2361,11 @@ const FAKE_KENWOOD = `(() => {
 /* A pretend Icom IC-7300 at CI-V address __ADDR__: binary CI-V frames, echoes our own frames like a real CI-V bus. */
 const FAKE_ICOM = `(() => {
   const ADDR = 0x__ADDR__;
-  const radio = window.__radio = { hz: 14074000, mode: 1, data: 1, frames: [], opened: null };
+  const radio = window.__radio = { hz: 14074000, mode: 1, data: 1, frames: [], opened: null,
+    rx: { af: 128, rf: 255, agc: 2, pre: 1, att: 0, nb: 0, nr: 0, an: 1 } };
+  const lvl = (n) => { const s = String(n).padStart(4, "0"); return [(+s[0] << 4) | +s[1], (+s[2] << 4) | +s[3]]; };
+  const unlvl = (a, b) => ((a >> 4) * 10 + (a & 15)) * 100 + (b >> 4) * 10 + (b & 15);
+  const SUB16 = { 0x12: "agc", 0x02: "pre", 0x22: "nb", 0x40: "nr", 0x41: "an" };
   let push = null;
   const send = (bytes) => push && push(Uint8Array.from(bytes));
   const bcd = (hz) => { const o = []; for (let i = 0; i < 5; i++) o.push((Math.floor(hz / 10 ** (2 * i + 1)) % 10) << 4 | Math.floor(hz / 10 ** (2 * i)) % 10); return o; };
@@ -2321,6 +2394,15 @@ const FAKE_ICOM = `(() => {
           else if (cmd === 0x05) { radio.hz = unbcd(body.slice(1, 6)); reply(0xFB); }
           else if (cmd === 0x06) { radio.mode = body[1]; radio.data = 0; reply(0xFB); }
           else if (cmd === 0x1A && body[1] === 0x06) { radio.data = body[2]; reply(0xFB); }
+          else if (cmd === 0x14 && (body[1] === 1 || body[1] === 2)) {
+            const k = body[1] === 1 ? "af" : "rf";
+            if (body.length === 2) reply(0x14, body[1], ...lvl(radio.rx[k])); else { radio.rx[k] = unlvl(body[2], body[3]); reply(0xFB); }
+          }
+          else if (cmd === 0x16 && SUB16[body[1]]) {
+            const k = SUB16[body[1]];
+            if (body.length === 2) reply(0x16, body[1], radio.rx[k]); else { radio.rx[k] = body[2]; reply(0xFB); }
+          }
+          else if (cmd === 0x11) { if (body.length === 1) reply(0x11, radio.rx.att); else { radio.rx.att = body[1]; reply(0xFB); } }
           else reply(0xFA);
         }
       } });

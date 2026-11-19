@@ -328,6 +328,7 @@ function rigYaesuAnswer(ans) {
   else if (/^FA\d{8,9}$/.test(ans)) rigSetState(Number(ans.slice(2)));
   else if (/^MD0[0-9A-E]$/.test(ans)) rigSetState(null, RIG_MODES[ans[3]] || "", RIG_LISTEN_MODE[ans[3]] || "");
   else if (/^ID\d{4}$/.test(ans)) rig.model = YAESU_IDS[ans.slice(2)] || "";
+  else if (typeof rxYaesuAnswer === "function") rxYaesuAnswer(ans); // the Radio panel's receive controls
 }
 
 /** Kenwood answers: FA (11 digits), MD, DA (data mode), ID. */
@@ -358,7 +359,7 @@ function rigIcomFrame(f) {
   else if (cmd === 0x15 && f[5] === 0x02 && f.length >= 9) {
     const bcd = (b) => (b >> 4) * 10 + (b & 15);
     rigSetMeter(icomMeterDb(bcd(f[6]) * 100 + bcd(f[7])));
-  }
+  } else if (typeof rxIcomFrame === "function") rxIcomFrame(f); // the Radio panel's receive controls
 }
 
 function rigIcomMode() {
@@ -491,8 +492,9 @@ async function rigConnect(pick = true) {
     if (rig.kind === "atsmini") rig.ats.toggledAt = Date.now() - 1300; // switch its status line on after ~1 s if it isn't
     rigReadLoop();
     await rigWrite(rigPollCommands(true));
+    if (typeof rxPollTick === "function") rxPollTick(true);
     clearInterval(rig.poll);
-    rig.poll = setInterval(() => { if (!rig.connected) return; if (rig.kind === "atsmini") atsWatch(); else rigWrite(rigPollCommands()); }, 1000);
+    rig.poll = setInterval(() => { if (!rig.connected) return; if (rig.kind === "atsmini") atsWatch(); else { rigWrite(rigPollCommands()); if (typeof rxPollTick === "function") rxPollTick(); } }, 1000);
     if (typeof showToast === "function") showToast(rig.kind === "atsmini" ? "ATS Mini connected" : "Radio connected", "Band Watch will tune your radio when you click a spot or the scope.");
     return true;
   } catch (e) {
@@ -565,6 +567,7 @@ function rigLabel() {
 }
 
 function renderRig() {
+  if (typeof renderRx === "function") renderRx(); // the Radio panel's receive controls
   const btn = $("rigBtn");
   if (btn) {
     btn.textContent = rig.connected ? `Radio: ${fmtRigHz(rig.hz)} ${rig.modeName}`.trim() : rig.busy ? "Radio…" : "Connect radio";
