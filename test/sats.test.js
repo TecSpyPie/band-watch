@@ -97,6 +97,48 @@ test("CelesTrak rule: ask at most once every 2 hours, and wait 2 hours after a r
   assert.equal(S.shouldFetch(null, now - 121 * 60e3, now), true);
 });
 
+test("orbit facts: the ISS laps in about 92 minutes about 420 km up, tilted 51.6°, launched 1998", () => {
+  const o = S.orbitInfo(GP[0]);
+  assert.ok(o.periodMin > 91 && o.periodMin < 94, `period ${o.periodMin}`);
+  assert.ok(o.perigeeKm > 390 && o.apogeeKm < 450 && o.perigeeKm <= o.apogeeKm, `${o.perigeeKm}-${o.apogeeKm}`);
+  assert.equal(o.inclination, 51.6318);
+  assert.equal(o.launched, 1998);
+  assert.equal(o.epoch, Date.parse("2026-11-19T04:55:07.676Z"));
+  // RS-44 is much higher (about 1,100 to 1,500 km) and slower
+  const r = S.orbitInfo(GP[2]);
+  assert.ok(r.periodMin > 110 && r.periodMin < 115, `RS-44 period ${r.periodMin}`);
+  assert.ok(r.perigeeKm > 1000 && r.apogeeKm < 1700, `RS-44 ${r.perigeeKm}-${r.apogeeKm}`);
+  assert.equal(S.orbitInfo({ MEAN_MOTION: 0 }), null);
+});
+
+test("reach: from 420 km up a satellite sees about 2,250 km around the point below it", () => {
+  const f = S.footprintKm(420);
+  assert.ok(f > 2200 && f < 2300, `footprint ${f}`);
+  assert.ok(S.footprintKm(1300) > f);
+  assert.equal(S.footprintKm(0), 0);
+});
+
+test("sky chart: the track runs horizon to horizon; overhead is the middle, north is up, east is right", () => {
+  const iss = rec(25544);
+  const p = S.passes(lib, iss, IO93, T0, 24, 30)[0];
+  const tr = S.skyTrack(lib, iss, IO93, p.aos, p.los, 15e3);
+  assert.equal(tr[0].t, p.aos);
+  assert.equal(tr[tr.length - 1].t, p.los);
+  assert.ok(Math.abs(tr[0].el) < 0.3 && Math.abs(tr[tr.length - 1].el) < 0.3);
+  assert.ok(Math.max(...tr.map((x) => x.el)) <= p.maxEl + 0.01);
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  let q = S.skyXY(0, 90, 100); assert.ok(near(q.x, 0) && near(q.y, 0));
+  q = S.skyXY(0, 0, 100); assert.ok(near(q.x, 0) && near(q.y, -100));
+  q = S.skyXY(90, 0, 100); assert.ok(near(q.x, 100) && near(q.y, 0));
+  q = S.skyXY(180, 45, 100); assert.ok(near(q.x, 0) && near(q.y, 50));
+  q = S.skyXY(270, -5, 100); assert.ok(near(q.x, -100));
+});
+
+test("look also gives the speed: the ISS does about 7.7 km/s", () => {
+  const l = S.look(lib, rec(25544), new Date(T0), IO93);
+  assert.ok(l.speed > 7.5 && l.speed < 7.8, `speed ${l.speed}`);
+});
+
 test("compass points", () => {
   assert.equal(S.compass(0), "N");
   assert.equal(S.compass(359), "N");

@@ -1,5 +1,18 @@
 # What's new
 
+## 1.29.0 (19 Nov 2026)
+- **Click a satellite for everything about it.** Click its dot on the world map, its name in the Satellites list or
+  in the passes table, and a card opens with:
+  - **Identifiers**: short name and OSCAR number (e.g. AO-7, AMSAT-OSCAR 7), full name, NORAD catalogue number,
+    international ID with the launch year, and callsigns where there are well-known ones (the ISS: NA1SS, RS0ISS…).
+  - **Right now**: up in your sky or below the horizon, where to point, how far away it is and whether it's coming
+    or going, the point on Earth it's over (with the grid square), height, speed, and how far it can reach.
+  - **Orbit**: how long one lap takes, how high it flies, its tilt and how old the orbit data is.
+  - **In your sky**: a round sky chart of this pass (or the next one) from horizon to horizon, with rise and set
+    times; while it's up, an orange dot shows where it is now.
+  - **Radio**: its frequencies, Doppler-corrected while it's up (click one to tune there and follow it).
+  - **Next passes** for the coming 3 days, and links to AMSAT's status page, N2YO and CelesTrak.
+
 ## 1.28.0 (19 Nov 2026)
 - **Satellites.** A new **Satellites** panel shows the ISS and amateur radio satellites over your locator: which
   are up now (where to point, how high, how far, coming or going), the **next passes** in the coming 24 hours

@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.29.0", "Click a satellite (map, list or passes) for its card: identifiers, where it is, orbit, a sky chart of the pass, frequencies and next passes"],
   ["1.28.0", "Satellites: the ISS and amateur satellites over your locator, next passes, pass alerts, the map, and Doppler-corrected tuning"],
   ["1.27.0", "RTL-SDR attenuator: ATT (10, 20, 30 dB) on the Radio panel and in Listen, for strong signals"],
   ["1.26.0", "ClearRX 1.2.0: noise blanker, AGC speed, squelch, bass and treble, and a manual notch (used by Band Watch's RTL-SDR sound too)"],

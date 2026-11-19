@@ -43,6 +43,7 @@
     const ecf = lib.eciToEcf(pv.position, gmst);
     const geo = lib.eciToGeodetic(pv.position, gmst);
     const out = { lat: geo.latitude * DEG, lon: ((geo.longitude * DEG + 540) % 360) - 180, height: geo.height };
+    if (pv.velocity && typeof pv.velocity === "object") out.speed = Math.hypot(pv.velocity.x, pv.velocity.y, pv.velocity.z);
     if (obs) {
       const la = lib.ecfToLookAngles(obs, ecf);
       out.az = (la.azimuth * DEG + 360) % 360;
@@ -126,11 +127,56 @@
     return out.filter((p) => p.maxEl >= minEl);
   }
 
+  const EARTH_KM = 6378.137;
+  const MU = 398600.4418; // km³/s², Earth's gravity
+
+  /** Orbit facts from CelesTrak's numbers: how long one lap takes, lowest and highest point, tilt. */
+  function orbitInfo(omm) {
+    const revsPerDay = Number(omm.MEAN_MOTION);
+    const e = Number(omm.ECCENTRICITY) || 0;
+    if (!(revsPerDay > 0)) return null;
+    const n = (revsPerDay * 2 * Math.PI) / 86400; // radians per second
+    const a = Math.cbrt(MU / (n * n)); // km, from the centre of the Earth
+    const year = /^(\d{4})-/.exec(String(omm.OBJECT_ID || ""));
+    return {
+      periodMin: 1440 / revsPerDay,
+      perigeeKm: a * (1 - e) - EARTH_KM,
+      apogeeKm: a * (1 + e) - EARTH_KM,
+      inclination: Number(omm.INCLINATION),
+      launched: year ? Number(year[1]) : null,
+      epoch: Date.parse(`${String(omm.EPOCH || "").replace(/Z?$/, "Z")}`),
+    };
+  }
+
+  /** How far across the ground (km) the satellite can see from `heightKm` up: anyone inside can work it. */
+  function footprintKm(heightKm) {
+    if (!(heightKm > 0)) return 0;
+    return EARTH_KM * Math.acos(EARTH_KM / (EARTH_KM + heightKm));
+  }
+
+  /** The path across your sky between two times: [{ t, az, el }], every `stepMs`, ends included. */
+  function skyTrack(lib, rec, obs, from, to, stepMs = 15e3) {
+    const out = [];
+    for (let t = from; ; t = Math.min(to, t + stepMs)) {
+      const l = look(lib, rec, new Date(t), obs);
+      if (l) out.push({ t, az: l.az, el: l.el });
+      if (t >= to) break;
+    }
+    return out;
+  }
+
+  /** A sky position as x, y on a round sky chart of radius r: overhead in the middle, horizon at the edge, north up. */
+  function skyXY(az, el, r) {
+    const d = r * (90 - Math.max(0, Math.min(90, el))) / 90;
+    return { x: d * Math.sin(az / DEG), y: -d * Math.cos(az / DEG) };
+  }
+
   const POINTS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
   /** 0..360 degrees -> "NE" etc. */
   function compass(az) {
     return POINTS[Math.round(((az % 360) + 360) % 360 / 22.5) % 16];
   }
 
-  return { MAX_AGE, BACKOFF, shouldFetch, satrecFor, observer, look, elevation, rangeRate, dopplerDown, dopplerUp, passes, compass };
+  return { MAX_AGE, BACKOFF, shouldFetch, satrecFor, observer, look, elevation, rangeRate, dopplerDown, dopplerUp, passes, compass,
+    orbitInfo, footprintKm, skyTrack, skyXY };
 });

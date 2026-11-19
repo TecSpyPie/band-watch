@@ -6,7 +6,7 @@
 "use strict";
 
 const SAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=json";
-const SAT_LIB = "/js/vendor/satellite.esm.js?v=1.28.0";
+const SAT_LIB = "/js/vendor/satellite.esm.js?v=1.29.0";
 
 /* Frequencies for well-known birds (MHz). down/up: a number, or [low, high] for a linear transponder (passband);
    inverting transponders go down as the uplink goes up. AMSAT's status page says which are working this week. */
@@ -28,6 +28,12 @@ const SAT_RADIO = {
 // Shown until you choose your own: the popular FM and linear birds.
 const SAT_DEFAULT = [25544, 27607, 22825, 7530, 39444, 44909, 53109];
 const SAT_SHORT = { 25544: "ISS", 44909: "RS-44" };
+// Callsigns the satellite (or its crew) use on the air, where there are well-known ones.
+const SAT_CALLS = { 25544: "NA1SS, RS0ISS, OR4ISS, DP0ISS, IR0ISS (APRS digipeater: RS0ISS, ARISS)" };
+// OSCAR prefixes: who looks after the satellite.
+const OSCAR_WHO = { AO: "AMSAT-OSCAR", SO: "Saudi-OSCAR", IO: "Italy-OSCAR", PO: "Philippines-OSCAR", FO: "Fuji-OSCAR",
+  RS: "Radio Sputnik", JO: "Japan-OSCAR", LO: "LEO-OSCAR", CO: "CubeSat-OSCAR", EO: "Emirates-OSCAR", HO: "Hope-OSCAR",
+  TO: "Tevel-OSCAR", QO: "Qatar-OSCAR", XW: "Xi Wang (Hope)", CAS: "Chinese Amateur Satellite" };
 
 const sats = {
   lib: null, gp: [], at: 0, fail: 0, error: "", loading: false,
@@ -171,11 +177,12 @@ function renderSats() {
   const passes = satPasses(now);
   satSet(list, sats.picked.map((id) => {
     const rec = satRec(id);
-    const name = esc(satName(id));
-    const rm = `<button type="button" class="linkbtn satrm" data-id="${id}" title="Take ${name} off the list" aria-label="Remove ${name}">✕</button>`;
-    if (!rec) return `<li class="satrow"><span class="satname">${name}</span><span class="small muted">No orbit for this one from CelesTrak.</span>${rm}</li>`;
+    const plain = esc(satName(id));
+    const name = `<button type="button" class="linkbtn satname satinfo" data-id="${id}" title="Everything about ${plain}">${plain}</button>`;
+    const rm = `<button type="button" class="linkbtn satrm" data-id="${id}" title="Take ${plain} off the list" aria-label="Remove ${plain}">✕</button>`;
+    if (!rec) return `<li class="satrow">${name}<span class="small muted">No orbit for this one from CelesTrak.</span>${rm}</li>`;
     const l = SatMath.look(sats.lib, rec, new Date(now), obs);
-    if (!l) return `<li class="satrow"><span class="satname">${name}</span><span class="small muted">Can't work out where it is (orbit too old?).</span>${rm}</li>`;
+    if (!l) return `<li class="satrow">${name}<span class="small muted">Can't work out where it is (orbit too old?).</span>${rm}</li>`;
     const radio = SAT_RADIO[id] || [];
     if (l.el > 0) {
       const rate = SatMath.rangeRate(sats.lib, rec, now, obs) || 0;
@@ -183,7 +190,7 @@ function renderSats() {
       const p = passes.find((x) => x.id === id && x.aos <= now + 60e3 && x.los >= now)
         || SatMath.passes(sats.lib, rec, obs, now, 3, 0)[0];
       const lines = radio.map((r, i) => satRadioLine(id, i, r, rate)).join("");
-      return `<li class="satrow up"><span class="satname">${name}</span>` +
+      return `<li class="satrow up">${name}` +
         `<span class="satnow"><b>Up now</b>: point ${Math.round(l.az)}° ${SatMath.compass(l.az)}, ${Math.round(l.el)}° up, ` +
         `${(Math.round(l.range / 10) * 10).toLocaleString()} km away, ${rate < 0 ? "coming towards you" : "going away"}` +
         `${p && p.los ? `. Sets ${satIn(p.los - now)} (${satUtc(p.los)} UTC) in the ${SatMath.compass(p.losAz)}` : ""}.</span>${rm}` +
@@ -194,11 +201,11 @@ function renderSats() {
       ? `Next pass ${satIn(next.aos - now)}, ${satUtc(next.aos)} UTC, up to ${Math.round(next.maxEl)}°, ${SatMath.compass(next.aosAz)} to ${SatMath.compass(next.losAz)}`
       : `No pass above ${sats.minEl}° in the next 24 hours`;
     const fq = radio.length ? ` · ${radio.map((r) => `${esc(r.what)} ${satBand(r.down)}`).join(", ")} MHz` : "";
-    return `<li class="satrow"><span class="satname">${name}</span><span class="small">${when}<span class="muted">${fq}</span></span>${rm}</li>`;
+    return `<li class="satrow">${name}<span class="small">${when}<span class="muted">${fq}</span></span>${rm}</li>`;
   }).join("") || `<li class="small muted">No satellites chosen. Add one from the list above.</li>`);
 
   satSet($("satPasses"), passes.filter((p) => p.los > now).slice(0, 12).map((p) =>
-    `<tr${p.aos <= now ? ' class="satup"' : ""}><td>${esc(satName(p.id))}</td><td>${p.aos <= now ? "now" : `${satUtc(p.aos)} <span class="muted small">${satIn(p.aos - now)}</span>`}</td>` +
+    `<tr${p.aos <= now ? ' class="satup"' : ""}><td><button type="button" class="linkbtn satinfo" data-id="${p.id}">${esc(satName(p.id))}</button></td><td>${p.aos <= now ? "now" : `${satUtc(p.aos)} <span class="muted small">${satIn(p.aos - now)}</span>`}</td>` +
     `<td>${Math.round(p.maxEl)}°</td><td>${SatMath.compass(p.aosAz)} → ${SatMath.compass(p.losAz)}</td>` +
     `<td>${Math.max(1, Math.round((p.los - p.aos) / 60000))} min</td></tr>`).join("") ||
     `<tr><td colspan="5" class="small muted">No passes above ${sats.minEl}° in the next 24 hours.</td></tr>`);
@@ -261,11 +268,182 @@ function satMapSvg(X, Y) {
     const l = rec && SatMath.look(sats.lib, rec, now, satObs());
     if (!l) continue;
     const cx = X(l.lon).toFixed(1), cy = Y(l.lat).toFixed(1);
-    svg += `<g class="satmark${l.el > 0 ? " up" : ""}"><circle cx="${cx}" cy="${cy}" r="2.2"/>` +
+    svg += `<g class="satmark${l.el > 0 ? " up" : ""}" data-sat="${id}" role="button" tabindex="0" aria-label="${esc(satName(id))}: click for details">` +
+      `<circle class="sathit" cx="${cx}" cy="${cy}" r="6"/><circle cx="${cx}" cy="${cy}" r="2.2"/>` +
       `<text x="${(X(l.lon) + 3).toFixed(1)}" y="${(Y(l.lat) + 1.5).toFixed(1)}">${esc(satName(id))}</text>` +
-      `<title>${esc(`${satName(id)}: ${l.el > 0 ? `up now, ${Math.round(l.el)}°` : "below your horizon"}, ${Math.round(l.height)} km high`)}</title></g>`;
+      `<title>${esc(`${satName(id)}: ${l.el > 0 ? `up now, ${Math.round(l.el)}°` : "below your horizon"}, ${Math.round(l.height)} km high. Click for details.`)}</title></g>`;
   }
   return svg;
+}
+
+/* ---------- The card you get by clicking a satellite (in the list, the passes table or on the map) ---------- */
+
+const satCard = { id: null, timer: null, passes: [], passesAt: 0 };
+
+function satGp(id) {
+  return sats.gp.find((x) => x.NORAD_CAT_ID === id) || null;
+}
+
+/** "AO-7" -> "AMSAT-OSCAR 7"; null if the name isn't an OSCAR-style number. */
+function satOscar(short) {
+  const m = /^([A-Z]{2,3})-(\d+)$/.exec(short);
+  if (!m || !OSCAR_WHO[m[1]]) return null;
+  return `${OSCAR_WHO[m[1]]} ${m[2]}`;
+}
+
+function openSatCard(id) {
+  if (!sats.lib || !satGp(id)) return;
+  satCard.id = id;
+  satCard.passesAt = 0;
+  for (const k of ["siNow", "siOrbit", "siSky", "siSkyNote", "siRadio", "siPasses"]) delete $(k).dataset.html;
+  renderSatCard();
+  const d = $("satInfo");
+  if (!d.open) d.showModal();
+  clearInterval(satCard.timer);
+  satCard.timer = setInterval(renderSatCard, 1000);
+}
+
+function closeSatCard() {
+  clearInterval(satCard.timer);
+  satCard.timer = null;
+  satCard.id = null;
+}
+
+const satDay = (t) => {
+  const d = new Date(t), today = new Date();
+  if (d.toISOString().slice(0, 10) === today.toISOString().slice(0, 10)) return "Today";
+  if (d.toISOString().slice(0, 10) === new Date(today.getTime() + 864e5).toISOString().slice(0, 10)) return "Tomorrow";
+  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+};
+const satKm = (km) => `${Math.round(km).toLocaleString()} km`;
+
+/** The round sky chart: horizon at the edge, overhead in the middle, north at the top; the pass's path on it. */
+function satSkySvg(track, now, upNow) {
+  const R = 100;
+  let s = `<circle class="horizon" r="${R}"/>`;
+  for (const el of [30, 60]) s += `<circle class="ring" r="${(R * (90 - el)) / 90}"/>`;
+  s += `<line class="ring" x1="${-R}" y1="0" x2="${R}" y2="0"/><line class="ring" x1="0" y1="${-R}" x2="0" y2="${R}"/>`;
+  s += `<text class="lbl" x="0" y="${-R - 9}">N</text><text class="lbl" x="${R + 9}" y="0">E</text>` +
+    `<text class="lbl" x="0" y="${R + 9}">S</text><text class="lbl" x="${-R - 9}" y="0">W</text>` +
+    `<text class="lbl" x="4" y="${(-R * 60) / 90 + 6}" style="text-anchor:start;font-size:8px">30°</text>` +
+    `<text class="lbl" x="4" y="${(-R * 30) / 90 + 6}" style="text-anchor:start;font-size:8px">60°</text>`;
+  if (track.length > 1) {
+    const pts = (list) => list.map((p) => { const q = SatMath.skyXY(p.az, p.el, R); return `${q.x.toFixed(1)},${q.y.toFixed(1)}`; }).join(" ");
+    const gone = track.filter((p) => p.t <= now), ahead = track.filter((p) => p.t >= now);
+    if (upNow && gone.length > 1) s += `<polyline class="track gone" points="${pts(gone)}"/>`;
+    s += `<polyline class="track" points="${pts(upNow ? ahead : track)}"/>`;
+    const a = SatMath.skyXY(track[0].az, 0, R), b = SatMath.skyXY(track[track.length - 1].az, 0, R);
+    const tl = (q, t) => `<text class="tlbl" x="${(q.x * 1.0).toFixed(1)}" y="${(q.y + (q.y < 0 ? -7 : 12)).toFixed(1)}" style="text-anchor:${q.x > 30 ? "end" : q.x < -30 ? "start" : "middle"}">${satUtc(t)}</text>`;
+    s += `<circle class="end" cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="3.5"/>${tl(a, track[0].t)}`;
+    s += `<rect class="end" x="${(b.x - 3).toFixed(1)}" y="${(b.y - 3).toFixed(1)}" width="6" height="6"/>${tl(b, track[track.length - 1].t)}`;
+  }
+  if (upNow) {
+    const cur = track.find((p) => p.t >= now) || track[track.length - 1];
+    if (cur) { const q = SatMath.skyXY(cur.az, cur.el, R); s += `<circle class="now" cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="6"/>`; }
+  }
+  return s;
+}
+
+function renderSatCard() {
+  const id = satCard.id;
+  if (id == null || !sats.lib) return;
+  const g = satGp(id);
+  const rec = satRec(id);
+  const now = Date.now();
+  const obs = satObs();
+  const short = satName(id);
+  const o = g ? SatMath.orbitInfo(g) : null;
+  $("siTitle").textContent = short;
+  $("siSub").textContent = g && g.OBJECT_NAME !== short ? g.OBJECT_NAME : "";
+
+  const l = rec && SatMath.look(sats.lib, rec, new Date(now), obs);
+  if (!l) {
+    satSet($("siNow"), `<p class="muted">Band Watch can't work out where ${esc(short)} is from the orbit CelesTrak has (it may have come down, or the numbers are too old).</p>`);
+    return;
+  }
+  if (now - satCard.passesAt > 60e3) {
+    satCard.passes = SatMath.passes(sats.lib, rec, obs, now - 30 * 60e3, 72, 0);
+    satCard.passesAt = now;
+  }
+  const passes = satCard.passes.filter((p) => p.los > now);
+  const up = l.el > 0;
+  const rate = up ? SatMath.rangeRate(sats.lib, rec, now, obs) || 0 : 0;
+  const reach = SatMath.footprintKm(l.height);
+  const dist = Math.round(distanceKm(app.home.lat, app.home.lon, l.lat, l.lon) / 10) * 10;
+  const ns = (v, p, n) => `${Math.abs(v).toFixed(1)}° ${v >= 0 ? p : n}`;
+
+  // Right now
+  let now$ = `<dl>`;
+  now$ += `<dt>Where</dt><dd><b class="${up ? "warm" : ""}">${up ? "Up in your sky" : "Below your horizon"}</b></dd>`;
+  if (up) {
+    now$ += `<dt>Point</dt><dd>${Math.round(l.az)}° ${SatMath.compass(l.az)}, ${Math.round(l.el)}° up</dd>`;
+    now$ += `<dt>Distance</dt><dd>${satKm(Math.round(l.range / 10) * 10)}, ${rate < 0 ? "coming towards you" : "going away"} at ${Math.abs(rate).toFixed(1)} km/s</dd>`;
+  } else {
+    now$ += `<dt>Direction</dt><dd>${Math.round(l.az)}° ${SatMath.compass(l.az)}, ${Math.round(-l.el)}° below the horizon</dd>`;
+  }
+  now$ += `<dt>Over</dt><dd>${ns(l.lat, "N", "S")}, ${ns(l.lon, "E", "W")} (${latLonToLocator(l.lat, l.lon).slice(0, 4)}), ${satKm(dist)} from you</dd>`;
+  now$ += `<dt>Height</dt><dd>${satKm(l.height)}</dd>`;
+  if (l.speed) now$ += `<dt>Speed</dt><dd>${l.speed.toFixed(2)} km/s (${Math.round(l.speed * 3600).toLocaleString()} km/h)</dd>`;
+  now$ += `<dt>Reach</dt><dd>It can hear stations up to ${satKm(Math.round(reach / 10) * 10)} from the point below it, so stations about ${satKm(Math.round((reach * 2) / 100) * 100)} apart can work each other through it</dd>`;
+  now$ += `</dl>`;
+  satSet($("siNow"), now$);
+
+  // Identifiers and orbit
+  let orb = `<dl>`;
+  orb += `<dt>Name</dt><dd>${esc(short)}${satOscar(short) ? ` (${esc(satOscar(short))})` : ""}</dd>`;
+  if (g && g.OBJECT_NAME !== short) orb += `<dt>Full name</dt><dd>${esc(g.OBJECT_NAME)}</dd>`;
+  orb += `<dt>NORAD number</dt><dd>${id}</dd>`;
+  if (g && g.OBJECT_ID) orb += `<dt>International ID</dt><dd>${esc(g.OBJECT_ID)}${o && o.launched ? ` (launched ${o.launched})` : ""}</dd>`;
+  if (SAT_CALLS[id]) orb += `<dt>Callsigns</dt><dd>${esc(SAT_CALLS[id])}</dd>`;
+  if (o) {
+    const flat = Math.abs(o.apogeeKm - o.perigeeKm) < 40;
+    orb += `<dt>One lap</dt><dd>${Math.round(o.periodMin)} min (${(1440 / o.periodMin).toFixed(1)} laps a day)</dd>`;
+    orb += `<dt>Orbit height</dt><dd>${flat ? `about ${satKm(Math.round((o.apogeeKm + o.perigeeKm) / 20) * 10)}` : `${satKm(o.perigeeKm)} to ${satKm(o.apogeeKm)}`}</dd>`;
+    orb += `<dt>Tilt</dt><dd>${o.inclination.toFixed(1)}°: it goes as far as ${Math.round(o.inclination > 90 ? 180 - o.inclination : o.inclination)}° north and south${o.inclination > 95 ? " (a polar orbit, so it passes everywhere)" : ""}</dd>`;
+    if (Number.isFinite(o.epoch)) {
+      const h = Math.round((now - o.epoch) / 3600e3);
+      orb += `<dt>Orbit data</dt><dd>${h < 1 ? "under an hour" : h < 48 ? `${h} hours` : `${Math.round(h / 24)} days`} old${h > 24 * 7 ? " (old, so times may be a few minutes out)" : ""}</dd>`;
+    }
+  }
+  orb += `</dl>`;
+  satSet($("siOrbit"), orb);
+
+  // Sky chart: this pass if it's up, otherwise the next one above "Passes above" (or simply the next one)
+  const p = up ? passes[0] : passes.find((q) => q.maxEl >= sats.minEl) || passes[0];
+  const track = p ? SatMath.skyTrack(sats.lib, rec, obs, p.aos, p.los, Math.max(5e3, Math.round((p.los - p.aos) / 120))) : [];
+  satSet($("siSky"), satSkySvg(track, now, up));
+  satSet($("siSkyNote"), p
+    ? (up
+      ? `<b>This pass</b>: rose ${satUtc(p.aos)} in the ${SatMath.compass(p.aosAz)}, highest ${Math.round(p.maxEl)}° at ${satUtc(p.tca)}, sets ${satUtc(p.los)} (${satIn(p.los - now)}) in the ${SatMath.compass(p.losAz)}. The orange dot is where it is now.`
+      : `<b>Next pass</b> ${satIn(p.aos - now)}: rises ${satUtc(p.aos)} UTC in the ${SatMath.compass(p.aosAz)} (●), highest ${Math.round(p.maxEl)}° at ${satUtc(p.tca)}, sets ${satUtc(p.los)} in the ${SatMath.compass(p.losAz)} (■).`)
+    : "No pass over your locator in the next 3 days.");
+
+  // Radio
+  const radio = SAT_RADIO[id] || [];
+  satSet($("siRadio"), radio.length
+    ? radio.map((r, i) => (up ? satRadioLine(id, i, r, rate)
+      : `<div class="satfq small"><b>${esc(r.what)}</b>: listen ${satBand(r.down)} MHz${r.up != null ? `, send ${satBand(r.up)} MHz` : ""}` +
+        `${r.note ? `, ${esc(r.note)}` : ""}${r.inverting ? ", inverting" : ""} (${esc(String(r.mode).toUpperCase())})</div>`)).join("") +
+      (up ? `<p class="small muted">Click a frequency to tune there and follow the Doppler shift.</p>` : `<p class="small muted">When it's up, the frequencies here include the Doppler shift, and you can click one to tune there.</p>`)
+    : `<p class="small muted">Band Watch doesn't have frequencies for this one. AMSAT's status page and the satellite's own website list them.</p>`);
+
+  // Next passes
+  satSet($("siPasses"), passes.slice(0, 8).map((q) =>
+    `<tr${q.aos <= now ? ' class="satup"' : ""}><td>${satDay(q.aos)}</td><td>${q.aos <= now ? "now" : `${satUtc(q.aos)} <span class="muted small">${satIn(q.aos - now)}</span>`}</td>` +
+    `<td>${Math.round(q.maxEl)}°</td><td>${SatMath.compass(q.aosAz)} → ${SatMath.compass(q.losAz)}</td><td>${Math.max(1, Math.round((q.los - q.aos) / 60000))} min</td></tr>`).join("") ||
+    `<tr><td colspan="5" class="small muted">No passes in the next 3 days.</td></tr>`);
+
+  satSet($("siFoot"), `More: <a href="https://www.amsat.org/status/" target="_blank" rel="noopener noreferrer">AMSAT status</a> · ` +
+    `<a href="https://www.n2yo.com/satellite/?s=${id}" target="_blank" rel="noopener noreferrer">N2YO live map</a> · ` +
+    `<a href="https://celestrak.org/satcat/table-satcat.php?CATNR=${id}" target="_blank" rel="noopener noreferrer">CelesTrak catalogue</a>`);
+}
+
+/** Start or stop following a satellite's Doppler-corrected frequency. */
+function satToggleFollow(id, i) {
+  if (sats.follow && sats.follow.id === id && sats.follow.i === i) sats.follow = null;
+  else { sats.follow = { id, i }; sats.lastTune = 0; satFollow(Date.now()); }
+  renderSats();
+  if (satCard.id != null) renderSatCard();
 }
 
 function satFillAdd() {
@@ -307,15 +485,30 @@ async function setupSats() {
       return;
     }
     const b = e.target.closest(".sattune");
-    if (b) {
-      const id = Number(b.dataset.id), i = Number(b.dataset.i);
-      if (sats.follow && sats.follow.id === id && sats.follow.i === i) { sats.follow = null; renderSats(); return; }
-      sats.follow = { id, i };
-      sats.lastTune = 0;
-      satFollow(Date.now());
-      renderSats();
-    }
+    if (b) { satToggleFollow(Number(b.dataset.id), Number(b.dataset.i)); return; }
+    const n = e.target.closest(".satinfo");
+    if (n) openSatCard(Number(n.dataset.id));
   });
+  $("satPasses").addEventListener("click", (e) => {
+    const n = e.target.closest(".satinfo");
+    if (n) openSatCard(Number(n.dataset.id));
+  });
+  // A satellite's dot on the world map opens its card too (click, or Enter/Space on the keyboard).
+  const mapOpen = (e) => {
+    const m = e.target.closest && e.target.closest("[data-sat]");
+    if (!m) return;
+    if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    openSatCard(Number(m.dataset.sat));
+  };
+  $("map").addEventListener("click", mapOpen);
+  $("map").addEventListener("keydown", mapOpen);
+  $("siRadio").addEventListener("click", (e) => {
+    const b = e.target.closest(".sattune");
+    if (b) satToggleFollow(Number(b.dataset.id), Number(b.dataset.i));
+  });
+  $("siClose").addEventListener("click", () => $("satInfo").close());
+  $("satInfo").addEventListener("close", closeSatCard);
   renderSats();
   try {
     sats.lib = await import(SAT_LIB);

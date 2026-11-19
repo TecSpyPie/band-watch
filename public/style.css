@@ -347,6 +347,26 @@ table.sattab tr.satup td{background:color-mix(in srgb,var(--warm) 14%,transparen
 .satmark text{font-size:4.5px;fill:var(--muted)}
 .satmark.up circle{fill:var(--warm)}
 .satmark.up text{fill:var(--warm);font-weight:600}
+.satrow .satname.linkbtn{font:inherit;font-weight:600;text-align:left;padding:0;cursor:pointer}
+.satrow .satname.linkbtn:hover{text-decoration:underline}
+.satmark{cursor:pointer}
+.satmark .sathit{fill:transparent;stroke:none}
+.satmark:hover circle:not(.sathit){stroke:var(--text);stroke-width:.8}
+.sattab .satinfo{font:inherit;padding:0;cursor:pointer}
+.satinfo dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0}
+.satinfo dt{color:var(--muted)}
+.satinfo dd{margin:0}
+.satsky{display:block;width:100%;max-width:280px;margin:0 auto}
+.satsky .ring{fill:none;stroke:var(--grid);stroke-width:1}
+.satsky .horizon{fill:color-mix(in srgb,var(--cool) 6%,transparent);stroke:var(--line);stroke-width:1.5}
+.satsky .lbl{font-size:10px;fill:var(--muted);text-anchor:middle;dominant-baseline:middle}
+.satsky .track{fill:none;stroke:var(--cool);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.satsky .gone{stroke:var(--muted);opacity:.55}
+.satsky .end{fill:var(--cool)}
+.satsky .tlbl{font-size:9px;fill:var(--text)}
+.satsky .now{fill:var(--warm);stroke:var(--surface);stroke-width:1.5}
+.satinfo .satfq{margin:0 0 6px}
+.satinfo .warm{color:var(--warm)}
 @media (max-width:600px){.satrow{grid-template-columns:1fr auto}.satrow > .small,.satrow > .satnow{grid-column:1 / -1;grid-row:2}.satrow .satfqs{grid-column:1 / -1}}
 /* Logbook */
 .linkbtn{background:none;border:0;padding:0 2px;color:var(--cool);font:inherit;text-decoration:underline;cursor:pointer}

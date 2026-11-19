@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.28.0">
-<link rel="stylesheet" href="/listen.css?v=1.28.0">
+<link rel="stylesheet" href="/style.css?v=1.29.0">
+<link rel="stylesheet" href="/listen.css?v=1.29.0">
 </head>
 <body>
 <div class="wrap">
@@ -781,6 +781,42 @@
     </form>
   </dialog>
 
+  <dialog id="satInfo" class="station satinfo" aria-labelledby="siTitle">
+    <div class="qc">
+      <div class="qchead">
+        <div><h2 id="siTitle"></h2><p class="small muted" id="siSub"></p></div>
+        <button type="button" class="ghost x" id="siClose" aria-label="Close">×</button>
+      </div>
+      <div class="stgrid">
+        <section aria-labelledby="siNowH">
+          <h3 id="siNowH">Right now</h3>
+          <div class="small" id="siNow" aria-live="off"></div>
+          <h3 id="siOrbitH" style="margin-top:14px">Orbit</h3>
+          <div class="small" id="siOrbit"></div>
+        </section>
+        <section aria-labelledby="siSkyH">
+          <h3 id="siSkyH">In your sky</h3>
+          <svg class="satsky" id="siSky" viewBox="-118 -118 236 236" role="img" aria-label="Sky chart: the satellite's path across your sky, overhead in the middle, horizon at the edge, north at the top"></svg>
+          <p class="small" id="siSkyNote"></p>
+        </section>
+        <section class="stwide" aria-labelledby="siRadioH">
+          <h3 id="siRadioH">Radio</h3>
+          <div id="siRadio"></div>
+        </section>
+        <section class="stwide" aria-labelledby="siPassH">
+          <h3 id="siPassH">Next passes over your locator (UTC)</h3>
+          <div class="sattabwrap">
+            <table class="sattab">
+              <thead><tr><th>Day</th><th>Rises</th><th>Highest</th><th>Direction</th><th>Lasts</th></tr></thead>
+              <tbody id="siPasses"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <p class="small muted" id="siFoot" style="margin:12px 0 0"></p>
+    </div>
+  </dialog>
+
   <dialog id="station" class="station" aria-labelledby="qcTitle">
     <div class="qc">
       <div class="qchead">
@@ -826,39 +862,39 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.28.0"></script>
-<script src="/js/bandplan.js?v=1.28.0"></script>
-<script src="/js/core.js?v=1.28.0"></script>
-<script src="/js/modes.js?v=1.28.0"></script>
-<script src="/js/map.js?v=1.28.0"></script>
-<script src="/js/scope.js?v=1.28.0"></script>
-<script src="/js/monitor.js?v=1.28.0"></script>
-<script src="/js/lookup.js?v=1.28.0"></script>
-<script src="/js/worldclock.js?v=1.28.0"></script>
-<script src="/js/locator.js?v=1.28.0"></script>
-<script src="/js/activity.js?v=1.28.0"></script>
-<script src="/js/qrz.js?v=1.28.0"></script>
-<script src="/js/hovercard.js?v=1.28.0"></script>
-<script src="/js/station.js?v=1.28.0"></script>
-<script src="/js/sdr-dsp.js?v=1.28.0"></script>
-<script src="/js/sdr.js?v=1.28.0"></script>
-<script src="/js/rxfx.js?v=1.28.0"></script>
-<script src="/js/clearrx-link.js?v=1.28.0"></script>
-<script src="/js/listen.js?v=1.28.0"></script>
-<script src="/js/rig.js?v=1.28.0"></script>
-<script src="/js/rigrx.js?v=1.28.0"></script>
-<script src="/js/xota.js?v=1.28.0"></script>
-<script src="/js/satmath.js?v=1.28.0"></script>
-<script src="/js/sats.js?v=1.28.0"></script>
-<script src="/js/eibi-data.js?v=1.28.0"></script>
-<script src="/js/eibi.js?v=1.28.0"></script>
-<script src="/js/panel.js?v=1.28.0"></script>
-<script src="/js/logbook.js?v=1.28.0"></script>
-<script src="/js/wanted.js?v=1.28.0"></script>
-<script src="/js/decoders.js?v=1.28.0"></script>
-<script src="/js/sun.js?v=1.28.0"></script>
-<script src="/js/options.js?v=1.28.0"></script>
-<script src="/js/windows.js?v=1.28.0"></script>
-<script src="/js/app.js?v=1.28.0"></script>
+<script src="/js/install.js?v=1.29.0"></script>
+<script src="/js/bandplan.js?v=1.29.0"></script>
+<script src="/js/core.js?v=1.29.0"></script>
+<script src="/js/modes.js?v=1.29.0"></script>
+<script src="/js/map.js?v=1.29.0"></script>
+<script src="/js/scope.js?v=1.29.0"></script>
+<script src="/js/monitor.js?v=1.29.0"></script>
+<script src="/js/lookup.js?v=1.29.0"></script>
+<script src="/js/worldclock.js?v=1.29.0"></script>
+<script src="/js/locator.js?v=1.29.0"></script>
+<script src="/js/activity.js?v=1.29.0"></script>
+<script src="/js/qrz.js?v=1.29.0"></script>
+<script src="/js/hovercard.js?v=1.29.0"></script>
+<script src="/js/station.js?v=1.29.0"></script>
+<script src="/js/sdr-dsp.js?v=1.29.0"></script>
+<script src="/js/sdr.js?v=1.29.0"></script>
+<script src="/js/rxfx.js?v=1.29.0"></script>
+<script src="/js/clearrx-link.js?v=1.29.0"></script>
+<script src="/js/listen.js?v=1.29.0"></script>
+<script src="/js/rig.js?v=1.29.0"></script>
+<script src="/js/rigrx.js?v=1.29.0"></script>
+<script src="/js/xota.js?v=1.29.0"></script>
+<script src="/js/satmath.js?v=1.29.0"></script>
+<script src="/js/sats.js?v=1.29.0"></script>
+<script src="/js/eibi-data.js?v=1.29.0"></script>
+<script src="/js/eibi.js?v=1.29.0"></script>
+<script src="/js/panel.js?v=1.29.0"></script>
+<script src="/js/logbook.js?v=1.29.0"></script>
+<script src="/js/wanted.js?v=1.29.0"></script>
+<script src="/js/decoders.js?v=1.29.0"></script>
+<script src="/js/sun.js?v=1.29.0"></script>
+<script src="/js/options.js?v=1.29.0"></script>
+<script src="/js/windows.js?v=1.29.0"></script>
+<script src="/js/app.js?v=1.29.0"></script>
 </body>
 </html>
