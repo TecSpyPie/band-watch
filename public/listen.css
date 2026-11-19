@@ -71,6 +71,9 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab td.dcact{width:6.5em;white-space:nowrap}
 /* Add-ons: hidden until ticked in Settings */
 :root:not([data-addons~="rotator"]) #secRot{display:none}
+:root:not([data-addons~="dv"]) #secDv{display:none}
+#secDv h3{margin:12px 0 4px}
+#dvChans .muted{font-weight:normal}
 /* CB channels in Listen */
 .lscb{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0}
 .lscb label{display:flex;align-items:center;gap:6px}

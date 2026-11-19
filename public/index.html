@@ -15,9 +15,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.38.0">
-<link rel="stylesheet" href="/listen.css?v=1.38.0">
-<link rel="stylesheet" href="/looks.css?v=1.38.0">
+<link rel="stylesheet" href="/style.css?v=1.39.0">
+<link rel="stylesheet" href="/listen.css?v=1.39.0">
+<link rel="stylesheet" href="/looks.css?v=1.39.0">
 </head>
 <body>
 <div class="wrap">
@@ -513,6 +513,46 @@
     </div>
   </section>
 
+  <section class="panel" id="secDv" aria-labelledby="dvTitle">
+    <div class="phead">
+      <h2 id="dvTitle">Digital voice</h2>
+      <span class="small muted">DMR, BrandMeister and Yaesu System Fusion (add-on)</span>
+    </div>
+    <p class="small">Band Watch can't make or send DMR or Fusion (C4FM) voice itself: they use a patented voice codec
+      (AMBE) that only radios and hotspots have. Band Watch can put your Yaesu radio on C4FM, and take you to the right pages.</p>
+    <h3 class="small">Fusion (C4FM) on your radio</h3>
+    <div class="dcrow" id="dvChans"></div>
+    <div class="dcrow">
+      <label class="small txlvl">Frequency <input type="number" id="dvFreq" min="144" max="440" step="0.0125" placeholder="145.375" style="width:7em"> MHz</label>
+      <button type="button" class="ghost" id="dvGo">Set C4FM</button>
+    </div>
+    <p class="small" id="dvNote" role="status" aria-live="polite"></p>
+    <p class="small muted">This only sets the frequency and C4FM mode (2 m and 70 cm). Band Watch never transmits here:
+      you talk on your own microphone. For a repeater or WIRES-X node, use a memory channel on the radio with its shift and tone.</p>
+    <h3 class="small">BrandMeister (DMR)</h3>
+    <div class="dcrow">
+      <a class="lbtn optlink" href="https://hose.brandmeister.network/" target="_blank" rel="noopener noreferrer">Hoseline: listen in your browser</a>
+      <a class="lbtn optlink" href="https://brandmeister.network/?page=talkgroups" target="_blank" rel="noopener noreferrer">Talkgroups</a>
+      <a class="lbtn optlink" href="https://brandmeister.network/?page=lh" target="_blank" rel="noopener noreferrer">Last heard</a>
+    </div>
+    <p class="small muted">Talkgroups to try: <b>235</b> UK wide, <b>91</b> worldwide, <b>92</b> Europe, <b>9990</b> Parrot
+      (plays you back, to test your audio). On Hoseline, pick the talkgroup to listen.</p>
+    <h3 class="small">UK repeaters</h3>
+    <div class="dcrow">
+      <a class="lbtn optlink" href="https://ukrepeater.net/multimode.html?dmode=FUSION" target="_blank" rel="noopener noreferrer">Fusion repeaters</a>
+      <a class="lbtn optlink" href="https://ukrepeater.net/multimode.html?dmode=DMR" target="_blank" rel="noopener noreferrer">DMR repeaters</a>
+      <a class="lbtn optlink" href="https://ukrepeater.net/repeaterlist.html" target="_blank" rel="noopener noreferrer">All repeaters</a>
+    </div>
+    <p class="small muted">From ukrepeater.net, run by the RSGB's repeater committee (ETCC).</p>
+    <h3 class="small">Your hotspot</h3>
+    <div class="dcrow">
+      <label class="grow">Dashboard address <input type="text" id="dvHotspot" placeholder="http://pi-star.local/" spellcheck="false" autocomplete="off"></label>
+      <a class="lbtn optlink" id="dvHotspotOpen" target="_blank" rel="noopener noreferrer" hidden>Open dashboard</a>
+    </div>
+    <p class="small" id="dvHotNote" role="status"></p>
+    <p class="small muted">A Pi-Star or WPSD hotspot shows its dashboard on your home network, e.g. http://pi-star.local/ or its number (192.168.x.x).</p>
+  </section>
+
   <section class="panel" id="secSats" aria-labelledby="satTitle">
     <div class="phead">
       <h2 id="satTitle">Satellites</h2>
@@ -783,7 +823,7 @@
       <span class="small muted">Show these sections</span>
       <div class="secs" id="optSecs"></div>
       <span class="small muted">Add-ons (extra panels, off until you tick them)</span>
-      <div class="secs" id="optAddons"><label><input type="checkbox" data-addon="rotator"> Rotator: turn your antenna</label></div>
+      <div class="secs" id="optAddons"><label><input type="checkbox" data-addon="rotator"> Rotator: turn your antenna</label><label><input type="checkbox" data-addon="dv"> Digital voice: DMR, BrandMeister and Fusion</label></div>
 
       <h3 class="opth">Background</h3>
       <div class="swatches bgsw" id="optBgPresets" role="group" aria-label="Background presets"></div>
@@ -1048,51 +1088,52 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.38.0"></script>
-<script src="/js/bandplan.js?v=1.38.0"></script>
-<script src="/js/core.js?v=1.38.0"></script>
-<script src="/js/modes.js?v=1.38.0"></script>
-<script src="/js/map.js?v=1.38.0"></script>
-<script src="/js/scope.js?v=1.38.0"></script>
-<script src="/js/monitor.js?v=1.38.0"></script>
-<script src="/js/lookup.js?v=1.38.0"></script>
-<script src="/js/worldclock.js?v=1.38.0"></script>
-<script src="/js/locator.js?v=1.38.0"></script>
-<script src="/js/activity.js?v=1.38.0"></script>
-<script src="/js/qrz.js?v=1.38.0"></script>
-<script src="/js/hovercard.js?v=1.38.0"></script>
-<script src="/js/station.js?v=1.38.0"></script>
-<script src="/js/sdr-dsp.js?v=1.38.0"></script>
-<script src="/js/sdr.js?v=1.38.0"></script>
-<script src="/js/rxfx.js?v=1.38.0"></script>
-<script src="/js/clearrx-link.js?v=1.38.0"></script>
-<script src="/js/listen.js?v=1.38.0"></script>
-<script src="/js/rig.js?v=1.38.0"></script>
-<script src="/js/rigrx.js?v=1.38.0"></script>
-<script src="/js/xota.js?v=1.38.0"></script>
-<script src="/js/satmath.js?v=1.38.0"></script>
-<script src="/js/sats.js?v=1.38.0"></script>
-<script src="/js/eibi-data.js?v=1.38.0"></script>
-<script src="/js/eibi.js?v=1.38.0"></script>
-<script src="/js/panel.js?v=1.38.0"></script>
-<script src="/js/logbook.js?v=1.38.0"></script>
-<script src="/js/wanted.js?v=1.38.0"></script>
-<script src="/js/dccols.js?v=1.38.0"></script>
-<script src="/js/decoders.js?v=1.38.0"></script>
-<script src="/js/ft8.js?v=1.38.0"></script>
-<script src="/js/ftxtx.js?v=1.38.0"></script>
-<script src="/js/tx.js?v=1.38.0"></script>
-<script src="/js/cwtx.js?v=1.38.0"></script>
-<script src="/js/cwkey.js?v=1.38.0"></script>
-<script src="/js/sstv.js?v=1.38.0"></script>
-<script src="/js/sstvui.js?v=1.38.0"></script>
-<script src="/js/aprsui.js?v=1.38.0"></script>
-<script src="/js/sun.js?v=1.38.0"></script>
-<script src="/js/options.js?v=1.38.0"></script>
-<script src="/js/windows.js?v=1.38.0"></script>
-<script src="/js/rotmath.js?v=1.38.0"></script>
-<script src="/js/rotator.js?v=1.38.0"></script>
-<script src="/js/looks.js?v=1.38.0"></script>
-<script src="/js/app.js?v=1.38.0"></script>
+<script src="/js/install.js?v=1.39.0"></script>
+<script src="/js/bandplan.js?v=1.39.0"></script>
+<script src="/js/core.js?v=1.39.0"></script>
+<script src="/js/modes.js?v=1.39.0"></script>
+<script src="/js/map.js?v=1.39.0"></script>
+<script src="/js/scope.js?v=1.39.0"></script>
+<script src="/js/monitor.js?v=1.39.0"></script>
+<script src="/js/lookup.js?v=1.39.0"></script>
+<script src="/js/worldclock.js?v=1.39.0"></script>
+<script src="/js/locator.js?v=1.39.0"></script>
+<script src="/js/activity.js?v=1.39.0"></script>
+<script src="/js/qrz.js?v=1.39.0"></script>
+<script src="/js/hovercard.js?v=1.39.0"></script>
+<script src="/js/station.js?v=1.39.0"></script>
+<script src="/js/sdr-dsp.js?v=1.39.0"></script>
+<script src="/js/sdr.js?v=1.39.0"></script>
+<script src="/js/rxfx.js?v=1.39.0"></script>
+<script src="/js/clearrx-link.js?v=1.39.0"></script>
+<script src="/js/listen.js?v=1.39.0"></script>
+<script src="/js/rig.js?v=1.39.0"></script>
+<script src="/js/rigrx.js?v=1.39.0"></script>
+<script src="/js/xota.js?v=1.39.0"></script>
+<script src="/js/satmath.js?v=1.39.0"></script>
+<script src="/js/sats.js?v=1.39.0"></script>
+<script src="/js/eibi-data.js?v=1.39.0"></script>
+<script src="/js/eibi.js?v=1.39.0"></script>
+<script src="/js/panel.js?v=1.39.0"></script>
+<script src="/js/logbook.js?v=1.39.0"></script>
+<script src="/js/wanted.js?v=1.39.0"></script>
+<script src="/js/dccols.js?v=1.39.0"></script>
+<script src="/js/decoders.js?v=1.39.0"></script>
+<script src="/js/ft8.js?v=1.39.0"></script>
+<script src="/js/ftxtx.js?v=1.39.0"></script>
+<script src="/js/tx.js?v=1.39.0"></script>
+<script src="/js/cwtx.js?v=1.39.0"></script>
+<script src="/js/cwkey.js?v=1.39.0"></script>
+<script src="/js/sstv.js?v=1.39.0"></script>
+<script src="/js/sstvui.js?v=1.39.0"></script>
+<script src="/js/aprsui.js?v=1.39.0"></script>
+<script src="/js/sun.js?v=1.39.0"></script>
+<script src="/js/options.js?v=1.39.0"></script>
+<script src="/js/windows.js?v=1.39.0"></script>
+<script src="/js/rotmath.js?v=1.39.0"></script>
+<script src="/js/rotator.js?v=1.39.0"></script>
+<script src="/js/dv.js?v=1.39.0"></script>
+<script src="/js/looks.js?v=1.39.0"></script>
+<script src="/js/app.js?v=1.39.0"></script>
 </body>
 </html>

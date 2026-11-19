@@ -1,5 +1,19 @@
 # What's new
 
+## 1.39.0 (19 Nov 2026)
+- **Digital voice add-on** (Settings > Add-ons: DMR, BrandMeister and Fusion). Band Watch can't make or send DMR or
+  Fusion (C4FM) voice itself: both use the AMBE voice codec, which is patented and only built into radios and hotspots.
+  What the add-on does:
+  - **One-click C4FM on a Yaesu radio** (FT-991A and others): the UK digital voice calling frequencies (145.375 MHz on
+    2 m, 438.6125 MHz on 70 cm) or a frequency you type, on 2 m or 70 cm only. It sets the frequency and C4FM mode
+    (`MD0E;`) and nothing else: Band Watch never transmits here, you talk on your own microphone.
+  - **BrandMeister (DMR):** links to Hoseline (listen to talkgroups in your browser), the talkgroup list and Last
+    heard, with talkgroups to try (235 UK, 91 worldwide, 92 Europe, 9990 Parrot).
+  - **UK repeaters:** links to the Fusion, DMR and full repeater lists at ukrepeater.net (RSGB ETCC).
+  - **Your hotspot:** save your Pi-Star or WPSD dashboard address (e.g. http://pi-star.local/) and open it from here.
+  - BrandMeister and ukrepeater.net data isn't copied into Band Watch: neither says it may be reused, so Band Watch
+    links to their own pages.
+
 ## 1.38.0 (19 Nov 2026)
 - **CB channels to listen to** (Listen panel): pick a UK 27/81 FM channel (1–40; channel 19 is 27.78125 MHz) or a
   European CEPT channel (1–40; channel 19 is 27.185 MHz) and Listen tunes there in FM. Listen only: Band Watch never

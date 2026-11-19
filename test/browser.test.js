@@ -3170,3 +3170,53 @@ test("ATS Mini panel: older firmware (before 2.41) gets its screen with the hex 
   await page.waitForFunction(() => window.__radio.band === 22 && window.__radio.hz === 14074000, null, { timeout: 12000 });
   assert.deepEqual(errors, []);
 });
+
+test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991A on C4FM, never transmits; hotspot link", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true"));
+  await page.reload();
+  await page.waitForFunction(() => rig.connected && rig.hz === 7074000);
+  assert.equal(await page.isVisible("#secDv"), false, "hidden until the add-on is ticked");
+  await page.click("#optBtn");
+  await page.check('#optAddons input[data-addon="dv"]');
+  await page.keyboard.press("Escape");
+  assert.equal(await page.isVisible("#secDv"), true);
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-display"))).addons, ["dv"]);
+  // 2 m DV calling: frequency, then C4FM
+  await page.click('#dvChans button[data-mhz="145.375"]');
+  await page.waitForFunction(() => window.__radio.hz === 145375000 && window.__radio.mode === "E");
+  assert.match(await page.textContent("#dvNote"), /145\.375 MHz, C4FM \(2 m\)/);
+  // A typed frequency on 70 cm
+  await page.fill("#dvFreq", "430.4");
+  await page.click("#dvGo");
+  await page.waitForFunction(() => window.__radio.hz === 430400000 && window.__radio.mode === "E");
+  // Outside 2 m / 70 cm: says so, sends nothing
+  const before = await page.evaluate(() => window.__radio.sent.length);
+  await page.fill("#dvFreq", "28.12");
+  await page.click("#dvGo");
+  assert.match(await page.textContent("#dvNote"), /2 m \(144–146 MHz\) and 70 cm/);
+  assert.equal(await page.evaluate(() => window.__radio.hz), 430400000);
+  assert.ok(await page.evaluate((n) => !window.__radio.sent.slice(n).some((c) => /^(FA\d|MD0)/.test(c)), before));
+  // Only frequency and mode were ever set: no transmit, MOX or power commands
+  assert.deepEqual(await page.evaluate(() => window.__radio.sent.filter((c) => /^(TX|MX|PC|AC)/.test(c))), []);
+  // The radio's C4FM shows up in Band Watch (FM listen mode)
+  await page.waitForFunction(() => rig.modeName === "C4FM" && listen.kHz === 430400, null, { timeout: 6000 });
+  // Links to BrandMeister and ukrepeater.net open in a new tab
+  assert.equal(await page.getAttribute('#secDv a[href="https://hose.brandmeister.network/"]', "target"), "_blank");
+  assert.ok(await page.$('#secDv a[href="https://ukrepeater.net/multimode.html?dmode=FUSION"]'));
+  // Hotspot dashboard: tidied, saved and offered as a link; nonsense refused
+  assert.equal(await page.isVisible("#dvHotspotOpen"), false);
+  await page.fill("#dvHotspot", "pi-star.local");
+  await page.dispatchEvent("#dvHotspot", "change");
+  assert.equal(await page.getAttribute("#dvHotspotOpen", "href"), "http://pi-star.local/");
+  assert.equal(await page.isVisible("#dvHotspotOpen"), true);
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-dv"))).hotspot, "http://pi-star.local/");
+  await page.fill("#dvHotspot", "javascript:alert(1)");
+  await page.dispatchEvent("#dvHotspot", "change");
+  assert.match(await page.textContent("#dvHotNote"), /doesn't look like a web address/);
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-dv"))).hotspot, "http://pi-star.local/");
+  // Fits a phone
+  await page.setViewportSize({ width: 380, height: 800 });
+  assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#secDv *")].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).map((e) => e.tagName + "#" + e.id).slice(0, 5)), []);
+  assert.deepEqual(errors, []);
+});

@@ -124,7 +124,7 @@ function setupOptions() {
     const k = i.dataset.addon;
     settings.addons = i.checked ? [...new Set([...(settings.addons || []), k])] : (settings.addons || []).filter((x) => x !== k);
     saveSettings();
-    const sec = { rotator: "secRot" }[k];
+    const sec = { rotator: "secRot", dv: "secDv" }[k];
     if (i.checked && sec && $(sec)) setTimeout(() => $(sec).scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   });
   setupBackground();
@@ -317,6 +317,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.39.0", "Digital voice add-on: one-click C4FM on a Yaesu radio, BrandMeister (Hoseline, talkgroups, last heard), UK repeater lists, your hotspot's dashboard"],
   ["1.38.0", "CB channels to listen to (UK 27/81 and CEPT), and Help pages on UK licences and exams and good operating"],
   ["1.37.0", "APRS on 2 m: decode packets with your RTL-SDR (144.800 MHz FM or the ISS), stations and weather on the map"],
   ["1.36.0", "Add-ons in Settings; the Rotator add-on: compass dial, point at a locator or callsign (short/long path), follow a satellite"],
