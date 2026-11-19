@@ -21,6 +21,7 @@ function start() {
   setupPanel();
   setupDecoders();
   setupTx();
+  setupSstv();
   const savedGrid = load("bw-grid");
   if (savedGrid && gridToLatLon(savedGrid)) $("grid").value = savedGrid;
   app.home = gridToLatLon($("grid").value) || app.home;

@@ -51,6 +51,16 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab tr.dccq{background:rgba(80,200,120,.10)}
 .dctab tr.dcmine{background:rgba(255,90,60,.18)}
 .dctab a.call{color:inherit;text-decoration:underline dotted}
+/* SSTV */
+.dcsstv[hidden]{display:none}
+.sstvmain{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:720px){.sstvmain{grid-template-columns:minmax(0,1fr)}}
+.sstvpic{display:block;width:100%;height:auto;background:#000;border:1px solid var(--line);border-radius:4px;image-rendering:auto}
+.sstvside p{margin:4px 0}
+.sstvgallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sstvthumb{margin:0}
+.sstvthumb img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:4px;cursor:zoom-in;background:#000}
+.sstvthumb figcaption{display:flex;justify-content:space-between;gap:6px;font-size:.75rem;color:var(--muted);margin-top:3px}
 /* Transmit (FT8/FT4) */
 .dctx{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:10px 0}
 .dctx[hidden]{display:none}

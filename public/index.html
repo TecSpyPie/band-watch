@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.30.0">
-<link rel="stylesheet" href="/listen.css?v=1.30.0">
+<link rel="stylesheet" href="/style.css?v=1.31.0">
+<link rel="stylesheet" href="/listen.css?v=1.31.0">
 </head>
 <body>
 <div class="wrap">
@@ -298,7 +298,7 @@
       <button type="button" class="lbtn" id="dcWindow" title="Open the decodes in their own window">Results window</button>
     </div>
     <div class="dcrow">
-      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option><option value="WSPR">WSPR (2 min)</option><option value="CW">CW (Morse)</option></select></label>
+      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option><option value="WSPR">WSPR (2 min)</option><option value="CW">CW (Morse)</option><option value="SSTV">SSTV (pictures)</option></select></label>
       <label class="grow">Audio from <select id="dcSrc"><option value="rtl">My RTL-SDR (Listen panel)</option><option value="mic">This computer's sound input (a radio, or a virtual cable)</option></select></label>
       <label class="grow" id="dcDevRow" hidden>Sound input <select id="dcDev"><option value="">Default input</option></select></label>
     </div>
@@ -341,6 +341,25 @@
         </ol>
         <p>Band Watch only transmits when Enable TX is on, inside an amateur band, and stops after 6 overs with no answer. <b>Stop TX</b> or <b>Esc</b> stops at once. Your power and where in the band your licence lets you transmit are for you to set. Your PC clock must be right to within a second.</p>
       </details>
+    </div>
+    <div class="dcsstv" id="dcSstv" hidden>
+      <div class="sstvmain">
+        <canvas id="sstvPic" class="sstvpic" width="320" height="256" role="img" aria-label="The SSTV picture being received"></canvas>
+        <div class="sstvside">
+          <p class="small" id="sstvInfo" role="status" aria-live="polite"></p>
+          <div class="dcrow">
+            <label class="small">Missed the start? <select id="sstvNowMode"></select></label>
+            <button type="button" class="ghost" id="sstvNow" title="Start receiving a picture in this mode now (when its VIS code wasn't heard)">Start now</button>
+            <button type="button" class="ghost" id="sstvStop" title="Stop this picture (keeps what has arrived)">Stop picture</button>
+          </div>
+          <p class="small muted">Pictures start by themselves when their VIS code is heard, in any of these modes:
+            Martin M1/M2, Scottie S1/S2/DX, Robot 36/72, PD 50/90/120/160/180/240/290, Wraase SC2-180, Pasokon P3/P5/P7.
+            Band Watch straightens slanted pictures by itself. On HF, SSTV is around 14.230 MHz USB (20 m) or 7.171 MHz LSB (40 m);
+            the ISS sends SSTV on 145.800 MHz FM during its events.</p>
+        </div>
+      </div>
+      <h3 class="dctxh" style="margin-top:12px">Gallery</h3>
+      <div class="sstvgallery" id="sstvGallery"></div>
     </div>
     <div class="dccw" id="dcCw" hidden>
       <div class="small muted" id="dcCwInfo"></div>
@@ -893,42 +912,44 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.30.0"></script>
-<script src="/js/bandplan.js?v=1.30.0"></script>
-<script src="/js/core.js?v=1.30.0"></script>
-<script src="/js/modes.js?v=1.30.0"></script>
-<script src="/js/map.js?v=1.30.0"></script>
-<script src="/js/scope.js?v=1.30.0"></script>
-<script src="/js/monitor.js?v=1.30.0"></script>
-<script src="/js/lookup.js?v=1.30.0"></script>
-<script src="/js/worldclock.js?v=1.30.0"></script>
-<script src="/js/locator.js?v=1.30.0"></script>
-<script src="/js/activity.js?v=1.30.0"></script>
-<script src="/js/qrz.js?v=1.30.0"></script>
-<script src="/js/hovercard.js?v=1.30.0"></script>
-<script src="/js/station.js?v=1.30.0"></script>
-<script src="/js/sdr-dsp.js?v=1.30.0"></script>
-<script src="/js/sdr.js?v=1.30.0"></script>
-<script src="/js/rxfx.js?v=1.30.0"></script>
-<script src="/js/clearrx-link.js?v=1.30.0"></script>
-<script src="/js/listen.js?v=1.30.0"></script>
-<script src="/js/rig.js?v=1.30.0"></script>
-<script src="/js/rigrx.js?v=1.30.0"></script>
-<script src="/js/xota.js?v=1.30.0"></script>
-<script src="/js/satmath.js?v=1.30.0"></script>
-<script src="/js/sats.js?v=1.30.0"></script>
-<script src="/js/eibi-data.js?v=1.30.0"></script>
-<script src="/js/eibi.js?v=1.30.0"></script>
-<script src="/js/panel.js?v=1.30.0"></script>
-<script src="/js/logbook.js?v=1.30.0"></script>
-<script src="/js/wanted.js?v=1.30.0"></script>
-<script src="/js/decoders.js?v=1.30.0"></script>
-<script src="/js/ft8.js?v=1.30.0"></script>
-<script src="/js/ftxtx.js?v=1.30.0"></script>
-<script src="/js/tx.js?v=1.30.0"></script>
-<script src="/js/sun.js?v=1.30.0"></script>
-<script src="/js/options.js?v=1.30.0"></script>
-<script src="/js/windows.js?v=1.30.0"></script>
-<script src="/js/app.js?v=1.30.0"></script>
+<script src="/js/install.js?v=1.31.0"></script>
+<script src="/js/bandplan.js?v=1.31.0"></script>
+<script src="/js/core.js?v=1.31.0"></script>
+<script src="/js/modes.js?v=1.31.0"></script>
+<script src="/js/map.js?v=1.31.0"></script>
+<script src="/js/scope.js?v=1.31.0"></script>
+<script src="/js/monitor.js?v=1.31.0"></script>
+<script src="/js/lookup.js?v=1.31.0"></script>
+<script src="/js/worldclock.js?v=1.31.0"></script>
+<script src="/js/locator.js?v=1.31.0"></script>
+<script src="/js/activity.js?v=1.31.0"></script>
+<script src="/js/qrz.js?v=1.31.0"></script>
+<script src="/js/hovercard.js?v=1.31.0"></script>
+<script src="/js/station.js?v=1.31.0"></script>
+<script src="/js/sdr-dsp.js?v=1.31.0"></script>
+<script src="/js/sdr.js?v=1.31.0"></script>
+<script src="/js/rxfx.js?v=1.31.0"></script>
+<script src="/js/clearrx-link.js?v=1.31.0"></script>
+<script src="/js/listen.js?v=1.31.0"></script>
+<script src="/js/rig.js?v=1.31.0"></script>
+<script src="/js/rigrx.js?v=1.31.0"></script>
+<script src="/js/xota.js?v=1.31.0"></script>
+<script src="/js/satmath.js?v=1.31.0"></script>
+<script src="/js/sats.js?v=1.31.0"></script>
+<script src="/js/eibi-data.js?v=1.31.0"></script>
+<script src="/js/eibi.js?v=1.31.0"></script>
+<script src="/js/panel.js?v=1.31.0"></script>
+<script src="/js/logbook.js?v=1.31.0"></script>
+<script src="/js/wanted.js?v=1.31.0"></script>
+<script src="/js/decoders.js?v=1.31.0"></script>
+<script src="/js/ft8.js?v=1.31.0"></script>
+<script src="/js/ftxtx.js?v=1.31.0"></script>
+<script src="/js/tx.js?v=1.31.0"></script>
+<script src="/js/sstv.js?v=1.31.0"></script>
+<script src="/js/sstvui.js?v=1.31.0"></script>
+<script src="/js/sun.js?v=1.31.0"></script>
+<script src="/js/options.js?v=1.31.0"></script>
+<script src="/js/windows.js?v=1.31.0"></script>
+<script src="/js/app.js?v=1.31.0"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
  * cycle or two, and decodes each 15 s (FT8) or 7.5 s (FT4) cycle as soon as it is complete,
  * lined up with UTC as WSJT-X does (so the PC clock needs to be right to within a second). */
 "use strict";
-importScripts("/js/ft8.js?v=1.30.0", "/js/wspr.js?v=1.30.0", "/js/cw.js?v=1.30.0");
+importScripts("/js/ft8.js?v=1.31.0", "/js/wspr.js?v=1.31.0", "/js/cw.js?v=1.31.0", "/js/sstv.js?v=1.31.0");
 
 // WSPR: two-minute cycles on the even minute, decoded at 12000 samples a second.
 const WSPR_PROTO = { name: "WSPR", period: 120, fs: 12000 };
@@ -15,6 +15,16 @@ const EARLY_SEC = { FT8: 13.6, FT4: 6.0 };
 let st = null;
 
 function start(mode, rate) {
+  if (mode === "SSTV") {
+    const dec = new Sstv.Decoder({
+      onStart: (s) => postMessage({ type: "sstv-start", ...s, at: Date.now() }),
+      onLines: (l) => postMessage({ type: "sstv-lines", from: l.from, to: l.to, rgba: l.rgba, final: Boolean(l.final) }, [l.rgba.buffer]),
+      onDone: (r) => postMessage({ type: "sstv-done", mode: r.mode, width: r.width, height: r.height, rgba: r.rgba, slant: r.slant, complete: r.complete, lines: r.lines }, [r.rgba.buffer]),
+    });
+    st = { sstv: dec, resampler: new Ftx.Resampler(rate, Sstv.FS) };
+    postMessage({ type: "status", text: "Listening for SSTV. A picture starts by itself when its VIS code is heard (any of the supported modes)." });
+    return;
+  }
   if (mode === "CW") {
     st = { cw: new Cw.Decoder(), resampler: new Ftx.Resampler(rate, Cw.FS), sent: 0 };
     postMessage({ type: "status", text: "Listening for CW. Tune the Morse to a tone between 300 and 1200 Hz (CW mode puts it near 700 Hz)." });
@@ -48,6 +58,7 @@ function pushCw(samples) {
 function push(samples, at) {
   const s = st;
   if (s.cw) return pushCw(samples);
+  if (s.sstv) { s.sstv.push(s.resampler.process(samples)); return; }
   const out = s.resampler.process(samples);
   if (!out.length) return;
   const fs = s.proto.fs;
@@ -113,4 +124,6 @@ onmessage = (e) => {
   if (m.type === "start") start(m.mode, m.rate);
   else if (m.type === "stop") st = null;
   else if (m.type === "audio" && st) push(m.samples, m.at);
+  else if (m.type === "sstv-now" && st && st.sstv) st.sstv.start(m.mode); // the VIS was missed: start by hand
+  else if (m.type === "sstv-stop" && st && st.sstv) st.sstv.stop();
 };

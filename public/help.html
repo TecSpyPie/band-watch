@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.30.0">
+<link rel="stylesheet" href="/style.css?v=1.31.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -247,6 +247,22 @@
     </ol>
     <figure><img src="/help/ft4-decoder.webp" alt="The decoder panel showing decoded FT4 messages" loading="lazy">
       <figcaption>Decoded messages, newest at the top.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="sstv" aria-labelledby="hSstv">
+    <h2 id="hSstv">SSTV pictures</h2>
+    <p>Set the decoder's <b>Mode</b> to <b>SSTV (pictures)</b>, tune to an SSTV frequency (<b class="btn">Tune to SSTV</b>:
+      14.230 MHz USB on 20 m, 7.171 MHz LSB on 40 m; the ISS uses 145.800 MHz FM during its SSTV events) and
+      <b class="btn">Start decoding</b>.</p>
+    <ul>
+      <li>A picture starts by itself when its <b>VIS code</b> is heard, and builds line by line. Modes: Martin M1/M2,
+        Scottie S1/S2/DX, Robot 36/72, PD 50/90/120/160/180/240/290, Wraase SC2-180 and Pasokon P3/P5/P7.</li>
+      <li>Band Watch follows each line's sync pulse, so a picture comes out <b>straight</b> even when a sound card runs a
+        little fast or slow.</li>
+      <li><b>Missed the start?</b> Pick the mode and click <b class="btn">Start now</b>: Band Watch finds the lines from their sync pulses.
+        <b class="btn">Stop picture</b> keeps what has arrived.</li>
+      <li>The <b>Gallery</b> keeps your last 16 pictures in this browser. Click one to see it big; <b>Save</b> downloads it as a PNG.</li>
+    </ul>
   </section>
 
   <section class="panel" id="transmit" aria-labelledby="hTx">

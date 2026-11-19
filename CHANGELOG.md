@@ -1,5 +1,18 @@
 # What's new
 
+## 1.31.0 (19 Nov 2026)
+- **SSTV pictures.** A new decoder mode, **SSTV (pictures)**, receives slow-scan TV in all the common analogue modes:
+  Martin M1/M2, Scottie S1/S2/DX, Robot 36/72, PD 50/90/120/160/180/240/290, Wraase SC2-180 and Pasokon P3/P5/P7.
+  - Starts by itself when a picture's **VIS code** is heard, and the picture builds line by line.
+  - **Straightens slanted pictures** by itself, following each line's sync pulse (tested with sound cards 300 and
+    1000 ppm off).
+  - **Missed the start?** Pick the mode and **Start now**: the lines are found from their sync pulses.
+    **Stop picture** keeps what has arrived.
+  - A **Gallery** of the last 16 pictures, kept in your browser: click one to see it big, **Save** as PNG.
+  - **Tune to SSTV** goes to the band's SSTV frequency in the right sideband (14.230 USB, 7.171 LSB…); the ISS sends
+    SSTV on 145.800 MHz FM during its events.
+  - Tested by making every mode's test card into SSTV audio, with noise and a sound card off speed, and decoding it back.
+
 ## 1.30.0 (19 Nov 2026)
 - **Transmit FT8 and FT4.** With FT8 or FT4 as the decoder's mode, a new **Transmit** box keys your radio over its
   USB cable (Yaesu `TX1;`/`TX0;`, Kenwood `TX1;`/`RX;`, Icom CI-V `1C 00`) and plays the signal into the radio's USB

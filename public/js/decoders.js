@@ -10,7 +10,7 @@ const dc = {
   ctx: null, stream: null, node: null, channel: null, lastCycle: null,
   cwText: "", cwWpm: 0, cwTone: 0,
 };
-const DC_MODES = ["FT8", "FT4", "WSPR", "CW"];
+const DC_MODES = ["FT8", "FT4", "WSPR", "CW", "SSTV"];
 
 function loadDc() {
   try {
@@ -45,7 +45,7 @@ async function dcStart() {
   dc.running = true;
   dc.rate = 0;
   if (dc.mode === "CW") dc.cwText = "";
-  dc.worker = new Worker("/js/ft8-worker.js?v=1.30.0");
+  dc.worker = new Worker("/js/ft8-worker.js?v=1.31.0");
   dc.worker.onmessage = (e) => onDecoderMessage(e.data);
   dc.worker.onerror = (e) => { dcStop(); dcSetStatus(`The decoder stopped: ${e.message}`); };
   if (dc.src === "mic") {
@@ -54,7 +54,7 @@ async function dcStart() {
       if (dc.device) constraints.deviceId = { exact: dc.device };
       dc.stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
       dc.ctx = new AudioContext();
-      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.30.0");
+      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.31.0");
       const srcNode = dc.ctx.createMediaStreamSource(dc.stream);
       dc.node = new AudioWorkletNode(dc.ctx, "bw-capture");
       dc.node.port.onmessage = (e) => decoderFeed(e.data, dc.ctx.sampleRate);
@@ -67,9 +67,9 @@ async function dcStart() {
       return;
     }
   } else {
-    const where = dc.mode === "CW" ? "a CW signal in CW mode" : `the ${dc.mode} frequency in USB`;
+    const where = dc.mode === "CW" ? "a CW signal in CW mode" : dc.mode === "SSTV" ? "an SSTV frequency (Tune to SSTV), or the ISS on 145.800 MHz FM" : `the ${dc.mode} frequency in USB`;
     dcSetStatus(sdr.running
-      ? `Decoding the RTL-SDR audio. Tune to ${where}.${dc.mode === "CW" ? "" : " Waiting for the next cycle…"}`
+      ? `Decoding the RTL-SDR audio. Tune to ${where}.${dc.mode === "CW" || dc.mode === "SSTV" ? "" : " Waiting for the next cycle…"}`
       : `Start your RTL-SDR in the Listen panel (receiver: My RTL-SDR), on ${where}.`);
   }
   renderDc();
@@ -89,6 +89,7 @@ function dcStop() {
 }
 
 function onDecoderMessage(m) {
+  if (typeof m.type === "string" && m.type.startsWith("sstv-")) { if (typeof sstvOnMessage === "function") sstvOnMessage(m); return; }
   if (m.type === "status") dcSetStatus(m.text);
   else if (m.type === "cw") {
     dc.cwText = (dc.cwText + (m.text || "")).slice(-3000);
@@ -182,9 +183,16 @@ function renderCw() {
 /** The FT8, FT4 or WSPR dial frequency (kHz) on the Listen panel's band. */
 function dcDialKHz() {
   if (dc.mode === "CW") return null;
+  if (dc.mode === "SSTV") { const f = typeof sstvTuneKHz === "function" ? sstvTuneKHz() : null; return f ? f[0] : null; }
   const table = dc.mode === "FT4" ? FT4 : dc.mode === "WSPR" ? WSPR : FT8;
   const mhz = table[listen.band];
   return mhz ? Math.round(mhz * 1000 * 10) / 10 : null;
+}
+
+/** The sideband for the Tune button: USB, except SSTV below 10 MHz (LSB, by custom). */
+function dcTuneMode() {
+  if (dc.mode === "SSTV") { const f = typeof sstvTuneKHz === "function" ? sstvTuneKHz() : null; return f ? f[1] : "usb"; }
+  return "usb";
 }
 
 /** The "Tune to FT8 on 20 m" button follows the Listen panel's band. */
@@ -192,7 +200,7 @@ function dcRenderTune() {
   if (!$("dcTune")) return;
   const k = dcDialKHz();
   $("dcTune").hidden = dc.src !== "rtl" || !k;
-  if (k) $("dcTune").textContent = `Tune to ${dc.mode} on ${listen.band} m (${k.toLocaleString()} kHz USB)`;
+  if (k) $("dcTune").textContent = `Tune to ${dc.mode} on ${listen.band} m (${k.toLocaleString()} kHz ${dcTuneMode().toUpperCase()})`;
 }
 
 function renderDc() {
@@ -202,9 +210,12 @@ function renderDc() {
   $("dcDevRow").hidden = dc.src !== "mic";
   $("dcCqOnly").checked = dc.cqOnly;
   const cw = dc.mode === "CW";
+  const sstv = dc.mode === "SSTV";
   $("dcCw").hidden = !cw;
-  $("dcTable").hidden = cw;
-  $("dcCqRow").hidden = cw || dc.mode === "WSPR";
+  if ($("dcSstv")) $("dcSstv").hidden = !sstv;
+  $("dcTable").hidden = cw || sstv;
+  $("dcCqRow").hidden = cw || sstv || dc.mode === "WSPR";
+  if (sstv && typeof sstvRenderInfo === "function") sstvRenderInfo();
   renderCw();
   $("dcStart").textContent = dc.running ? "Stop decoding" : "Start decoding";
   $("dcStart").classList.toggle("ghost", dc.running);
@@ -262,7 +273,7 @@ function setupDecoders() {
     const k = dcDialKHz();
     if (!k) return;
     if (RECEIVERS[listen.rx].kind !== "rtl") { listen.rx = "rtl"; saveListen(); }
-    tuneTo(k, "usb", { quiet: true });
+    tuneTo(k, dcTuneMode(), { quiet: true });
   });
   $("dcCqOnly").addEventListener("change", () => { dc.cqOnly = $("dcCqOnly").checked; saveDc(); renderDcRows(); });
   $("dcClear").addEventListener("click", () => { dc.rows = []; dc.cwText = ""; renderCw(); renderDcRows(); if (dc.channel) dc.channel.postMessage({ type: "all", rows: [], status: dc.status, mode: dc.mode }); });
