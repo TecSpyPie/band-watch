@@ -1,5 +1,12 @@
 # What's new
 
+## 1.24.2 (19 Nov 2026)
+- **ClearRX 1.1.0: My radio.** Buttons for **RTL-SDR, Yaesu, Icom, ATS Mini, Malahit and Other / mixer**. Pick
+  yours and ClearRX finds its sound input (the radio's USB Audio CODEC, or the line-in for the ATS Mini), sets a good
+  starting preset (SSB voice, or AM broadcast for the ATS Mini) and shows a tip for that radio, such as where the
+  IC-7300's USB audio level is. RTL-SDR points you to Band Watch's Listen, which sends its sound through ClearRX.
+  Download the new `ClearRX-Windows.zip` and unzip it over the old one.
+
 ## 1.24.1 (19 Nov 2026)
 - **ClearRX is now its own download** (`ClearRX-Windows.zip` on the release page), not inside the Band Watch
   installer. Microsoft Defender wrongly flagged the 1.24.0 installer as unwanted software, most likely because

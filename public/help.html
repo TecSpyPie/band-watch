@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.24.1">
+<link rel="stylesheet" href="/style.css?v=1.24.2">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -173,7 +173,10 @@
       <li>Download <b>ClearRX-Windows.zip</b> from the latest release on GitHub
         (github.com/TecSpyPie/band-watch/releases/latest) and unzip it into <b>C:\BandWatch\ClearRX</b>.
         Double-click <b>ClearRX.exe</b>. (The next Band Watch update adds a desktop icon for it.)</li>
-      <li>In <b>Sound from</b>, pick where your radio's sound comes in: for the IC-7300 or FT-991A it's the radio's
+      <li>Under <b>My radio</b>, pick yours: <b>RTL-SDR</b>, <b>Yaesu</b>, <b>Icom</b>, <b>ATS Mini</b>, <b>Malahit</b> or
+        <b>Other / mixer</b>. ClearRX finds its sound input, sets a good starting preset and shows a tip for that radio
+        (for the RTL-SDR, the sound comes through Band Watch's Listen instead).</li>
+      <li>Or, in <b>Sound from</b>, pick where your radio's sound comes in yourself: for the IC-7300 or FT-991A it's the radio's
         <b>USB Audio CODEC</b>; otherwise the PC's line-in, or your mixer or sound card.</li>
       <li>In <b>Play to</b>, pick your speakers or headphones (not the radio's USB sound, or you'd send it back to the radio).</li>
       <li>Press <b class="btn">Start</b>. The first time, allow ClearRX to use the sound input.</li>

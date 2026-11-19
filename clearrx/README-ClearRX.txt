@@ -1,4 +1,4 @@
-ClearRX by M3VRV - radio audio processor (version 1.0.0)
+ClearRX by M3VRV - radio audio processor (version 1.1.0)
 
 Install
   1. Unzip this folder somewhere to keep it, for example C:\BandWatch\ClearRX
@@ -7,6 +7,9 @@ Install
      Send to > Desktop (create shortcut).
 
 Use
+  - My radio: pick RTL-SDR, Yaesu, Icom, ATS Mini, Malahit or Other / mixer.
+    ClearRX finds that radio's sound input, sets a good starting preset and
+    shows a tip for it.
   - Sound from: your radio's USB Audio CODEC, the PC's line-in, a mixer or a sound card.
   - Play to: your speakers or headphones (not the radio's USB sound).
   - Press Start (allow the sound input the first time), then pick a preset:

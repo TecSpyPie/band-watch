@@ -82,3 +82,47 @@ test("ClearRX starts with a test input, the effects run, presets are saved", { s
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT, fullPage: true });
   assert.deepEqual(errors, []);
 });
+
+test("ClearRX My radio: each radio sets its preset and tip, finds its input, and is remembered", { skip, timeout: 40000 }, async () => {
+  const page = await (await browser.newContext({ viewport: { width: 1000, height: 900 } })).newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(base + "/");
+  await page.waitForSelector('#radios button[data-r="yaesu"]');
+  assert.match(await page.textContent("#radioTip"), /Pick your radio/);
+  await page.click("#power");
+  await page.waitForFunction(() => app.running, null, { timeout: 10000 });
+
+  // Yaesu: SSB voice, the USB Audio CODEC tip; the test PC has no Yaesu, so it says so
+  await page.click('#radios button[data-r="yaesu"]');
+  assert.equal(await page.getAttribute('#radios button[data-r="yaesu"]', "aria-pressed"), "true");
+  assert.equal(await page.getAttribute('#presets button[data-p="ssb"]', "aria-pressed"), "true");
+  assert.match(await page.textContent("#radioTip"), /USB Audio CODEC/);
+  assert.match(await page.textContent("#status"), /couldn't find a sound input for your Yaesu/);
+
+  // ATS Mini: AM broadcast, the headphone-lead tip
+  await page.click('#radios button[data-r="ats"]');
+  assert.equal(await page.getAttribute('#presets button[data-p="am"]', "aria-pressed"), "true");
+  assert.match(await page.textContent("#radioTip"), /headphone socket/);
+
+  // Finding the input by its name: an Icom's USB Audio CODEC, an ATS Mini on the line-in
+  const found = await page.evaluate(() => {
+    const sel = $("inDev");
+    for (const [v, t] of [["spk", "Microphone (Realtek)"], ["codec", "Microphone (2- USB Audio CODEC)"], ["line", "Line In (Realtek)"]]) {
+      const o = document.createElement("option"); o.value = v; o.textContent = t; sel.append(o);
+    }
+    return { icom: findInput(RADIOS.find((r) => r.id === "icom")), ats: findInput(RADIOS.find((r) => r.id === "ats")),
+      other: findInput(RADIOS.find((r) => r.id === "other")) };
+  });
+  assert.deepEqual(found, { icom: "codec", ats: "line", other: null });
+
+  // RTL-SDR: points to Band Watch's Listen; kept by ClearRX.exe
+  await page.click('#radios button[data-r="rtl"]');
+  assert.match(await page.textContent("#radioTip"), /Send my RTL-SDR sound through ClearRX/);
+  await page.waitForTimeout(600);
+  assert.equal((await (await fetch(base + "/api/settings")).json()).radio, "rtl");
+  await page.reload();
+  await page.waitForSelector('#radios button[data-r="rtl"][aria-pressed="true"]');
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT.replace(".png", "-radio.png"), fullPage: true });
+  assert.deepEqual(errors, []);
+});

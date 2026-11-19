@@ -54,8 +54,11 @@ type Settings struct {
 	Nr      bool   `json:"nr"`
 	NrLevel int    `json:"nrLevel"`
 	Comp    bool   `json:"comp"`
-	On      bool   `json:"on"` // ClearRX's power switch: off means "leave the sound alone"
+	On      bool   `json:"on"`    // ClearRX's power switch: off means "leave the sound alone"
+	Radio   string `json:"radio"` // "My radio": rtl, yaesu, icom, ats, malahit, other (or "" before one is picked)
 }
+
+var radios = map[string]bool{"": true, "rtl": true, "yaesu": true, "icom": true, "ats": true, "malahit": true, "other": true}
 
 var presets = map[string]bool{"off": true, "ssb": true, "weak": true, "cw": true, "am": true, "custom": true}
 
@@ -86,6 +89,9 @@ func (s Settings) clean() Settings {
 	s.Tone = clampInt(s.Tone, 300, 1500, 700)
 	s.Width = clampInt(s.Width, 50, 800, 200)
 	s.NrLevel = clampInt(s.NrLevel, 1, 3, 1)
+	if !radios[s.Radio] {
+		s.Radio = "other"
+	}
 	return s
 }
 

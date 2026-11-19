@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClearRX by M3VRV</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/clearrx.css?v=1.0.0">
+<link rel="stylesheet" href="/clearrx.css?v=1.1.0">
 </head>
 <body>
 <main class="rack" aria-labelledby="title">
@@ -18,6 +18,12 @@
     <span class="link" id="bwLink" hidden>Band Watch is using these settings</span>
     <button type="button" class="key power" id="power" aria-pressed="false">Start</button>
   </header>
+
+  <section class="radios" aria-labelledby="radiosLabel">
+    <span id="radiosLabel" class="rlabel">My radio</span>
+    <div class="rkeys" id="radios" role="group" aria-labelledby="radiosLabel"></div>
+    <p class="rtip" id="radioTip" role="status"></p>
+  </section>
 
   <section class="io" aria-label="Sound in and out">
     <label>Sound from <select id="inDev"><option value="">Default input</option></select></label>
@@ -62,7 +68,7 @@
   <footer class="small">Settings are kept on this PC. While ClearRX is open, Band Watch can send its RTL-SDR sound through it
     (Listen &gt; "Send my RTL-SDR sound through ClearRX"). <a href="#" id="quit">Close ClearRX</a></footer>
 </main>
-<script src="/js/rxfx.js?v=1.0.0"></script>
-<script src="/js/app.js?v=1.0.0"></script>
+<script src="/js/rxfx.js?v=1.1.0"></script>
+<script src="/js/app.js?v=1.1.0"></script>
 </body>
 </html>

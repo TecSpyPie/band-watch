@@ -8,10 +8,31 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 const PRESETS = [["off", "Off"], ["ssb", "SSB voice"], ["weak", "Weak DX"], ["cw", "CW"], ["am", "AM broadcast"]];
 const LO = [100, 200, 300, 400, 500], HI = [1800, 2100, 2400, 2700, 3000, 3500, 4500, 6000];
 const TONES = [500, 600, 650, 700, 750, 800], WIDTHS = [100, 150, 200, 300, 500];
+/* "My radio": which sound input to look for, a starting preset, and a tip for that radio. */
+const RADIOS = [
+  { id: "rtl", label: "RTL-SDR", preset: "ssb",
+    tip: "Your RTL-SDR's sound comes through Band Watch: in Band Watch, open Listen, pick Receiver: My RTL-SDR and tick "
+      + "\"Send my RTL-SDR sound through ClearRX\". You don't need to press Start here; just keep ClearRX open and set the switches." },
+  { id: "yaesu", label: "Yaesu", preset: "ssb", match: [/usb audio codec/i, /usb audio/i],
+    tip: "Yaesu (FT-991A, FT-710, FTdx10 and others): the sound comes in on the radio's USB Audio CODEC, the same USB lead as "
+      + "radio control. If ClearRX says it's too loud, turn down the radio's USB/DATA output level in its menu." },
+  { id: "icom", label: "Icom", preset: "ssb", match: [/usb audio codec/i, /usb audio/i],
+    tip: "Icom (IC-7300, IC-705, IC-7610 and others): the sound comes in on the radio's USB Audio CODEC. On the IC-7300 its level "
+      + "is MENU > SET > Connectors > ACC/USB AF Output Level." },
+  { id: "ats", label: "ATS Mini", preset: "am", match: [/line/i, /microphone|mic/i],
+    tip: "The ATS Mini has no USB sound. Run a lead from its headphone socket to the PC's line-in (often the blue socket) or "
+      + "microphone socket, and set the ATS Mini's volume to about half." },
+  { id: "malahit", label: "Malahit", preset: "ssb", match: [/malahit/i, /usb audio/i, /line/i],
+    tip: "Malahit DSP2: if Windows shows a Malahit or USB audio input, ClearRX picks it. If not, run a lead from its headphone "
+      + "socket to the PC's line-in." },
+  { id: "other", label: "Other / mixer", tip: "Pick where the sound comes from yourself: a mixer, a sound card or a line-in." },
+];
+
 const KEYS = ["voice", "lo", "hi", "cw", "tone", "width", "notch", "nr", "nrLevel", "comp"];
 
 const app = {
-  s: { preset: "ssb", voice: true, lo: 300, hi: 2700, cw: false, tone: 700, width: 200, notch: true, nr: false, nrLevel: 1, comp: true, on: true },
+  findAfterStart: false,
+  s: { radio: "", preset: "ssb", voice: true, lo: 300, hi: 2700, cw: false, tone: 700, width: 200, notch: true, nr: false, nrLevel: 1, comp: true, on: true },
   ctx: null, node: null, stream: null, before: null, after: null, running: false, bypass: false, gain: 1,
   meter: { inPeak: -120, outPeak: -120, clip: false }, saveTimer: null,
 };
@@ -70,8 +91,8 @@ async function start() {
       deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 },
     } });
     app.ctx = new AudioContext({ sampleRate: RxFx.RATE, latencyHint: "interactive" });
-    await app.ctx.audioWorklet.addModule("/js/rxfx.js?v=1.0.0");
-    await app.ctx.audioWorklet.addModule("/js/clearrx-worklet.js?v=1.0.0");
+    await app.ctx.audioWorklet.addModule("/js/rxfx.js?v=1.1.0");
+    await app.ctx.audioWorklet.addModule("/js/clearrx-worklet.js?v=1.1.0");
     const src = app.ctx.createMediaStreamSource(app.stream);
     app.node = new AudioWorkletNode(app.ctx, "clearrx", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
     app.node.port.onmessage = (e) => { if (e.data && e.data.meter) app.meter = e.data.meter; };
@@ -88,6 +109,7 @@ async function start() {
     applySettings();
     await listDevices(); // now the names show (the browser only gives them after you allow the sound)
     setStatus(`Running: ${selectedName($("inDev"))} → ${selectedName($("outDev"))}.`);
+    if (app.findAfterStart) { app.findAfterStart = false; setTimeout(() => pickRadio(app.s.radio, false), 0); }
   } catch (e) {
     stop();
     setStatus(e && e.name === "NotAllowedError"
@@ -109,10 +131,49 @@ function stop() {
 const selectedName = (sel) => (sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : "default");
 function setStatus(t) { $("status").textContent = t; }
 
+/* ---------- My radio ---------- */
+/** The input for a radio: the first input whose name matches, in order of the radio's patterns. */
+function findInput(radio) {
+  const opts = [...$("inDev").options].filter((o) => o.value);
+  for (const re of radio.match || []) {
+    const o = opts.find((x) => re.test(x.textContent));
+    if (o) return o.value;
+  }
+  return null;
+}
+
+/** Choose a radio: remember it, set its preset (when picked by hand) and its sound input. */
+async function pickRadio(id, byHand) {
+  const radio = RADIOS.find((x) => x.id === id);
+  if (!radio) return;
+  app.s.radio = id;
+  if (byHand && radio.preset) app.s.preset = radio.preset;
+  applySettings();
+  saveSettings();
+  if (!radio.match) return;
+  const names = [...$("inDev").options].some((o) => o.value && o.textContent && !/^Input \d+$/.test(o.textContent));
+  const dev = findInput(radio);
+  if (dev === null) {
+    setStatus(names
+      ? `ClearRX couldn't find a sound input for your ${radio.label}. Check it's plugged in, or pick it in "Sound from".`
+      : `Press Start once and allow the sound input, so ClearRX can see your sound devices' names and find your ${radio.label}.`);
+    if (!names) app.findAfterStart = true;
+    return;
+  }
+  if ($("inDev").value === dev) return;
+  $("inDev").value = dev;
+  try { localStorage.setItem("clearrx-inDev", dev); } catch { /* fine */ }
+  setStatus(`Sound from: ${selectedName($("inDev"))} (for your ${radio.label}).`);
+  if (app.running) { stop(); await start(); }
+}
+
 /* ---------- Screen ---------- */
 function render() {
   const s = app.s;
   for (const b of $("presets").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.p === s.preset));
+  for (const b of $("radios").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.r === s.radio));
+  const r = RADIOS.find((x) => x.id === s.radio);
+  $("radioTip").textContent = r ? r.tip : "Pick your radio, and ClearRX finds its sound input and a good starting preset.";
   $("fxVoice").checked = s.voice; $("fxLo").value = String(s.lo); $("fxHi").value = String(s.hi);
   $("fxCw").checked = s.cw; $("fxTone").value = String(s.tone); $("fxWidth").value = String(s.width);
   $("fxNotch").checked = s.notch; $("fxNr").checked = s.nr; $("fxNrLevel").value = String(s.nrLevel); $("fxComp").checked = s.comp;
@@ -191,6 +252,11 @@ async function setup() {
   await loadSettings();
   $("presets").innerHTML = PRESETS.map(([k, l]) => `<button type="button" class="key" data-p="${k}" aria-pressed="false">${esc(l)}</button>`).join("")
     + '<button type="button" class="key" data-p="custom" aria-pressed="false" disabled title="Change any switch for your own settings">Custom</button>';
+  $("radios").innerHTML = RADIOS.map((r) => `<button type="button" class="key" data-r="${r.id}" aria-pressed="false">${esc(r.label)}</button>`).join("");
+  $("radios").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) pickRadio(b.dataset.r, true);
+  });
   $("fxLo").innerHTML = LO.map((v) => `<option value="${v}">${v} Hz</option>`).join("");
   $("fxHi").innerHTML = HI.map((v) => `<option value="${v}">${(v / 1000).toFixed(1)} kHz</option>`).join("");
   $("fxTone").innerHTML = TONES.map((v) => `<option value="${v}">${v} Hz</option>`).join("");

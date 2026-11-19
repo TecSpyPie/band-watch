@@ -54,12 +54,15 @@ func TestOtherSitesCantReadSettings(t *testing.T) {
 func TestSettingsSavedCheckedAndLinked(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "s.json")
 	a := NewApp(file, nil)
-	w := do(t, a, "POST", "/api/settings", `{"preset":"weird","lo":5,"hi":99999,"tone":700,"width":200,"nrLevel":9,"nr":true,"on":true}`, nil)
+	w := do(t, a, "POST", "/api/settings", `{"preset":"weird","radio":"spaceship","lo":5,"hi":99999,"tone":700,"width":200,"nrLevel":9,"nr":true,"on":true}`, nil)
 	if w.Code != 200 {
 		t.Fatalf("POST = %d %s", w.Code, w.Body)
 	}
 	var s Settings
 	json.Unmarshal(w.Body.Bytes(), &s)
+	if s.Radio != "other" {
+		t.Fatalf("radio not checked: %q", s.Radio)
+	}
 	if s.Preset != "custom" || s.Lo != 50 || s.Hi != 8000 || s.NrLevel != 3 || !s.Nr {
 		t.Fatalf("not cleaned: %+v", s)
 	}
