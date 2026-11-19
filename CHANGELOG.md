@@ -1,5 +1,14 @@
 # What's new
 
+## 1.35.0 (19 Nov 2026)
+- **New looks with depth** (Settings > Look; High contrast and Night keep the plain look):
+  - **Radio front panel:** brushed-metal panels with screws in the corners, bevelled keys that press in, lit keys
+    that glow, and amber LCD-style clocks and readouts.
+  - **Glass and depth:** frosted-glass panels floating over soft colour, lifting under the mouse.
+  - **Space station:** a starfield and Earth's glow behind the page, drifting at different depths as the mouse moves
+    (still for people who ask their computer for reduced motion), with glowing blue panels.
+  - **Classic** is the look you had before.
+
 ## 1.34.0 (19 Nov 2026)
 - **CW keyboard** (Decoder, CW mode). Type, and each letter is sent in Morse as you type it: you hear it and see its
   dots and dashes, the one sounding now picked out.

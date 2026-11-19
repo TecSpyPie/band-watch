@@ -17,7 +17,7 @@ const SECTIONS = [
   ["sun", "Sunspots"], ["activity", "Band activity"],
 ];
 const DEFAULT_SETTINGS = {
-  theme: "system", accent: "", text: 100, zoom: 100, width: "1100px", cols: "auto", density: "comfortable",
+  theme: "system", look: "classic", accent: "", text: 100, zoom: 100, width: "1100px", cols: "auto", density: "comfortable",
   scopeRes: "normal", scopeH: "280px", hide: [], modesOff: [], bgDim: 55,
 };
 let settings = { ...DEFAULT_SETTINGS };
@@ -35,6 +35,9 @@ function loadSettings() {
 function applySettings() {
   const root = document.documentElement;
   if (settings.theme === "system") delete root.dataset.theme; else root.dataset.theme = settings.theme;
+  // The 3D looks (looks.css); High contrast and Night always stay plain.
+  const look = ["rig", "glass", "space"].includes(settings.look) && settings.theme !== "contrast" && settings.theme !== "night" ? settings.look : "";
+  if (look) root.dataset.look = look; else delete root.dataset.look;
   root.dataset.density = settings.density;
   root.dataset.cols = settings.cols;
   root.dataset.hide = settings.hide.join(" ");
@@ -54,6 +57,8 @@ function saveSettings() {
 
 function renderOptions() {
   $("optTheme").value = settings.theme;
+  $("optLook").value = settings.look || "classic";
+  $("optLookNote").hidden = !(settings.theme === "contrast" || settings.theme === "night") || settings.look === "classic";
   $("optText").value = settings.text;
   $("optTextVal").textContent = `${settings.text}%`;
   $("optZoom").value = settings.zoom;
@@ -100,7 +105,8 @@ function setupOptions() {
     if (id === "optZoom") $("optZoomVal").textContent = `${settings.zoom}%`;
     saveSettings();
   });
-  bind("optTheme", "theme"); bind("optText", "text", true); bind("optZoom", "zoom", true); bind("optWidth", "width");
+  bind("optTheme", "theme"); bind("optLook", "look"); bind("optText", "text", true);
+  for (const id of ["optTheme", "optLook"]) $(id).addEventListener("input", renderOptions); bind("optZoom", "zoom", true); bind("optWidth", "width");
   bind("optCols", "cols"); bind("optDensity", "density"); bind("optScopeRes", "scopeRes"); bind("optScopeH", "scopeH");
   $("optDim").addEventListener("input", (e) => { settings.bgDim = Number(e.target.value); $("optDimVal").textContent = `${settings.bgDim}%`; store("bw-display", settings); applySettings(); });
   $("optReset").addEventListener("click", () => {
@@ -298,6 +304,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.35.0", "New looks with depth in Settings > Look: Radio front panel, Glass and depth, and Space station (moving stars)"],
   ["1.34.0", "CW keyboard: type and hear Morse as you go (Practice), or send it on the air with break-in, message buttons and Farnsworth spacing"],
   ["1.33.0", "Decode table: choose and resize columns, an on-air Frequency column, times in any time zone with a clock; completed QSOs can log themselves"],
   ["1.32.0", "Send SSTV pictures (any mode, your text on it, preview, countdown), and band checks against the whole UK band plan for all transmitting"],

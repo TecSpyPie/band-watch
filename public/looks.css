@@ -1,0 +1,124 @@
+/* Band Watch looks (Settings > Look): Radio front panel, Glass and depth, Space station.
+   Set as <html data-look="…"> by options.js, never with High contrast or Night (those stay plain).
+   Each rule starts with :root[data-look=…]:not(#_) so it wins over the standard glossy layer in style.css. */
+
+/* ======================= Radio front panel ======================= */
+:root[data-look="rig"]:not(#_){
+  --bg:#141719;--surface:#20252a;--line:#39424a;--text:#e7ecef;--muted:#9ba7b1;--cool:#3fd0ff;--warm:#ffb22e;
+  --night:rgba(0,0,0,.45);--grid:#2b333a;--wfbg:#0a0d0f;--gloss:rgba(255,255,255,.07);--shade:rgba(0,0,0,.6);
+  --card-top:#3b434a;--card-bot:#23282d;--edge-hi:rgba(255,255,255,.17);--edge-lo:rgba(0,0,0,.75);--lip:#0a0c0e;
+  --lcd:#ffb22e;--lcdbg:#0b0f0d;color-scheme:dark}
+:root[data-look="rig"]:not(#_) body{
+  background:
+    radial-gradient(1400px 700px at 50% -10%,rgba(255,255,255,.07),transparent 60%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,#1b1f22,#0f1113);background-attachment:fixed}
+/* Panels: brushed metal with a screw in each corner */
+:root[data-look="rig"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero,header){
+  background:
+    radial-gradient(circle at 11px 11px,#c9d0d6 0 1.6px,#59626a 2.4px,rgba(0,0,0,.6) 3.4px,transparent 4.2px),
+    radial-gradient(circle at calc(100% - 11px) 11px,#c9d0d6 0 1.6px,#59626a 2.4px,rgba(0,0,0,.6) 3.4px,transparent 4.2px),
+    radial-gradient(circle at 11px calc(100% - 11px),#c9d0d6 0 1.6px,#59626a 2.4px,rgba(0,0,0,.6) 3.4px,transparent 4.2px),
+    radial-gradient(circle at calc(100% - 11px) calc(100% - 11px),#c9d0d6 0 1.6px,#59626a 2.4px,rgba(0,0,0,.6) 3.4px,transparent 4.2px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 2px,rgba(0,0,0,.03) 2px 3px),
+    linear-gradient(180deg,#3d454c 0%,#2a3036 18%,#22272c 100%);
+  border:1px solid #0b0d0f;border-top-color:#59636c;border-radius:10px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.6),0 2px 0 #0a0c0e,0 14px 28px rgba(0,0,0,.55)}
+:root[data-look="rig"]:not(#_) .wrap > #secPanel{background:none;border:0;box-shadow:none}
+:root[data-look="rig"]:not(#_) .wrap > .panel > .phead{
+  background:linear-gradient(180deg,#4a535b,#30373d);border-bottom:1px solid #0b0d0f;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+:root[data-look="rig"]:not(#_) .wrap > #secPanel > .phead{background:none;box-shadow:none;border:0}
+/* Engraved headings */
+:root[data-look="rig"]:not(#_) :is(h1,h2,h3){text-transform:uppercase;letter-spacing:.06em;color:#dfe5ea;text-shadow:0 -1px 0 #000,0 1px 0 rgba(255,255,255,.12)}
+:root[data-look="rig"]:not(#_) .wrap > .panel > .phead h2::before{background:radial-gradient(circle at 35% 30%,#fff,#ff6b3d 50%,#7a1c00);box-shadow:0 0 8px #ff6b3d}
+/* Glowing LCD readouts: the clock, the best band, the decoder clock */
+:root[data-look="rig"]:not(#_) :is(.clock,.dcclock,.wcc .t){
+  font-family:ui-monospace,Consolas,monospace;color:var(--lcd);background:var(--lcdbg);border:1px solid #000;border-radius:5px;padding:2px 8px;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.1);text-shadow:0 0 6px rgba(255,178,46,.7),0 0 14px rgba(255,178,46,.35)}
+:root[data-look="rig"]:not(#_) .hero .big span{background:none;color:var(--lcd);-webkit-text-fill-color:var(--lcd);filter:none;
+  text-shadow:0 0 10px rgba(255,178,46,.65),0 0 28px rgba(255,178,46,.3)}
+/* Bevelled keys that press in; lit keys glow */
+:root[data-look="rig"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.lk button){
+  background:linear-gradient(180deg,#56606a 0%,#3a4249 48%,#2c3237 52%,#262b30 100%);color:#eef2f5;
+  border:1px solid #0a0c0e;border-top-color:#7b858e;border-radius:6px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 2px 0 #0a0c0e,0 4px 8px rgba(0,0,0,.55);text-shadow:0 -1px 0 rgba(0,0,0,.6)}
+:root[data-look="rig"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.lk button):active{
+  transform:translateY(2px);box-shadow:inset 0 2px 4px rgba(0,0,0,.7),0 0 0 #0a0c0e}
+:root[data-look="rig"]:not(#_) :is(.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on){
+  color:#06222c;background:linear-gradient(180deg,#8fe6ff,#3fd0ff 55%,#1aa6d1);border-top-color:#c8f3ff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 2px 0 #0a0c0e,0 0 14px rgba(63,208,255,.55);text-shadow:none}
+/* Recessed boxes and screens */
+:root[data-look="rig"]:not(#_) :is(input[type=text],input[type=search],input[type=number],input[type=url],input:not([type]),select,textarea):not(.pnentry){
+  background:#0d1012;color:#e7ecef;border:1px solid #000;border-bottom-color:#4b545c;box-shadow:inset 0 2px 5px rgba(0,0,0,.85)}
+:root[data-look="rig"]:not(#_) :is(#scope,.map,#lsFrame,.atsscreen,.stmap,.planchart,.dcwrap,.sstvpic,.cwmorse){
+  border:1px solid #000;border-bottom-color:#4b545c;border-radius:6px;box-shadow:inset 0 3px 10px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.08)}
+:root[data-look="rig"]:not(#_) thead th{background:linear-gradient(180deg,#3a4249,#2a3036);color:#c3ccd3;border-bottom:1px solid #000}
+
+/* ======================= Glass and depth ======================= */
+:root[data-look="glass"]:not(#_){--glass:rgba(255,255,255,.55);--glass-rim:rgba(255,255,255,.7);--glass-blur:18px}
+@media (prefers-color-scheme:dark){:root[data-look="glass"]:not([data-theme="light"]):not(#_){--glass:rgba(22,37,52,.5);--glass-rim:rgba(255,255,255,.14)}}
+:root[data-look="glass"][data-theme="dark"]:not(#_){--glass:rgba(22,37,52,.5);--glass-rim:rgba(255,255,255,.14)}
+:root[data-look="glass"]:not(#_) body{
+  background:
+    radial-gradient(700px 520px at 8% 12%,color-mix(in srgb,var(--cool) 38%,transparent),transparent 70%),
+    radial-gradient(640px 520px at 92% 18%,color-mix(in srgb,#a46bff 34%,transparent),transparent 70%),
+    radial-gradient(800px 600px at 50% 100%,color-mix(in srgb,var(--warm) 30%,transparent),transparent 70%),
+    var(--bg);background-attachment:fixed}
+:root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero,header){
+  background:var(--glass);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.5);backdrop-filter:blur(var(--glass-blur)) saturate(1.5);
+  border:1px solid var(--glass-rim);border-radius:20px;
+  box-shadow:inset 0 1px 0 var(--glass-rim),0 2px 6px rgba(0,0,0,.12),0 24px 48px -12px rgba(0,0,0,.35)}
+:root[data-look="glass"]:not(#_) .wrap > #secPanel{background:none;border:0;box-shadow:none;backdrop-filter:none}
+:root[data-look="glass"]:not(#_) .wrap > .panel > .phead{background:linear-gradient(180deg,rgba(255,255,255,.18),transparent);border-radius:20px 20px 0 0;border-bottom:1px solid var(--glass-rim);box-shadow:none}
+:root[data-look="glass"]:not(#_) .wrap > #secPanel > .phead{background:none;border:0}
+@media (hover:hover){
+  :root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section):hover{transform:translateY(-4px);box-shadow:inset 0 1px 0 var(--glass-rim),0 4px 10px rgba(0,0,0,.14),0 34px 60px -14px rgba(0,0,0,.42)}
+  :root[data-look="glass"]:not(#_) .wrap > #secPanel:hover{transform:none;box-shadow:none}
+}
+:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button){
+  background:color-mix(in srgb,var(--glass) 70%,rgba(255,255,255,.2));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border:1px solid var(--glass-rim);border-radius:999px;box-shadow:inset 0 1px 0 var(--glass-rim),0 3px 10px rgba(0,0,0,.18);transition:transform .12s,box-shadow .12s}
+:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button):hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 var(--glass-rim),0 8px 18px rgba(0,0,0,.24)}
+:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button):active{transform:translateY(1px) scale(.98);box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
+:root[data-look="glass"]:not(#_) :is(.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on,.lk button){background:color-mix(in srgb,var(--cool) 75%,transparent);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 18px color-mix(in srgb,var(--cool) 45%,transparent)}
+:root[data-look="glass"]:not(#_) :is(#scope,.map,#lsFrame,.stmap,.planchart,.dcwrap,.sstvpic){border-radius:14px;border:1px solid var(--glass-rim);box-shadow:inset 0 2px 12px rgba(0,0,0,.25)}
+:root[data-look="glass"]:not(#_) thead th{background:color-mix(in srgb,var(--glass) 80%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+
+/* ======================= Space station ======================= */
+:root[data-look="space"]:not(#_){
+  --bg:#02040b;--surface:#0b1426;--line:#1f3352;--text:#e6f0ff;--muted:#8fa7c8;--cool:#57c7ff;--warm:#ffcf6b;
+  --night:rgba(0,0,0,.5);--grid:#132440;--wfbg:#050a16;--gloss:rgba(140,200,255,.08);--shade:rgba(0,0,0,.65);
+  --card-top:rgba(16,30,58,.78);--card-bot:rgba(8,16,34,.78);--edge-hi:rgba(150,200,255,.2);--edge-lo:rgba(0,0,0,.7);--lip:rgba(0,0,0,.6);
+  color-scheme:dark;--px:0;--py:0}
+:root[data-look="space"]:not(#_) body{background:#02040b}
+/* The stars (a canvas drawn by looks.js) and Earth's glow along the bottom */
+#lookSky{position:fixed;inset:0;width:100vw;height:100vh;z-index:-2;pointer-events:none}
+:root[data-look="space"]:not(#_) body::after{content:"";position:fixed;left:-20vw;right:-20vw;bottom:-62vw;height:80vw;border-radius:50%;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,#0b2a5a 0 86%,#1e6fd0 93%,rgba(87,199,255,.55) 96%,transparent 100%);
+  box-shadow:0 -10px 80px rgba(87,199,255,.35);transform:translate3d(calc(var(--px) * -10px),calc(var(--py) * -6px),0)}
+:root[data-look="space"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero,header){
+  background:linear-gradient(180deg,var(--card-top),var(--card-bot));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  border:1px solid rgba(120,180,255,.2);border-radius:16px;
+  box-shadow:inset 0 1px 0 rgba(170,210,255,.18),0 0 0 1px rgba(0,0,0,.5),0 20px 44px rgba(0,0,0,.65),0 0 30px -8px rgba(87,199,255,.25)}
+/* Floating at different depths: they drift a little against the stars as the mouse moves */
+@media (prefers-reduced-motion:no-preference){
+  :root[data-look="space"]:not(#_) .wrap > .panel,:root[data-look="space"]:not(#_) .wrap > .cols > section{transform:translate3d(calc(var(--px) * 3px),calc(var(--py) * 2px),0)}
+  :root[data-look="space"]:not(#_) .wrap > .panel:nth-of-type(even){transform:translate3d(calc(var(--px) * 5px),calc(var(--py) * 3px),0)}
+  :root[data-look="space"]:not(#_) .hero{transform:translate3d(calc(var(--px) * 7px),calc(var(--py) * 4px),0)}
+}
+:root[data-look="space"]:not(#_) .wrap > #secPanel{background:none;border:0;box-shadow:none;backdrop-filter:none}
+:root[data-look="space"]:not(#_) .wrap > .panel > .phead{background:linear-gradient(90deg,rgba(87,199,255,.16),transparent 70%);border-bottom:1px solid rgba(120,180,255,.18);box-shadow:none;border-radius:16px 16px 0 0}
+:root[data-look="space"]:not(#_) .wrap > #secPanel > .phead{background:none;border:0}
+:root[data-look="space"]:not(#_) :is(h1,h2,h3){color:#dff1ff;text-shadow:0 0 12px rgba(87,199,255,.45)}
+:root[data-look="space"]:not(#_) .wrap > .panel > .phead h2::before{background:radial-gradient(circle at 35% 30%,#fff,#57c7ff 55%,#0a4f80);box-shadow:0 0 10px #57c7ff}
+:root[data-look="space"]:not(#_) .hero .big span{background:linear-gradient(180deg,#e9f7ff,#57c7ff 60%,#2486d9);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(87,199,255,.5))}
+:root[data-look="space"]:not(#_) :is(.clock,.dcclock){color:#bfe9ff;text-shadow:0 0 10px rgba(87,199,255,.6)}
+:root[data-look="space"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button){
+  background:linear-gradient(180deg,rgba(40,70,120,.75),rgba(14,28,56,.85));color:#e6f0ff;border:1px solid rgba(120,180,255,.3);border-radius:8px;
+  box-shadow:inset 0 1px 0 rgba(170,210,255,.25),0 4px 12px rgba(0,0,0,.5)}
+:root[data-look="space"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button):hover{box-shadow:inset 0 1px 0 rgba(170,210,255,.3),0 0 16px rgba(87,199,255,.45),0 4px 12px rgba(0,0,0,.5)}
+:root[data-look="space"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button):active{transform:translateY(1px);box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
+:root[data-look="space"]:not(#_) :is(.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on,.lk button){background:linear-gradient(180deg,#7fd6ff,#2a9fe6);color:#02101e;box-shadow:0 0 18px rgba(87,199,255,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+:root[data-look="space"]:not(#_) :is(input[type=text],input[type=search],input[type=number],input[type=url],input:not([type]),select,textarea):not(.pnentry){background:rgba(3,8,20,.85);color:#e6f0ff;border:1px solid rgba(120,180,255,.25)}
+:root[data-look="space"]:not(#_) :is(#scope,.map,#lsFrame,.stmap,.planchart,.dcwrap,.sstvpic){border:1px solid rgba(120,180,255,.22);border-radius:10px;box-shadow:inset 0 0 18px rgba(0,0,0,.8),0 0 20px -6px rgba(87,199,255,.3)}
+:root[data-look="space"]:not(#_) thead th{background:rgba(10,22,44,.95);color:#a9c6ea}
