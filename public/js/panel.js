@@ -109,6 +109,10 @@ function renderPanel() {
   $("pnSrc").classList.toggle("on", Boolean(src));
   $("pnStep").value = String(listen.step);
   $("pnSpan").value = String(panel.span);
+  // The RTL-SDR's attenuator, while the RTL-SDR is the receiver in Listen
+  const rtl = typeof sdr !== "undefined" && listen.rx === "rtl";
+  $("pnAttRow").hidden = !rtl;
+  if (rtl) $("pnAtt").value = String(sdr.att);
   const radio = typeof rig !== "undefined" && rig.connected;
   $("pnNote").textContent = radio
     ? (rigHasMeter() ? "" : `The S-meter isn't read from this radio (its scale differs between models). Tuning works.`)

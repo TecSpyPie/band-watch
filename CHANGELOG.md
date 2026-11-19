@@ -1,5 +1,11 @@
 # What's new
 
+## 1.27.0 (19 Nov 2026)
+- **RTL-SDR attenuator.** An **ATT** switch (Off, 10, 20, 30 dB) on the Radio panel and next to RF gain in Listen
+  turns the dongle's RF gain down by that much, to the nearest step the tuner has, for very strong signals or a
+  noisy band (handy on HF). With RF gain on Auto it counts down from full gain (49.6 dB). Your RF gain setting is
+  kept, so ATT Off puts it straight back. The S-meter, spectrum and waterfall drop with it.
+
 ## 1.26.0 (19 Nov 2026)
 - **ClearRX 1.2.0: more sound controls.** A **noise blanker** for clicks and crackles (electric fences, ignition,
   static crashes), an **AGC speed** (Fast, Medium, Slow) for Steady volume, a **squelch** that keeps quiet between

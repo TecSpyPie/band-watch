@@ -22,7 +22,19 @@ const SDR_DEFAULTS = {
   addr: "127.0.0.1:1234", gain: -1, ppm: 0, bias: false, volume: 70, rtlAgc: false, audioAgc: true, autoLevel: true, range: 60, speed: "normal",
   device: 0, autoStart: false, exePath: "", reconnect: true,
   dongle: "v4", rate: SdrDsp.IN_RATE, widths: { ...SdrDsp.DEFAULT_WIDTH }, squelch: null, agcSpeed: "normal", deemph: 50,
+  att: 0, // attenuator, dB: takes this much off the RF gain (Off, 10, 20, 30)
 };
+const RTL_ATTS = [0, 10, 20, 30];
+
+/** The tuner gain to use (tenths of a dB, -1 = automatic): the RF gain, less the attenuator. With RF gain on
+ * Auto, the attenuator counts down from full gain. It uses the nearest gain step the tuner has at or below that. */
+function rtlAttGain(gain, att) {
+  if (!att) return gain;
+  const want = (gain < 0 ? RTL_GAINS[RTL_GAINS.length - 1] : gain) - att * 10;
+  let best = RTL_GAINS[0];
+  for (const g of RTL_GAINS) if (g <= want) best = g;
+  return best;
+}
 const SDR_RETRIES = 5; // reconnect attempts after the connection drops
 const FALL_SPEEDS = { slow: 160, normal: 80, fast: 40 }; // ms between waterfall rows
 const sdr = {
@@ -83,6 +95,7 @@ function loadSdr() {
       sdr.squelch = Number.isFinite(s.squelch) && s.squelch >= -100 && s.squelch <= 0 ? s.squelch : null;
       if (SdrDsp.AGC_DECAY[s.agcSpeed]) sdr.agcSpeed = s.agcSpeed;
       if (s.deemph === 50 || s.deemph === 75) sdr.deemph = s.deemph;
+      if (RTL_ATTS.includes(s.att)) sdr.att = s.att;
     }
   } catch { /* defaults */ }
 }
@@ -96,7 +109,7 @@ function sdrSet(key, value) {
   saveSdr();
   switch (key) {
     case "addr": if (sdr.running) { sdrStop(); sdrStart(); } break;
-    case "gain": sdrApplyGain(); break;
+    case "gain": case "att": sdrApplyGain(); if (typeof renderPanel === "function") renderPanel(); break;
     case "ppm": sdrCommand(0x05, sdr.ppm); break;
     case "bias": sdrCommand(0x0e, sdr.bias ? 1 : 0); break;
     case "rtlAgc": sdrCommand(0x08, sdr.rtlAgc ? 1 : 0); break;
@@ -219,11 +232,12 @@ function sdrCommand(cmd, value) {
 const sdrMode = (m) => (SdrDsp.MODES.includes(m) ? m : "usb");
 
 function sdrApplyGain() {
-  if (sdr.gain < 0) {
+  const gain = rtlAttGain(sdr.gain, sdr.att);
+  if (gain < 0) {
     sdrCommand(0x03, 0); // tuner automatic gain
   } else {
     sdrCommand(0x03, 1);
-    sdrCommand(0x04, sdr.gain);
+    sdrCommand(0x04, gain);
   }
 }
 
@@ -523,6 +537,7 @@ function renderSdr() {
     if ($(id) && document.activeElement !== $(id)) $(id).value = sdr[key];
   }
   for (const id of ["rtlGain", "optRtlGain"]) if ($(id)) $(id).innerHTML = gains;
+  for (const id of ["rtlAtt", "pnAtt"]) if ($(id)) $(id).value = String(sdr.att);
   for (const [id, key] of [["rtlBias", "bias"], ["optRtlBias", "bias"], ["optRtlAgc", "rtlAgc"], ["optRtlAudioAgc", "audioAgc"], ["optRtlAuto", "autoLevel"]]) {
     if ($(id)) $(id).checked = sdr[key];
   }
@@ -564,6 +579,13 @@ function setupSdr() {
   }
   for (const id of ["rtlAddr", "optRtlAddr"]) on(id, "change", () => sdrSet("addr", cleanAddr($(id).value)));
   for (const id of ["rtlGain", "optRtlGain"]) on(id, "change", () => sdrSet("gain", Number($(id).value)));
+  for (const id of ["rtlAtt", "pnAtt"]) {
+    on(id, "change", () => {
+      const v = Number($(id).value);
+      sdrSet("att", RTL_ATTS.includes(v) ? v : 0);
+      renderSdr(); // keeps the Listen panel's and the Radio panel's ATT in step
+    });
+  }
   for (const id of ["rtlPpm", "optRtlPpm"]) {
     on(id, "change", () => {
       const v = Math.round(Number($(id).value));
