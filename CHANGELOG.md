@@ -1,5 +1,19 @@
 # What's new
 
+## 1.28.0 (19 Nov 2026)
+- **Satellites.** A new **Satellites** panel shows the ISS and amateur radio satellites over your locator: which
+  are up now (where to point, how high, how far, coming or going), the **next passes** in the coming 24 hours
+  (rise time in UTC, highest point, direction and how long), and **dots on the world map**.
+  - Starts with the ISS, SO-50, AO-27, AO-7, AO-73, RS-44 and IO-117. **Add a satellite** puts any of the ~100
+    amateur satellites on the list; ✕ takes one off. **Passes above** hides low passes (0°, 10°, 20°, 30°).
+  - **Tell me 5 minutes before a pass** pops up a reminder.
+  - While a satellite is up, its frequencies are shown **with the Doppler shift worked out**: what to listen on
+    and what to send on. Click the frequency and Listen (and your radio, if it's connected) tunes there and keeps
+    following the Doppler shift until you click it again or the satellite sets.
+  - Orbits come from CelesTrak, fetched by the page itself no more than once every 2 hours (CelesTrak's rule) and
+    kept in your browser, so it works in the Windows app and on the web. The orbit maths is satellite.js (MIT).
+  - Check AMSAT's status page (linked in the panel) to see which satellites are working before a pass.
+
 ## 1.27.0 (19 Nov 2026)
 - **RTL-SDR attenuator.** An **ATT** switch (Off, 10, 20, 30 dB) on the Radio panel and next to RF gain in Listen
   turns the dongle's RF gain down by that much, to the nearest step the tuner has, for very strong signals or a

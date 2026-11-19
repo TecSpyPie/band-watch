@@ -4,7 +4,7 @@
 
 const POP_PARTS = [
   ["secBands", "Bands"], ["secMap", "Map"], ["secScope", "Band scope"], ["secListen", "Listen"], ["secPanel", "Radio panel"], ["secAts", "ATS Mini"], ["secSked", "Shortwave stations"],
-  ["secDecode", "Decoder"], ["secXota", "POTA"], ["secWanted", "Wanted"], ["secLog", "Logbook"], ["secActivity", "Band activity"],
+  ["secDecode", "Decoder"], ["secXota", "POTA"], ["secSats", "Satellites"],["secWanted", "Wanted"], ["secLog", "Logbook"], ["secActivity", "Band activity"],
 ];
 const popWins = new Map(); // part id -> { win, holder, doc, extras: [{ id, holder }] }
 // Parts that go along in the same window: Listen goes with the Radio panel, so its sound plays where you click.

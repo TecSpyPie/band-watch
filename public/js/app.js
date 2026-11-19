@@ -16,6 +16,7 @@ function start() {
   setupLog();
   setupWanted();
   setupXota();
+  setupSats();
   setupSked();
   setupPanel();
   setupDecoders();

@@ -202,7 +202,7 @@ function setupBackground() {
 
 /* ===================== Profiles ===================== */
 
-const PROFILE_KEYS = ["bw-display", "bw-grid", "bw-call", "bw-mon", "bw-clocks", "bw-clocks-auto", "bw-locauto", "bw-listen", "bw-sdr", "bw-decode", "bw-bg", "bw-rig", "bw-xota", "bw-log", "bw-wanted"];
+const PROFILE_KEYS = ["bw-display", "bw-grid", "bw-call", "bw-mon", "bw-clocks", "bw-clocks-auto", "bw-locauto", "bw-listen", "bw-sdr", "bw-decode", "bw-bg", "bw-rig", "bw-xota", "bw-sats", "bw-log", "bw-wanted"];
 
 function loadProfiles() {
   try { const p = JSON.parse(load("bw-profiles")); return p && typeof p === "object" && !Array.isArray(p) ? p : {}; } catch { return {}; }
@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.28.0", "Satellites: the ISS and amateur satellites over your locator, next passes, pass alerts, the map, and Doppler-corrected tuning"],
   ["1.27.0", "RTL-SDR attenuator: ATT (10, 20, 30 dB) on the Radio panel and in Listen, for strong signals"],
   ["1.26.0", "ClearRX 1.2.0: noise blanker, AGC speed, squelch, bass and treble, and a manual notch (used by Band Watch's RTL-SDR sound too)"],
   ["1.25.1", "The Radio panel's S-meter follows the RTL-SDR's signal level (a rough guide) when no radio is connected"],
