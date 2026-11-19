@@ -3204,6 +3204,9 @@ test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991
   // Links to BrandMeister and ukrepeater.net open in a new tab
   assert.equal(await page.getAttribute('#secDv a[href="https://hose.brandmeister.network/"]', "target"), "_blank");
   assert.ok(await page.$('#secDv a[href="https://ukrepeater.net/multimode.html?dmode=FUSION"]'));
+  // DMR over the internet: listen in a browser, talk needs AMBE (radio + hotspot, or an app with an AMBE stick)
+  assert.match(await page.textContent("#dvNet"), /To listen.*Hoseline.*To talk.*AMBE.*DMR ID/s);
+  assert.ok(await page.$('#secDv a[href="https://radioid.net/"]'));
   // Hotspot dashboard: tidied, saved and offered as a link; nonsense refused
   assert.equal(await page.isVisible("#dvHotspotOpen"), false);
   await page.fill("#dvHotspot", "pi-star.local");

@@ -9,6 +9,9 @@
     (`MD0E;`) and nothing else: Band Watch never transmits here, you talk on your own microphone.
   - **BrandMeister (DMR):** links to Hoseline (listen to talkgroups in your browser), the talkgroup list and Last
     heard, with talkgroups to try (235 UK, 91 worldwide, 92 Europe, 9990 Parrot).
+  - **DMR over the internet:** a short guide. To listen, Hoseline in your browser (no radio). To talk, something with
+    the AMBE codec: a DMR radio and a hotspot (Pi-Star or WPSD), or an app such as DroidStar with an AMBE USB stick;
+    either way your licence and a DMR ID from RadioID.net. Links to each project's own page.
   - **UK repeaters:** links to the Fusion, DMR and full repeater lists at ukrepeater.net (RSGB ETCC).
   - **Your hotspot:** save your Pi-Star or WPSD dashboard address (e.g. http://pi-star.local/) and open it from here.
   - BrandMeister and ukrepeater.net data isn't copied into Band Watch: neither says it may be reused, so Band Watch
