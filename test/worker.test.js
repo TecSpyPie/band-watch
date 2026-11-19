@@ -68,3 +68,20 @@ for (const [proto, earlySec] of [[F.FT8, 13.6], [F.FT4, 6.0]]) {
     assert.equal(all.length, 1, "the same message isn't reported twice");
   });
 }
+
+test("RTTY: the worker decodes it from 48000 Hz audio, takes new settings, and finds the tones", () => {
+  const R = require("../public/js/rtty.js");
+  const rate = 48000;
+  const w = loadWorker();
+  w.send({ type: "start", mode: "RTTY", rate, cfg: { low: 2125, reverse: false } });
+  const audio = R.synthesize("CQ DE M3VRV 599 73", { fs: rate, noise: 0.1, reverse: true, low: 1700 });
+  // wrong tones and sense first: nothing useful; then the right ones
+  w.send({ type: "rtty-config", cfg: { low: 1700, reverse: true } });
+  for (let i = 0; i < audio.length; i += 4800) w.send({ type: "audio", samples: audio.slice(i, i + 4800), at: 0 });
+  w.send({ type: "audio", samples: new Float32Array(rate), at: 0 });
+  const text = w.out.filter((m) => m.type === "rtty").map((m) => m.text).join("");
+  assert.equal(text, "CQ DE M3VRV 599 73");
+  w.send({ type: "rtty-find" });
+  const found = w.out.filter((m) => m.type === "rtty-tone").pop();
+  assert.ok(found && Math.abs(found.low - 1700) <= 10, JSON.stringify(found));
+});

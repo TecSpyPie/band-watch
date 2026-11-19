@@ -50,6 +50,7 @@
       <li><a href="#bands">Bands, map and band scope</a></li>
       <li><a href="#shortwave">Shortwave stations on air</a></li>
       <li><a href="#decoders">Decoders: FT8, FT4, WSPR, CW</a></li>
+      <li><a href="#rtty">RTTY (radioteletype)</a></li>
       <li><a href="#pota">Parks on the air (POTA)</a></li>
       <li><a href="#wanted">Wanted alerts</a></li>
       <li><a href="#logbook">Logbook</a></li>
@@ -237,7 +238,7 @@
     <h2 id="hDec">Decoders: FT8, FT4, WSPR, CW</h2>
     <p>Band Watch can decode what your receiver hears, like WSJT-X. Your PC's clock must be right to within a second.</p>
     <ol>
-      <li>Pick the <b>Mode</b>: FT8, FT4, WSPR or CW.</li>
+      <li>Pick the <b>Mode</b>: FT8, FT4, WSPR, CW or RTTY (see <a href="#rtty">RTTY</a>).</li>
       <li>Pick <b>Audio from</b>: <b>My RTL-SDR</b>, or <b>This computer's sound input</b> for a radio's audio
         (the IC-7300's USB sound card, or a cable from the radio's speaker).</li>
       <li>Tune to the right frequency (click a band key in the Radio panel, then pick DATA/USB), and click
@@ -375,6 +376,32 @@
       starts. <b class="btn">Stop TX</b> or the <b>Esc</b> key stops at once. Band Watch won't transmit outside the amateur
       bands, stops after 6 overs with no answer (10 CQs) and unkeys the radio at the end of every over. Your power, and
       where in each band your licence allows you to transmit, are for you to set on the radio.</p>
+  </section>
+
+  <section class="panel" id="rtty" aria-labelledby="hRtty">
+    <h2 id="hRtty">RTTY (radioteletype)</h2>
+    <p>RTTY is typing sent as two audio tones, one for each of the two states (<b>mark</b> and <b>space</b>). Band Watch
+      only <b>receives</b> it: it never transmits RTTY. The usual amateur RTTY is <b>45.45 baud</b> with a <b>170 Hz</b>
+      shift, 5-bit Baudot (ITA2) letters and figures. Contests and DX use it a lot.</p>
+    <ol>
+      <li>Set the decoder's <b>Mode</b> to <b>RTTY (radioteletype)</b>. The RTTY settings appear only for this mode.</li>
+      <li>Tune the radio to a signal. Typical places: <b>14.080 to 14.099 MHz</b> on 20 m (7.040 to 7.050 MHz on 40 m;
+        contests spread out). Use the radio's <b>LSB</b> for RTTY (the amateur convention) or its DATA/FSK mode, with the
+        tones near 2125 and 2295 Hz.</li>
+      <li>Choose <b>Audio from</b> (your RTL-SDR, or the radio's sound), then click <b class="btn">Start decoding</b>.</li>
+      <li>Click <b class="btn">Find the tones</b> while a signal is coming in, or type the <b>Lower tone</b> in Hz
+        (the standard pair is 2125 Hz and 2295 Hz). The line under the settings says which tone is mark and which is space,
+        and whether a signal is heard.</li>
+      <li>The text appears in the box, and scrolls. <b class="btn">Clear</b> empties it.</li>
+    </ol>
+    <ul>
+      <li><b>Reverse</b> swaps mark and space. If you get nonsense from a clear signal, tick it. On <b>USB</b> the
+        sidebands are the wrong way round for the usual RTTY, so <b>tick Reverse when you listen in USB</b>.</li>
+      <li><b>Speed and shift</b> are 45.45 baud and 170 Hz for amateur RTTY. Also offered: 50 and 75 baud, and 425 and 850 Hz shift.</li>
+      <li><b>Unshift on space (USOS)</b> is on by default: after a space, the next character is read as a letter again,
+        as most amateur software sends it. If the numbers after a space come out as letters, untick it.</li>
+      <li>Short bursts of garbage before and after a signal are normal. Poor signals lose letters; that's RTTY.</li>
+    </ul>
   </section>
 
   <section class="panel" id="pota" aria-labelledby="hPota">

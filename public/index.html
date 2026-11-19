@@ -302,7 +302,7 @@
       <button type="button" class="lbtn" id="dcWindow" title="Open the decodes in their own window">Results window</button>
     </div>
     <div class="dcrow">
-      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option><option value="WSPR">WSPR (2 min)</option><option value="CW">CW (Morse)</option><option value="SSTV">SSTV (pictures)</option><option value="APRS">APRS (2 m packets)</option></select></label>
+      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option><option value="WSPR">WSPR (2 min)</option><option value="CW">CW (Morse)</option><option value="RTTY">RTTY (radioteletype)</option><option value="SSTV">SSTV (pictures)</option><option value="APRS">APRS (2 m packets)</option></select></label>
       <label class="grow">Audio from <select id="dcSrc"><option value="rtl">My RTL-SDR (Listen panel)</option><option value="mic">This computer's sound input (a radio, or a virtual cable)</option></select></label>
       <label class="grow" id="dcDevRow" hidden>Sound input <select id="dcDev"><option value="">Default input</option></select></label>
     </div>
@@ -410,6 +410,21 @@
           </div>
         </div>
       </details>
+    </div>
+    <div class="dcrtty" id="dcRtty" hidden>
+      <div class="dcrow">
+        <label>Speed <select id="rttyBaud"><option value="45.45">45.45 baud (standard)</option><option value="50">50 baud</option><option value="75">75 baud</option></select></label>
+        <label>Shift <select id="rttyShift"><option value="170">170 Hz (standard)</option><option value="425">425 Hz</option><option value="850">850 Hz</option></select></label>
+        <label>Lower tone (Hz) <input type="number" id="rttyLow" min="300" max="3000" step="5" value="2125" inputmode="numeric"></label>
+        <button type="button" class="ghost" id="rttyFind" title="Listens for two seconds and picks the tone pair it hears">Find the tones</button>
+      </div>
+      <div class="dcrow">
+        <label class="small dcchk"><input type="checkbox" id="rttyReverse"> Reverse (swap mark and space)</label>
+        <label class="small dcchk"><input type="checkbox" id="rttyUsos" checked> Unshift on space (USOS)</label>
+        <button type="button" class="ghost" id="rttyClear">Clear</button>
+      </div>
+      <div class="small muted" id="rttyInfo"></div>
+      <pre class="dccwtext" id="dcRttyText" aria-live="polite"></pre>
     </div>
     <div class="dccw" id="dcCw" hidden>
       <div class="small muted" id="dcCwInfo"></div>

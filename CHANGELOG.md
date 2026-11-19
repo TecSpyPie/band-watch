@@ -1,6 +1,11 @@
 # What's new
 
 ## Unreleased
+- **RTTY decoder (receive only).** The Decoders panel has a new mode, **RTTY (radioteletype)**: 45.45 baud and 170 Hz
+  shift as standard (50 and 75 baud, 425 and 850 Hz shift too), Baudot letters and figures, in a scrolling text box with
+  Clear. Set the lower tone (2125 Hz mark / 2295 Hz space by default) or click **Find the tones**; **Reverse** swaps mark and
+  space (for USB), and **Unshift on space** is on by default. The RTTY settings only show when RTTY is the mode. Band Watch
+  never transmits RTTY. `node tools/rtty-wav.js` writes a test recording.
 - **Section menu and folding.** A slim bar under the title (it stays on screen as you scroll) has a button for each
   panel that is showing: Clock, Radio panel, Listen, Decoders, POTA, Satellites, Logbook and so on. Click one to glide
   to that panel; the panel you're looking at is highlighted, and on a narrow screen the bar slides sideways. Add-on
