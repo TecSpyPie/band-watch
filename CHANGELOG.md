@@ -1,5 +1,11 @@
 # What's new
 
+## 1.25.1 (19 Nov 2026)
+- **The Radio panel's S-meter works with the RTL-SDR.** While your RTL-SDR is playing and no connected radio is
+  giving a reading, the needle follows the signal level in the channel you're tuned to, shown as "≈S5 (RTL-SDR)".
+  An RTL-SDR isn't calibrated like a radio, so it's a rough guide (S9 is about −45 dBFS). A connected Yaesu, Icom
+  or ATS Mini still drives the meter itself.
+
 ## 1.25.0 (19 Nov 2026)
 - **Receive controls on the Radio panel** for Yaesu (FT-991A, FT-710, FTdx10, FTdx101) and Icom (IC-7300, IC-705,
   IC-7610 and others): **AF gain** and **RF gain** sliders, **AGC** (FAST, MID, SLOW, AUTO), the preamp (IPO, AMP1,
