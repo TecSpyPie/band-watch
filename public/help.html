@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.29.0">
+<link rel="stylesheet" href="/style.css?v=1.30.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -139,7 +139,8 @@
       <li><b>Pop out ⧉:</b> puts the radio, with Listen underneath, in its own window. Drag it onto another screen.
         <b>Back in Band Watch</b> brings it home.</li>
     </ul>
-    <p class="warn">Band Watch only tunes and listens. It never transmits.</p>
+    <p class="warn">The Radio panel only tunes and listens. Band Watch transmits only FT8 and FT4, only from the Decoder's
+      <b>Transmit</b> box, and only while you have <b>Enable TX</b> switched on (it's off every time Band Watch starts).</p>
   </section>
 
   <section class="panel" id="listen" aria-labelledby="hListen">
@@ -246,6 +247,29 @@
     </ol>
     <figure><img src="/help/ft4-decoder.webp" alt="The decoder panel showing decoded FT4 messages" loading="lazy">
       <figcaption>Decoded messages, newest at the top.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="transmit" aria-labelledby="hTx">
+    <h2 id="hTx">Transmitting FT8 and FT4</h2>
+    <p>With FT8 or FT4 as the decoder's mode, a <b>Transmit</b> box appears. Band Watch keys your radio over its USB
+      cable (Yaesu, Icom or Kenwood) and plays the signal into the radio's USB sound, like WSJT-X.</p>
+    <ol>
+      <li><b>Set up once:</b> connect your radio (<b class="btn">Connect radio</b>), and set your callsign and locator.
+        In <b>Sound to the radio</b>, choose the radio's USB sound (FT-991A: <i>USB Audio CODEC</i>).</li>
+      <li>Click <b class="btn">Tune to FT8</b>: the radio goes to the FT8 frequency in DATA-USB (so it takes its sound
+        from the cable, not the microphone). Start decoding.</li>
+      <li><b>Set the level:</b> turn the radio's power down, click <b class="btn">Tune</b> (a steady tone for 10 s) and raise
+        <b>Level</b> until the radio's ALC meter only just moves, then back it off a little. Too much level makes a
+        dirty, wide signal.</li>
+      <li><b>Make a QSO:</b> click <b class="btn">Reply</b> on a CQ (or <b class="btn">Call CQ</b>), then
+        <b class="btn">Enable TX</b>. Band Watch sends your grid, the report, RR73 and 73 as the other station
+        answers, and stops when the QSO is done. <b class="btn">Log QSO</b> fills in the logbook; Band Watch also
+        fills it in by itself when the QSO completes.</li>
+    </ol>
+    <p class="warn"><b>Safety:</b> nothing is sent unless <b>Enable TX</b> is on, and it's off every time Band Watch
+      starts. <b class="btn">Stop TX</b> or the <b>Esc</b> key stops at once. Band Watch won't transmit outside the amateur
+      bands, stops after 6 overs with no answer (10 CQs) and unkeys the radio at the end of every over. Your power, and
+      where in each band your licence allows you to transmit, are for you to set on the radio.</p>
   </section>
 
   <section class="panel" id="pota" aria-labelledby="hPota">

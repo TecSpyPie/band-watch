@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.29.0">
-<link rel="stylesheet" href="/listen.css?v=1.29.0">
+<link rel="stylesheet" href="/style.css?v=1.30.0">
+<link rel="stylesheet" href="/listen.css?v=1.30.0">
 </head>
 <body>
 <div class="wrap">
@@ -311,6 +311,37 @@
     </div>
     <div class="dcbar" aria-hidden="true"><div id="dcProg"></div></div>
     <p class="small" id="dcStatus" role="status"></p>
+    <div class="dctx" id="dcTx" hidden>
+      <h3 class="dctxh">Transmit</h3>
+      <div class="dcrow">
+        <button type="button" class="txen" id="txEnable" aria-pressed="false" title="The one switch that lets Band Watch transmit. Off every time Band Watch starts.">Enable TX</button>
+        <button type="button" class="txhalt" id="txHalt" title="Stop transmitting at once (or press Esc)">Stop TX</button>
+        <button type="button" class="ghost" id="txCq">Call CQ</button>
+        <button type="button" class="ghost" id="txTune" title="A steady tone for 10 seconds, to set the level">Tune</button>
+        <button type="button" class="ghost" id="txLog" title="Put this QSO in the logbook: call, grid, reports, frequency and mode">Log QSO</button>
+        <label class="small txlvl">TX audio <input type="number" id="txHz" min="200" max="3000" step="10" style="width:5.5em"> Hz</label>
+      </div>
+      <div class="dcrow">
+        <label class="grow">Sound to the radio <select id="txDev"><option value="">Choose…</option></select></label>
+        <label class="small txlvl">Level <input type="range" id="txLevel" min="1" max="100" step="1"> <span id="txLevelVal"></span></label>
+      </div>
+      <p class="small muted" id="txDevNote"></p>
+      <p class="txonair" id="txOnAir" role="status" hidden></p>
+      <p class="small" id="txNext" aria-live="polite"></p>
+      <p class="small" id="txQso" aria-live="polite"></p>
+      <p class="small" id="txNote" role="status"></p>
+      <ol class="txsent small" id="txSent" aria-label="Sent"></ol>
+      <details class="small muted txhelp">
+        <summary>How to transmit, and keeping it clean</summary>
+        <ol>
+          <li>Connect your radio (Connect radio), then click <b>Tune to FT8</b> so it's on the FT8 frequency in DATA-USB.</li>
+          <li>Start decoding. In <b>Sound to the radio</b>, choose the radio's USB sound (FT-991A: <i>USB Audio CODEC</i>).</li>
+          <li>Set low power on the radio. Click <b>Tune</b> and raise <b>Level</b> until the radio's ALC meter just starts to move, then back it off a little. Too much level splatters.</li>
+          <li>Click <b>Reply</b> on a CQ (or <b>Call CQ</b>), then <b>Enable TX</b>. Band Watch sends the usual messages and stops after the 73.</li>
+        </ol>
+        <p>Band Watch only transmits when Enable TX is on, inside an amateur band, and stops after 6 overs with no answer. <b>Stop TX</b> or <b>Esc</b> stops at once. Your power and where in the band your licence lets you transmit are for you to set. Your PC clock must be right to within a second.</p>
+      </details>
+    </div>
     <div class="dccw" id="dcCw" hidden>
       <div class="small muted" id="dcCwInfo"></div>
       <pre class="dccwtext" id="dcCwText" aria-live="polite"></pre>
@@ -862,39 +893,42 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.29.0"></script>
-<script src="/js/bandplan.js?v=1.29.0"></script>
-<script src="/js/core.js?v=1.29.0"></script>
-<script src="/js/modes.js?v=1.29.0"></script>
-<script src="/js/map.js?v=1.29.0"></script>
-<script src="/js/scope.js?v=1.29.0"></script>
-<script src="/js/monitor.js?v=1.29.0"></script>
-<script src="/js/lookup.js?v=1.29.0"></script>
-<script src="/js/worldclock.js?v=1.29.0"></script>
-<script src="/js/locator.js?v=1.29.0"></script>
-<script src="/js/activity.js?v=1.29.0"></script>
-<script src="/js/qrz.js?v=1.29.0"></script>
-<script src="/js/hovercard.js?v=1.29.0"></script>
-<script src="/js/station.js?v=1.29.0"></script>
-<script src="/js/sdr-dsp.js?v=1.29.0"></script>
-<script src="/js/sdr.js?v=1.29.0"></script>
-<script src="/js/rxfx.js?v=1.29.0"></script>
-<script src="/js/clearrx-link.js?v=1.29.0"></script>
-<script src="/js/listen.js?v=1.29.0"></script>
-<script src="/js/rig.js?v=1.29.0"></script>
-<script src="/js/rigrx.js?v=1.29.0"></script>
-<script src="/js/xota.js?v=1.29.0"></script>
-<script src="/js/satmath.js?v=1.29.0"></script>
-<script src="/js/sats.js?v=1.29.0"></script>
-<script src="/js/eibi-data.js?v=1.29.0"></script>
-<script src="/js/eibi.js?v=1.29.0"></script>
-<script src="/js/panel.js?v=1.29.0"></script>
-<script src="/js/logbook.js?v=1.29.0"></script>
-<script src="/js/wanted.js?v=1.29.0"></script>
-<script src="/js/decoders.js?v=1.29.0"></script>
-<script src="/js/sun.js?v=1.29.0"></script>
-<script src="/js/options.js?v=1.29.0"></script>
-<script src="/js/windows.js?v=1.29.0"></script>
-<script src="/js/app.js?v=1.29.0"></script>
+<script src="/js/install.js?v=1.30.0"></script>
+<script src="/js/bandplan.js?v=1.30.0"></script>
+<script src="/js/core.js?v=1.30.0"></script>
+<script src="/js/modes.js?v=1.30.0"></script>
+<script src="/js/map.js?v=1.30.0"></script>
+<script src="/js/scope.js?v=1.30.0"></script>
+<script src="/js/monitor.js?v=1.30.0"></script>
+<script src="/js/lookup.js?v=1.30.0"></script>
+<script src="/js/worldclock.js?v=1.30.0"></script>
+<script src="/js/locator.js?v=1.30.0"></script>
+<script src="/js/activity.js?v=1.30.0"></script>
+<script src="/js/qrz.js?v=1.30.0"></script>
+<script src="/js/hovercard.js?v=1.30.0"></script>
+<script src="/js/station.js?v=1.30.0"></script>
+<script src="/js/sdr-dsp.js?v=1.30.0"></script>
+<script src="/js/sdr.js?v=1.30.0"></script>
+<script src="/js/rxfx.js?v=1.30.0"></script>
+<script src="/js/clearrx-link.js?v=1.30.0"></script>
+<script src="/js/listen.js?v=1.30.0"></script>
+<script src="/js/rig.js?v=1.30.0"></script>
+<script src="/js/rigrx.js?v=1.30.0"></script>
+<script src="/js/xota.js?v=1.30.0"></script>
+<script src="/js/satmath.js?v=1.30.0"></script>
+<script src="/js/sats.js?v=1.30.0"></script>
+<script src="/js/eibi-data.js?v=1.30.0"></script>
+<script src="/js/eibi.js?v=1.30.0"></script>
+<script src="/js/panel.js?v=1.30.0"></script>
+<script src="/js/logbook.js?v=1.30.0"></script>
+<script src="/js/wanted.js?v=1.30.0"></script>
+<script src="/js/decoders.js?v=1.30.0"></script>
+<script src="/js/ft8.js?v=1.30.0"></script>
+<script src="/js/ftxtx.js?v=1.30.0"></script>
+<script src="/js/tx.js?v=1.30.0"></script>
+<script src="/js/sun.js?v=1.30.0"></script>
+<script src="/js/options.js?v=1.30.0"></script>
+<script src="/js/windows.js?v=1.30.0"></script>
+<script src="/js/app.js?v=1.30.0"></script>
 </body>
 </html>

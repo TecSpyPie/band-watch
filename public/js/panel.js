@@ -2,7 +2,7 @@
    (read from the FT-991A, Icom radios and the ATS Mini), a close-up spectrum around the dial, band and mode
    buttons, and a tuning knob you can drag, scroll or turn with the arrow keys.
    It drives the same dial as everything else (tuneTo), so Listen, the scope and a connected radio all follow.
-   There's no transmit button: Band Watch only listens and tunes. */
+   There's no transmit button here: this panel only listens and tunes. (FT8/FT4 transmitting is in the Decoder, tx.js.) */
 "use strict";
 
 // Where each band button goes the first time (after that, the last frequency used on that band).

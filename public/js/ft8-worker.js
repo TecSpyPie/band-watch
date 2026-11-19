@@ -3,10 +3,14 @@
  * cycle or two, and decodes each 15 s (FT8) or 7.5 s (FT4) cycle as soon as it is complete,
  * lined up with UTC as WSJT-X does (so the PC clock needs to be right to within a second). */
 "use strict";
-importScripts("/js/ft8.js?v=1.29.0", "/js/wspr.js?v=1.29.0", "/js/cw.js?v=1.29.0");
+importScripts("/js/ft8.js?v=1.30.0", "/js/wspr.js?v=1.30.0", "/js/cw.js?v=1.30.0");
 
 // WSPR: two-minute cycles on the even minute, decoded at 12000 samples a second.
 const WSPR_PROTO = { name: "WSPR", period: 120, fs: 12000 };
+// Early decode, as WSJT-X does: by this far into a cycle every signal that started on time has ended
+// (FT8: 0.5 + 12.64 s, FT4: 0.5 + 5.04 s), so there's time to answer in the very next cycle.
+// The rest of the cycle is decoded again at its end, for stations that started late.
+const EARLY_SEC = { FT8: 13.6, FT4: 6.0 };
 
 let st = null;
 
@@ -26,6 +30,7 @@ function start(mode, rate) {
     count: 0, // samples written in total
     t0: null, // UTC ms of sample number 0
     lastCycle: 0,
+    earlyCycle: 0, earlyTexts: null, // the cycle decoded early, and what that found
   };
   postMessage({ type: "status", text: `Listening for ${proto.name}. The first decodes come at the end of the next full ${proto.period} s cycle.` });
 }
@@ -62,29 +67,45 @@ function push(samples, at) {
     s.lastCycle = cycle;
     decodeCycle(cycle);
   }
+  const early = EARLY_SEC[s.proto.name];
+  const current = cycle + s.periodMs; // the cycle under way
+  if (early && end - current >= early * 1000 && current > s.earlyCycle) {
+    s.earlyCycle = current;
+    decodeCycle(current, early);
+  }
   postMessage({ type: "progress", into: (end % s.periodMs) / s.periodMs });
 }
 
-function decodeCycle(cycle) {
+/** Decode a cycle: the whole of it, or (earlySec) just its first part, ahead of its end. */
+function decodeCycle(cycle, earlySec = 0) {
   const s = st;
   const fs = s.proto.fs;
   const n = Math.round(s.proto.period * fs);
+  const want = earlySec ? Math.round(earlySec * fs) : n; // samples there should be by now
   const first = Math.round(((cycle - s.t0) / 1000) * fs); // sample number of the cycle's start
   const audio = new Float32Array(n);
   let have = 0;
   const cap = s.buf.length;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < want; i++) {
     const k = first + i;
     if (k >= 0 && k < s.count && k >= s.count - cap) { audio[i] = s.buf[k % cap]; have++; }
   }
-  if (have < n * 0.85) {
-    postMessage({ type: "status", text: `Waiting for a full ${s.proto.period} s cycle of audio…` });
+  if (have < want * 0.85) {
+    if (!earlySec) postMessage({ type: "status", text: `Waiting for a full ${s.proto.period} s cycle of audio…` });
     return;
   }
   const t = Date.now();
   if (s.proto.name === "WSPR") postMessage({ type: "status", text: "Decoding the last two minutes of WSPR…" });
-  const list = s.decoder.decode(audio);
-  postMessage({ type: "decodes", mode: s.proto.name, cycle, list, ms: Date.now() - t });
+  let list = s.decoder.decode(audio);
+  let late = false;
+  if (earlySec) s.earlyTexts = { cycle, texts: new Set(list.map((d) => d.text)) };
+  else if (s.earlyTexts && s.earlyTexts.cycle === cycle) {
+    // Decoded early already: only pass on what's new (stations that started late).
+    list = list.filter((d) => !s.earlyTexts.texts.has(d.text));
+    late = true;
+    if (!list.length) return;
+  }
+  postMessage({ type: "decodes", mode: s.proto.name, cycle, list, ms: Date.now() - t, early: Boolean(earlySec), late });
 }
 
 onmessage = (e) => {

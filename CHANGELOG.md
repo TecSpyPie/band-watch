@@ -1,5 +1,25 @@
 # What's new
 
+## 1.30.0 (19 Nov 2026)
+- **Transmit FT8 and FT4.** With FT8 or FT4 as the decoder's mode, a new **Transmit** box keys your radio over its
+  USB cable (Yaesu `TX1;`/`TX0;`, Kenwood `TX1;`/`RX;`, Icom CI-V `1C 00`) and plays the signal into the radio's USB
+  sound (FT-991A: *USB Audio CODEC*).
+  - **Reply** on a decode answers that station; **Call CQ** calls CQ. Band Watch then sends the usual messages (grid,
+    report, R-report, RR73, 73) as the other station answers, in the right slot, and stops after the 73.
+  - **Log QSO** puts the QSO in the logbook (call, grid, both reports, frequency, mode); Band Watch also fills it in
+    by itself when the QSO completes.
+  - **Tune** sends a steady tone for 10 s to set **Level** with the radio's ALC meter. **TX audio** sets where in
+    the passband you transmit (1500 Hz to start).
+  - A clean signal: Gaussian-shaped tones and soft ramps, as WSJT-X sends them (tested: Band Watch's own decoder
+    reads it back, and it's over 50 dB down 120–300 Hz away).
+  - **Early decode** (13.6 s into an FT8 cycle, 6.0 s for FT4, as WSJT-X does), so replies go out in the very next
+    slot. A second pass at the end of the cycle adds any stations that started late.
+  - **Safety:** nothing is sent unless **Enable TX** is on (off every time Band Watch starts); **Stop TX** or **Esc**
+    stops at once; every over unkeys itself (and again 0.3 s later); no transmitting without your callsign and
+    locator, with a receiver-only radio, outside DATA-USB (Yaesu) / USB, or outside the amateur bands; it stops
+    after 6 overs with no answer (10 CQs). Your power and where your licence lets you transmit are for you to set.
+  - Tested with a pretend radio only: try it first at low power, ideally into a dummy load, watching the ALC.
+
 ## 1.29.0 (19 Nov 2026)
 - **Click a satellite for everything about it.** Click its dot on the world map, its name in the Satellites list or
   in the passes table, and a card opens with:

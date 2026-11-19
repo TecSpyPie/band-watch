@@ -45,7 +45,7 @@ async function dcStart() {
   dc.running = true;
   dc.rate = 0;
   if (dc.mode === "CW") dc.cwText = "";
-  dc.worker = new Worker("/js/ft8-worker.js?v=1.29.0");
+  dc.worker = new Worker("/js/ft8-worker.js?v=1.30.0");
   dc.worker.onmessage = (e) => onDecoderMessage(e.data);
   dc.worker.onerror = (e) => { dcStop(); dcSetStatus(`The decoder stopped: ${e.message}`); };
   if (dc.src === "mic") {
@@ -54,7 +54,7 @@ async function dcStart() {
       if (dc.device) constraints.deviceId = { exact: dc.device };
       dc.stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
       dc.ctx = new AudioContext();
-      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.29.0");
+      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.30.0");
       const srcNode = dc.ctx.createMediaStreamSource(dc.stream);
       dc.node = new AudioWorkletNode(dc.ctx, "bw-capture");
       dc.node.port.onmessage = (e) => decoderFeed(e.data, dc.ctx.sampleRate);
@@ -107,10 +107,14 @@ function onDecoderMessage(m) {
       .map((d) => ({ utc, cycle: m.cycle, mode: m.mode, snr: d.snr, dt: d.dt, freq: d.freq, text: d.text }));
     dc.rows = [...rows, ...dc.rows].slice(0, DC_MAX_ROWS);
     dc.lastCycle = m.cycle;
-    dcSetStatus(`${m.mode}: ${rows.length} decoded in the ${utc.slice(0, 2)}:${utc.slice(2, 4)}:${utc.slice(4)} cycle${m.mode === "WSPR" ? ` (${(m.ms / 1000).toFixed(1)} s to decode)` : ""}.`);
+    const when = `${utc.slice(0, 2)}:${utc.slice(2, 4)}:${utc.slice(4)}`;
+    dcSetStatus(m.late
+      ? `${m.mode}: ${rows.length} more decoded in the ${when} cycle (stations that started late).`
+      : `${m.mode}: ${rows.length} decoded in the ${when} cycle${m.mode === "WSPR" ? ` (${(m.ms / 1000).toFixed(1)} s to decode)` : ""}.`);
     renderDcRows();
     if (dc.channel) dc.channel.postMessage({ type: "cycle", rows, status: dc.status });
     if (typeof checkWanted === "function") checkWanted();
+    if (typeof txOnDecodes === "function") txOnDecodes(rows);
   }
 }
 
@@ -151,7 +155,9 @@ function renderDcRows() {
     const who = dcStation(r.text);
     const logBtn = who && typeof logPrefill === "function"
       ? `<button type="button" class="linkbtn dclog" data-i="${i}" title="Log a contact with ${esc(who.call)}">Log</button>${typeof workedBefore === "function" && workedBefore(who.call) ? ' <span class="worked" title="Already in your log">✓</span>' : ""}` : "";
-    return `<tr class="${dcRowClass(r)}${sep}"><td>${r.utc}</td><td>${r.snr > 0 ? "+" : ""}${r.snr}</td><td>${r.dt.toFixed(1)}</td><td>${r.freq}</td><td class="dcmsg">${dcMessageHtml(r.text)}</td><td>${logBtn}</td></tr>`;
+    const replyBtn = who && (r.mode === "FT8" || r.mode === "FT4") && typeof txReply === "function"
+      ? `<button type="button" class="linkbtn dcreply" data-i="${i}" title="Answer ${esc(who.call)} (switch Enable TX on to transmit)">Reply</button> ` : "";
+    return `<tr class="${dcRowClass(r)}${sep}"><td>${r.utc}</td><td>${r.snr > 0 ? "+" : ""}${r.snr}</td><td>${r.dt.toFixed(1)}</td><td>${r.freq}</td><td class="dcmsg">${dcMessageHtml(r.text)}</td><td>${replyBtn}${logBtn}</td></tr>`;
   }).join("") || `<tr><td colspan="6" class="muted small">${dc.running ? "Nothing decoded yet." : "Press Start decoding."}</td></tr>`;
   $("dcCount").textContent = dc.rows.length ? `${dc.rows.length} decode${dc.rows.length === 1 ? "" : "s"}` : "";
 }
@@ -203,6 +209,7 @@ function renderDc() {
   $("dcStart").textContent = dc.running ? "Stop decoding" : "Start decoding";
   $("dcStart").classList.toggle("ghost", dc.running);
   dcRenderTune();
+  if (typeof renderTx === "function") renderTx();
   $("dcStatus").textContent = dc.status;
   $("dcProg").style.width = dc.running ? `${Math.round(dc.progress * 100)}%` : "0";
   renderDcRows();
