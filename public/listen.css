@@ -71,6 +71,10 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab td.dcact{width:6.5em;white-space:nowrap}
 /* Add-ons: hidden until ticked in Settings */
 :root:not([data-addons~="rotator"]) #secRot{display:none}
+/* CB channels in Listen */
+.lscb{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0}
+.lscb label{display:flex;align-items:center;gap:6px}
+.lscb select{max-width:100%}
 /* APRS */
 .dcaprs[hidden]{display:none}
 .aprstab td.aprsdet{white-space:normal}

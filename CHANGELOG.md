@@ -1,5 +1,14 @@
 # What's new
 
+## 1.38.0 (19 Nov 2026)
+- **CB channels to listen to** (Listen panel): pick a UK 27/81 FM channel (1–40; channel 19 is 27.78125 MHz) or a
+  European CEPT channel (1–40; channel 19 is 27.185 MHz) and Listen tunes there in FM. Listen only: Band Watch never
+  transmits on CB. Best with an RTL-SDR (WebSDRs may not cover 27 MHz).
+- **Help: Licences and exams (UK).** The three UK licences, how the RSGB exams are taken online at home with a remote
+  invigilator, what the Intermediate exam is like, and links to the RSGB's guides, course finder and syllabus videos.
+- **Help: Good operating, a code of practice:** listen first, identify, keep to the band plan, the power you need, a
+  clean signal, courtesy, emergency traffic first, and more.
+
 ## 1.37.0 (19 Nov 2026)
 - **APRS on 2 m** (Decoder, Mode: APRS). With your RTL-SDR on **144.800 MHz FM** (Tune to APRS), or the ISS on
   145.825 MHz, Band Watch decodes APRS packets (1200 baud AFSK, AX.25): who, where (distance and beam heading from

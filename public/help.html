@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.37.0">
+<link rel="stylesheet" href="/style.css?v=1.38.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -250,6 +250,66 @@
     </ol>
     <figure><img src="/help/ft4-decoder.webp" alt="The decoder panel showing decoded FT4 messages" loading="lazy">
       <figcaption>Decoded messages, newest at the top.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="licences" aria-labelledby="hLic">
+    <h2 id="hLic">Licences and exams (UK)</h2>
+    <p>In the UK there are three amateur licences: <b>Foundation</b>, <b>Intermediate</b> and <b>Full</b>. Each step up
+      brings more bands, more power and more freedom. You pass Foundation before Intermediate, and Intermediate before Full
+      (there's also a "Direct to Full" exam for people who already know the technical side).</p>
+    <ul>
+      <li><b>The exams are taken online</b>, usually <b>at home with a remote invigilator</b> watching over your webcam,
+        or at a club. You book and pay online and choose a date and time that suits you.</li>
+      <li>The <b>Intermediate</b> exam is 46 multiple-choice questions in 90 minutes, and you see your result as soon as
+        you finish. A course isn't required, but it's strongly recommended: there are online ones.</li>
+      <li>After you pass, the RSGB sends your certificate (in about a week). Then you apply on Ofcom's licensing site
+        and choose your new callsign. Applying online is free.</li>
+    </ul>
+    <p><b>Links</b> (from the RSGB, the UK's national radio society):</p>
+    <ul>
+      <li><a href="https://rsgb.org/main/clubs-training/for-students/" target="_blank" rel="noopener noreferrer">Getting licensed and moving up</a>
+        (Foundation, Intermediate, Full)</li>
+      <li><a href="https://rsgb.org/main/clubs-training/for-students/intermediate/" target="_blank" rel="noopener noreferrer">The Intermediate licence and exam</a></li>
+      <li><a href="https://thersgb.org/services/cexfinder/" target="_blank" rel="noopener noreferrer">Course and exam finder</a> (courses and clubs near you, and online)</li>
+      <li><a href="https://rsgb.org/main/clubs-training/training-resources/" target="_blank" rel="noopener noreferrer">Training resources</a> and
+        <a href="https://rsgb.org/main/publications-archives/video/syllabus-resources/" target="_blank" rel="noopener noreferrer">syllabus videos</a></li>
+      <li><a href="https://rsgb.org/main/faq-2/exam-candidates-faq/" target="_blank" rel="noopener noreferrer">Exam questions answered</a>
+        (fees, sample papers, learning difficulties)</li>
+    </ul>
+    <p class="muted small">A club is a great help with any of this, and a friendly way to meet other amateurs.</p>
+  </section>
+
+  <section class="panel" id="practice" aria-labelledby="hPractice">
+    <h2 id="hPractice">Good operating: a code of practice</h2>
+    <p>The good habits that make the bands a pleasant place for everyone. Your licence conditions always come first:
+      this is the friendly part on top.</p>
+    <ol>
+      <li><b>Listen first.</b> Before you call, listen for a while, then ask "Is this frequency in use?" (on CW: QRL?).
+        On FT8, look at the waterfall and pick a clear spot.</li>
+      <li><b>Say who you are.</b> Give your callsign at the start and end of each contact and regularly in between,
+        as your licence requires. Don't transmit without identifying.</li>
+      <li><b>Keep to the band plan.</b> CW in the CW parts, data in the data parts, phone where phone belongs. Band Watch
+        shows the UK band plan and won't transmit data in the wrong segments.</li>
+      <li><b>Use only the power you need.</b> Less power, less interference, and more fun when it works. Never go above
+        your licence's limit.</li>
+      <li><b>Keep your signal clean.</b> Set your audio level so the ALC only just moves (FT8, SSTV, CW from Band Watch),
+        don't overdrive SSB, and check your signal isn't splattering.</li>
+      <li><b>Be patient and polite.</b> Wait your turn in a pile-up, don't call over a station working someone else, and
+        answer "QRZ?" only when it's for you. Everyone was new once: help newcomers.</li>
+      <li><b>Keep contacts friendly.</b> Avoid arguments; leave politics, religion and bad language off the air.</li>
+      <li><b>Don't cause trouble on purpose.</b> No deliberate interference, no music or broadcasting, no messages in
+        code you're not allowed to use.</li>
+      <li><b>Know when to give way.</b> Emergency traffic always comes first; keep 3760 kHz and other emergency
+        centres clear unless you're helping.</li>
+      <li><b>Never leave a transmitter unattended</b> unless your licence allows it for that kind of station. With Band
+        Watch: Enable TX goes off by itself, and Stop TX or Esc stops at once.</li>
+      <li><b>Log your contacts and send QSLs</b> when you can: it's part of the fun, and it's the record of what you did.</li>
+      <li><b>Keep learning.</b> Try a new mode, a new band, a club net, a contest, a satellite: there's always more.</li>
+    </ol>
+    <p><b>More from the RSGB:</b>
+      <a href="https://rsgb.org/main/activity/useful-practical-skills-for-new-licensees/" target="_blank" rel="noopener noreferrer">Practical skills for new licensees</a> ·
+      <a href="https://rsgb.org/main/publications-archives/video/practical-skills-for-new-licensees/" target="_blank" rel="noopener noreferrer">practical skills videos</a> ·
+      <a href="https://rsgb.org/main/operating/licensing-novs-visitors/" target="_blank" rel="noopener noreferrer">licensing</a></p>
   </section>
 
   <section class="panel" id="cwkey" aria-labelledby="hCwKey">

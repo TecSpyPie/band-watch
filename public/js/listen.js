@@ -66,6 +66,31 @@ function receiverUrl() {
   return `${base}/?tune=${k}${listen.mode}&messageorigin=${encodeURIComponent(location.origin)}`;
 }
 
+/* CB radio (27 MHz), to listen to: the UK's own FM channels ("27/81", 10 kHz apart from 27.60125 MHz; channel 19
+   is 27.78125) and the European CEPT channels (26.965-27.405 MHz, in their traditional order: channel 23 is
+   27.255 MHz, above 24 and 25, as on every CB rig). Band Watch never transmits on CB. */
+const CB_UK = Array.from({ length: 40 }, (_, i) => [i + 1, Math.round((27601.25 + i * 10) * 100) / 100]);
+const CB_EU = [26965, 26975, 26985, 27005, 27015, 27025, 27035, 27055, 27065, 27075, 27085, 27105, 27115, 27125, 27135,
+  27155, 27165, 27175, 27185, 27205, 27215, 27225, 27255, 27235, 27245, 27265, 27275, 27285, 27295, 27305, 27315, 27325,
+  27335, 27345, 27355, 27365, 27375, 27385, 27395, 27405].map((k, i) => [i + 1, k]);
+const CB_NAMES = { 9: "emergency", 14: "calling (UK)", 19: "road / calling" };
+
+function setupCb() {
+  const sel = $("lsCb");
+  if (!sel) return;
+  const opt = (sys, [ch, k]) => `<option value="${sys}:${k}">Ch ${ch}: ${(k / 1000).toFixed(5)} MHz${CB_NAMES[ch] ? ` (${CB_NAMES[ch]})` : ""}</option>`;
+  sel.innerHTML = `<option value="">Choose a channel…</option>` +
+    `<optgroup label="UK 27/81 (FM)">${CB_UK.map((c) => opt("uk", c)).join("")}</optgroup>` +
+    `<optgroup label="Europe, CEPT (FM; AM too on some)">${CB_EU.map((c) => opt("eu", c)).join("")}</optgroup>`;
+  sel.addEventListener("change", () => {
+    const [sys, k] = sel.value.split(":");
+    if (!k) return;
+    tuneTo(Number(k), "fm", { quiet: true });
+    $("lsCbNote").textContent = `${sys === "uk" ? "UK" : "CEPT"} channel ${sel.selectedOptions[0].textContent.match(/Ch (\d+)/)[1]}, FM. Best with your RTL-SDR or a radio that covers 27 MHz; WebSDRs may not.`;
+    sel.blur();
+  });
+}
+
 function bandForKHz(k) {
   return PLAN_BANDS.find((b) => k >= BANDPLAN[b].lo - 1 && k <= BANDPLAN[b].hi + 1) || null;
 }
@@ -360,6 +385,7 @@ function setupTuner() {
     }, { passive: false });
   }
 
+  setupCb();
   $("lsStations").addEventListener("change", (e) => {
     const s = listen.stations && listen.stations[Number(e.target.value)];
     e.target.blur();
