@@ -15,9 +15,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.35.0">
-<link rel="stylesheet" href="/listen.css?v=1.35.0">
-<link rel="stylesheet" href="/looks.css?v=1.35.0">
+<link rel="stylesheet" href="/style.css?v=1.36.0">
+<link rel="stylesheet" href="/listen.css?v=1.36.0">
+<link rel="stylesheet" href="/looks.css?v=1.36.0">
 </head>
 <body>
 <div class="wrap">
@@ -456,6 +456,45 @@
     <p class="small muted" id="xtNote" role="status"></p>
   </section>
 
+  <section class="panel" id="secRot" aria-labelledby="rotTitle">
+    <div class="phead">
+      <h2 id="rotTitle">Rotator</h2>
+      <span class="small muted">Turn your antenna (add-on)</span>
+    </div>
+    <div class="rotgrid">
+      <div class="rotdialbox">
+        <svg class="rotdial" id="rotDial" viewBox="-100 -100 200 200" role="img" aria-label="Compass dial: where the antenna points (solid) and where it's turning to (dashed). Click to turn there."></svg>
+        <p class="small" id="rotNow" aria-live="polite"></p>
+      </div>
+      <div>
+        <div class="dcrow">
+          <label class="grow">Controller <select id="rotProto"></select></label>
+          <label>Speed <select id="rotBaud"><option>1200</option><option>2400</option><option>4800</option><option>9600</option><option>19200</option><option>38400</option><option>57600</option><option>115200</option></select></label>
+          <button type="button" id="rotConnect">Connect rotator</button>
+        </div>
+        <div class="dcrow">
+          <button type="button" class="ghost" data-az="0">N</button><button type="button" class="ghost" data-az="90">E</button>
+          <button type="button" class="ghost" data-az="180">S</button><button type="button" class="ghost" data-az="270">W</button>
+          <label class="small txlvl">Heading <input type="number" id="rotDeg" min="0" max="359" step="1" style="width:5em">°</label>
+          <button type="button" class="ghost" id="rotTurn">Turn</button>
+          <button type="button" class="txhalt" id="rotStop">Stop</button>
+        </div>
+        <div class="dcrow">
+          <label class="grow">Point at a locator or callsign <input type="text" id="rotAt" placeholder="e.g. FN31, or a callsign you've heard" spellcheck="false" autocomplete="off"></label>
+          <label class="small dcchk"><input type="checkbox" id="rotLong"> Long path</label>
+          <button type="button" class="ghost" id="rotGo">Point</button>
+        </div>
+        <div class="dcrow">
+          <label class="grow">Follow a satellite <select id="rotSat"></select></label>
+          <button type="button" class="ghost" id="rotFollow">Follow</button>
+        </div>
+        <p class="small" id="rotNote" role="status"></p>
+        <p class="small muted">Plug the rotator controller's USB lead in (its own port, not the radio's). Yaesu GS-232: 9600 baud.
+          The rotator only moves when you ask it to; <b>Stop</b> or <b>Esc</b> stops it.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="panel" id="secSats" aria-labelledby="satTitle">
     <div class="phead">
       <h2 id="satTitle">Satellites</h2>
@@ -725,6 +764,8 @@
       </div>
       <span class="small muted">Show these sections</span>
       <div class="secs" id="optSecs"></div>
+      <span class="small muted">Add-ons (extra panels, off until you tick them)</span>
+      <div class="secs" id="optAddons"><label><input type="checkbox" data-addon="rotator"> Rotator: turn your antenna</label></div>
 
       <h3 class="opth">Background</h3>
       <div class="swatches bgsw" id="optBgPresets" role="group" aria-label="Background presets"></div>
@@ -989,48 +1030,50 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.35.0"></script>
-<script src="/js/bandplan.js?v=1.35.0"></script>
-<script src="/js/core.js?v=1.35.0"></script>
-<script src="/js/modes.js?v=1.35.0"></script>
-<script src="/js/map.js?v=1.35.0"></script>
-<script src="/js/scope.js?v=1.35.0"></script>
-<script src="/js/monitor.js?v=1.35.0"></script>
-<script src="/js/lookup.js?v=1.35.0"></script>
-<script src="/js/worldclock.js?v=1.35.0"></script>
-<script src="/js/locator.js?v=1.35.0"></script>
-<script src="/js/activity.js?v=1.35.0"></script>
-<script src="/js/qrz.js?v=1.35.0"></script>
-<script src="/js/hovercard.js?v=1.35.0"></script>
-<script src="/js/station.js?v=1.35.0"></script>
-<script src="/js/sdr-dsp.js?v=1.35.0"></script>
-<script src="/js/sdr.js?v=1.35.0"></script>
-<script src="/js/rxfx.js?v=1.35.0"></script>
-<script src="/js/clearrx-link.js?v=1.35.0"></script>
-<script src="/js/listen.js?v=1.35.0"></script>
-<script src="/js/rig.js?v=1.35.0"></script>
-<script src="/js/rigrx.js?v=1.35.0"></script>
-<script src="/js/xota.js?v=1.35.0"></script>
-<script src="/js/satmath.js?v=1.35.0"></script>
-<script src="/js/sats.js?v=1.35.0"></script>
-<script src="/js/eibi-data.js?v=1.35.0"></script>
-<script src="/js/eibi.js?v=1.35.0"></script>
-<script src="/js/panel.js?v=1.35.0"></script>
-<script src="/js/logbook.js?v=1.35.0"></script>
-<script src="/js/wanted.js?v=1.35.0"></script>
-<script src="/js/dccols.js?v=1.35.0"></script>
-<script src="/js/decoders.js?v=1.35.0"></script>
-<script src="/js/ft8.js?v=1.35.0"></script>
-<script src="/js/ftxtx.js?v=1.35.0"></script>
-<script src="/js/tx.js?v=1.35.0"></script>
-<script src="/js/cwtx.js?v=1.35.0"></script>
-<script src="/js/cwkey.js?v=1.35.0"></script>
-<script src="/js/sstv.js?v=1.35.0"></script>
-<script src="/js/sstvui.js?v=1.35.0"></script>
-<script src="/js/sun.js?v=1.35.0"></script>
-<script src="/js/options.js?v=1.35.0"></script>
-<script src="/js/windows.js?v=1.35.0"></script>
-<script src="/js/looks.js?v=1.35.0"></script>
-<script src="/js/app.js?v=1.35.0"></script>
+<script src="/js/install.js?v=1.36.0"></script>
+<script src="/js/bandplan.js?v=1.36.0"></script>
+<script src="/js/core.js?v=1.36.0"></script>
+<script src="/js/modes.js?v=1.36.0"></script>
+<script src="/js/map.js?v=1.36.0"></script>
+<script src="/js/scope.js?v=1.36.0"></script>
+<script src="/js/monitor.js?v=1.36.0"></script>
+<script src="/js/lookup.js?v=1.36.0"></script>
+<script src="/js/worldclock.js?v=1.36.0"></script>
+<script src="/js/locator.js?v=1.36.0"></script>
+<script src="/js/activity.js?v=1.36.0"></script>
+<script src="/js/qrz.js?v=1.36.0"></script>
+<script src="/js/hovercard.js?v=1.36.0"></script>
+<script src="/js/station.js?v=1.36.0"></script>
+<script src="/js/sdr-dsp.js?v=1.36.0"></script>
+<script src="/js/sdr.js?v=1.36.0"></script>
+<script src="/js/rxfx.js?v=1.36.0"></script>
+<script src="/js/clearrx-link.js?v=1.36.0"></script>
+<script src="/js/listen.js?v=1.36.0"></script>
+<script src="/js/rig.js?v=1.36.0"></script>
+<script src="/js/rigrx.js?v=1.36.0"></script>
+<script src="/js/xota.js?v=1.36.0"></script>
+<script src="/js/satmath.js?v=1.36.0"></script>
+<script src="/js/sats.js?v=1.36.0"></script>
+<script src="/js/eibi-data.js?v=1.36.0"></script>
+<script src="/js/eibi.js?v=1.36.0"></script>
+<script src="/js/panel.js?v=1.36.0"></script>
+<script src="/js/logbook.js?v=1.36.0"></script>
+<script src="/js/wanted.js?v=1.36.0"></script>
+<script src="/js/dccols.js?v=1.36.0"></script>
+<script src="/js/decoders.js?v=1.36.0"></script>
+<script src="/js/ft8.js?v=1.36.0"></script>
+<script src="/js/ftxtx.js?v=1.36.0"></script>
+<script src="/js/tx.js?v=1.36.0"></script>
+<script src="/js/cwtx.js?v=1.36.0"></script>
+<script src="/js/cwkey.js?v=1.36.0"></script>
+<script src="/js/sstv.js?v=1.36.0"></script>
+<script src="/js/sstvui.js?v=1.36.0"></script>
+<script src="/js/sun.js?v=1.36.0"></script>
+<script src="/js/options.js?v=1.36.0"></script>
+<script src="/js/windows.js?v=1.36.0"></script>
+<script src="/js/rotmath.js?v=1.36.0"></script>
+<script src="/js/rotator.js?v=1.36.0"></script>
+<script src="/js/looks.js?v=1.36.0"></script>
+<script src="/js/app.js?v=1.36.0"></script>
 </body>
 </html>

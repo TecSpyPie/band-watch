@@ -18,7 +18,7 @@ const SECTIONS = [
 ];
 const DEFAULT_SETTINGS = {
   theme: "system", look: "classic", accent: "", text: 100, zoom: 100, width: "1100px", cols: "auto", density: "comfortable",
-  scopeRes: "normal", scopeH: "280px", hide: [], modesOff: [], bgDim: 55,
+  scopeRes: "normal", scopeH: "280px", hide: [], modesOff: [], bgDim: 55, addons: [],
 };
 let settings = { ...DEFAULT_SETTINGS };
 
@@ -26,7 +26,8 @@ function loadSettings() {
   try {
     const saved = JSON.parse(load("bw-display"));
     if (saved && typeof saved === "object") {
-      settings = { ...DEFAULT_SETTINGS, ...saved, hide: Array.isArray(saved.hide) ? saved.hide : [], modesOff: Array.isArray(saved.modesOff) ? saved.modesOff : [] };
+      settings = { ...DEFAULT_SETTINGS, ...saved, hide: Array.isArray(saved.hide) ? saved.hide : [], modesOff: Array.isArray(saved.modesOff) ? saved.modesOff : [],
+        addons: Array.isArray(saved.addons) ? saved.addons.filter((a) => typeof a === "string") : [] };
     }
   } catch { /* defaults */ }
 }
@@ -41,6 +42,7 @@ function applySettings() {
   root.dataset.density = settings.density;
   root.dataset.cols = settings.cols;
   root.dataset.hide = settings.hide.join(" ");
+  root.dataset.addons = (settings.addons || []).join(" ");
   root.style.setProperty("--fs", String(settings.text / 100));
   root.style.setProperty("--zoom", String(settings.zoom / 100));
   root.style.setProperty("--maxw", settings.width);
@@ -84,6 +86,7 @@ function renderOptions() {
     ? `<button type="button" data-c="${c}" style="background:${c}" aria-label="${name}" title="${name}" aria-pressed="${settings.accent === c}"></button>`
     : `<button type="button" class="auto" data-c="" aria-pressed="${!settings.accent}">${name}</button>`).join("");
   $("optAccent").querySelectorAll("button").forEach((b) => { b.onclick = () => { settings.accent = b.dataset.c; saveSettings(); renderOptions(); }; });
+  $("optAddons").querySelectorAll("input[data-addon]").forEach((i) => { i.checked = (settings.addons || []).includes(i.dataset.addon); });
   $("optSecs").innerHTML = SECTIONS.map(([k, name]) =>
     `<label><input type="checkbox" data-sec="${k}"${settings.hide.includes(k) ? "" : " checked"}> ${name}</label>`).join("");
   $("optSecs").querySelectorAll("input").forEach((i) => {
@@ -113,6 +116,16 @@ function setupOptions() {
     settings = { ...DEFAULT_SETTINGS, hide: [], modesOff: settings.modesOff };
     saveSettings();
     renderOptions();
+  });
+  // Add-ons: ticking one shows its panel straight away (and takes you to it)
+  $("optAddons").addEventListener("change", (e) => {
+    const i = e.target.closest("input[data-addon]");
+    if (!i) return;
+    const k = i.dataset.addon;
+    settings.addons = i.checked ? [...new Set([...(settings.addons || []), k])] : (settings.addons || []).filter((x) => x !== k);
+    saveSettings();
+    const sec = { rotator: "secRot" }[k];
+    if (i.checked && sec && $(sec)) setTimeout(() => $(sec).scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   });
   setupBackground();
   setupProfiles();
@@ -304,6 +317,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.36.0", "Add-ons in Settings; the Rotator add-on: compass dial, point at a locator or callsign (short/long path), follow a satellite"],
   ["1.35.0", "New looks with depth in Settings > Look: Radio front panel, Glass and depth, and Space station (moving stars)"],
   ["1.34.0", "CW keyboard: type and hear Morse as you go (Practice), or send it on the air with break-in, message buttons and Farnsworth spacing"],
   ["1.33.0", "Decode table: choose and resize columns, an on-air Frequency column, times in any time zone with a clock; completed QSOs can log themselves"],

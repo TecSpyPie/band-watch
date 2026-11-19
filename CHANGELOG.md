@@ -1,5 +1,18 @@
 # What's new
 
+## 1.36.0 (19 Nov 2026)
+- **Add-ons** (Settings, under "Show these sections"): extra panels that stay out of the way until you tick them.
+- **Rotator add-on:** turn your antenna from Band Watch. Connect the rotator controller's own USB port (Chrome or
+  Edge) as Yaesu GS-232A, GS-232B (azimuth and elevation), EasyComm II (K3NG and many home-built controllers) or
+  Hy-Gain DCU-1.
+  - A compass dial shows where the beam points (solid) and where it's turning to (dashed); click the dial to turn
+    there, or use N / E / S / W, or type a heading.
+  - **Point at** a locator or a callsign Band Watch has heard (from decodes, spots or POTA), short or long path, with
+    the distance.
+  - **Follow a satellite** across its pass (azimuth, and elevation on an az/el rotator); below the horizon it waits
+    pointing where the satellite will rise. It only sends a new heading when it has moved 2° or more.
+  - The rotator only moves when you ask; **Stop** or **Esc** stops it.
+
 ## 1.35.0 (19 Nov 2026)
 - **New looks with depth** (Settings > Look; High contrast and Night keep the plain look):
   - **Radio front panel:** brushed-metal panels with screws in the corners, bevelled keys that press in, lit keys

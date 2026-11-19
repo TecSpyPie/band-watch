@@ -69,6 +69,21 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab .dcrsz:hover,.dctab .dcrsz:focus-visible{background:var(--cool);opacity:.6;outline:none}
 .dctab td.num,.dctab th[data-col=snr],.dctab th[data-col=dt],.dctab th[data-col=freq],.dctab th[data-col=rf]{text-align:right}
 .dctab td.dcact{width:6.5em;white-space:nowrap}
+/* Add-ons: hidden until ticked in Settings */
+:root:not([data-addons~="rotator"]) #secRot{display:none}
+/* Rotator */
+.rotgrid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:640px){.rotgrid{grid-template-columns:minmax(0,1fr)}}
+.rotdialbox{text-align:center}
+.rotdial{display:block;width:100%;max-width:220px;margin:0 auto;cursor:crosshair}
+.rotring{fill:color-mix(in srgb,var(--cool) 6%,var(--surface));stroke:var(--line);stroke-width:2}
+.rottick{stroke:var(--muted);stroke-width:1}
+.rotlbl{font:700 13px Barlow,sans-serif;fill:var(--text);text-anchor:middle;dominant-baseline:middle}
+.rotbeam{stroke:var(--warm);stroke-width:4;stroke-linecap:round}
+.rotbeamhead{fill:var(--warm)}
+.rottarget{stroke:var(--cool);stroke-width:2;stroke-dasharray:5 4}
+.rothub{fill:var(--text)}
+.dcrow button[data-az]{min-width:2.6em;padding-left:10px;padding-right:10px}
 /* CW keyboard */
 .cwkey{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-top:10px}
 .cwkey.air{border-color:#c0392b;box-shadow:inset 3px 0 0 #c0392b}
