@@ -4,7 +4,7 @@
 "use strict";
 const VERSION = "1.39.0";
 const CACHE = `bandwatch-${VERSION}`;
-const SHELL = ["/", "/install", "/help", "/style.css", "/listen.css", "/install.css", "/favicon.svg", "/manifest.webmanifest", "/icons/icon-192.png"];
+const SHELL = ["/", "/install", "/help", "/style.css", "/listen.css", "/nav.css","/install.css", "/favicon.svg", "/manifest.webmanifest", "/icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));

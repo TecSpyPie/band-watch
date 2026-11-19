@@ -1,5 +1,16 @@
 # What's new
 
+## Unreleased
+- **Section menu and folding.** A slim bar under the title (it stays on screen as you scroll) has a button for each
+  panel that is showing: Clock, Radio panel, Listen, Decoders, POTA, Satellites, Logbook and so on. Click one to glide
+  to that panel; the panel you're looking at is highlighted, and on a narrow screen the bar slides sideways. Add-on
+  panels (Rotator, Digital voice) and the ATS Mini appear in it only while they're switched on.
+  - **Fold a panel** with the small arrow by its name: only its name stays, the rest is hidden. Nothing stops
+    running (decoders, radio, Listen). Folded panels are remembered and shown with a dashed outline in the menu;
+    clicking one unfolds it.
+  - **Settings > Show the section menu** turns the bar off. Works in every theme and look; own windows and the
+    results window are unchanged.
+
 ## 1.39.0 (19 Nov 2026)
 - **Digital voice add-on** (Settings > Add-ons: DMR, BrandMeister and Fusion). Band Watch can't make or send DMR or
   Fusion (C4FM) voice itself: both use the AMBE voice codec, which is patented and only built into radios and hotspots.

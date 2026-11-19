@@ -18,7 +18,7 @@ const SECTIONS = [
 ];
 const DEFAULT_SETTINGS = {
   theme: "system", look: "classic", accent: "", text: 100, zoom: 100, width: "1100px", cols: "auto", density: "comfortable",
-  scopeRes: "normal", scopeH: "280px", hide: [], modesOff: [], bgDim: 55, addons: [],
+  scopeRes: "normal", scopeH: "280px", hide: [], modesOff: [], bgDim: 55, addons: [], secNav: true,
 };
 let settings = { ...DEFAULT_SETTINGS };
 
@@ -43,6 +43,7 @@ function applySettings() {
   root.dataset.cols = settings.cols;
   root.dataset.hide = settings.hide.join(" ");
   root.dataset.addons = (settings.addons || []).join(" ");
+  if (settings.secNav === false) root.dataset.secnav = "off"; else delete root.dataset.secnav;
   root.style.setProperty("--fs", String(settings.text / 100));
   root.style.setProperty("--zoom", String(settings.zoom / 100));
   root.style.setProperty("--maxw", settings.width);
@@ -86,6 +87,7 @@ function renderOptions() {
     ? `<button type="button" data-c="${c}" style="background:${c}" aria-label="${name}" title="${name}" aria-pressed="${settings.accent === c}"></button>`
     : `<button type="button" class="auto" data-c="" aria-pressed="${!settings.accent}">${name}</button>`).join("");
   $("optAccent").querySelectorAll("button").forEach((b) => { b.onclick = () => { settings.accent = b.dataset.c; saveSettings(); renderOptions(); }; });
+  $("optSecNav").checked = settings.secNav !== false;
   $("optAddons").querySelectorAll("input[data-addon]").forEach((i) => { i.checked = (settings.addons || []).includes(i.dataset.addon); });
   $("optSecs").innerHTML = SECTIONS.map(([k, name]) =>
     `<label><input type="checkbox" data-sec="${k}"${settings.hide.includes(k) ? "" : " checked"}> ${name}</label>`).join("");
@@ -112,6 +114,7 @@ function setupOptions() {
   for (const id of ["optTheme", "optLook"]) $(id).addEventListener("input", renderOptions); bind("optZoom", "zoom", true); bind("optWidth", "width");
   bind("optCols", "cols"); bind("optDensity", "density"); bind("optScopeRes", "scopeRes"); bind("optScopeH", "scopeH");
   $("optDim").addEventListener("input", (e) => { settings.bgDim = Number(e.target.value); $("optDimVal").textContent = `${settings.bgDim}%`; store("bw-display", settings); applySettings(); });
+  $("optSecNav").addEventListener("change", (e) => { settings.secNav = e.target.checked; saveSettings(); });
   $("optReset").addEventListener("click", () => {
     settings = { ...DEFAULT_SETTINGS, hide: [], modesOff: settings.modesOff };
     saveSettings();
