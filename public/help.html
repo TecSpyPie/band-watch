@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.25.1">
+<link rel="stylesheet" href="/style.css?v=1.26.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -191,6 +191,11 @@
       (set the note to your radio's CW pitch); <b>Auto notch</b> removes steady whistles and carriers; <b>Noise reduction</b>
       takes away hiss (Strong can sound a little "underwater"); <b>Steady volume</b> evens out loud and quiet stations.
       Tick <b>Hear it without ClearRX</b> to compare. The spectrum shows the sound before (grey) and after (blue).</p>
+    <p>The extras (ClearRX 1.2.0), which stay as they are when you pick a preset: <b>speed</b> next to Steady volume sets
+      how quickly it recovers after a loud signal (Fast, Medium, Slow); <b>Noise blanker</b> silences clicks and crackles
+      such as electric fences and ignition (Strong catches more); <b>Notch at</b> removes a whistle at the frequency you
+      choose; <b>Squelch</b> keeps quiet between signals (-70 dB opens easily, -30 dB only for strong ones);
+      <b>Bass</b> and <b>Treble</b> lift or cut the low and high ends. Picking <b>Off</b> switches these off too.</p>
     <p><b>With Band Watch:</b> while ClearRX is open, Listen shows <b>Send my RTL-SDR sound through ClearRX</b>. Tick it
       and your RTL-SDR's sound is cleaned up with ClearRX's settings; change them in the ClearRX window. Band Watch
       works just the same when ClearRX is closed.</p>

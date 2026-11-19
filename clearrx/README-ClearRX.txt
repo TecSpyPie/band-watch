@@ -1,4 +1,4 @@
-ClearRX by M3VRV - radio audio processor (version 1.1.0)
+ClearRX by M3VRV - radio audio processor (version 1.2.0)
 
 Install
   1. Unzip this folder somewhere to keep it, for example C:\BandWatch\ClearRX
@@ -14,6 +14,9 @@ Use
   - Play to: your speakers or headphones (not the radio's USB sound).
   - Press Start (allow the sound input the first time), then pick a preset:
     SSB voice, Weak DX, CW, AM broadcast, or Off.
+  - Extras, kept whichever preset you pick: AGC speed (next to Steady volume),
+    Noise blanker (clicks and crackles), Notch at (a whistle you choose),
+    Squelch (quiet between signals), Bass and Treble.
   - While ClearRX is open, Band Watch's Listen shows "Send my RTL-SDR sound
     through ClearRX".
   - Settings are kept in clearrx-settings.json next to ClearRX.exe.

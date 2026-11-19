@@ -56,6 +56,31 @@ type Settings struct {
 	Comp    bool   `json:"comp"`
 	On      bool   `json:"on"`    // ClearRX's power switch: off means "leave the sound alone"
 	Radio   string `json:"radio"` // "My radio": rtl, yaesu, icom, ats, malahit, other (or "" before one is picked)
+
+	// The extras, kept whichever preset is picked
+	Nb      bool   `json:"nb"`      // noise blanker
+	NbLevel int    `json:"nbLevel"` // 1-3
+	Agc     string `json:"agc"`     // the compressor's speed: fast, medium, slow
+	Sq      int    `json:"sq"`      // squelch: dBFS (-80 to -20), 0 = off
+	Bass    int    `json:"bass"`    // dB, -12 to +12
+	Treble  int    `json:"treble"`  // dB, -12 to +12
+	Mnotch  int    `json:"mnotch"`  // manual notch: Hz (200-3000), 0 = off
+}
+
+var agcSpeeds = map[string]bool{"fast": true, "medium": true, "slow": true}
+
+// clampOr0 keeps 0 as "off" and anything else within lo..hi.
+func clampOr0(v, lo, hi int) int {
+	if v == 0 {
+		return 0
+	}
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }
 
 var radios = map[string]bool{"": true, "rtl": true, "yaesu": true, "icom": true, "ats": true, "malahit": true, "other": true}
@@ -63,7 +88,7 @@ var radios = map[string]bool{"": true, "rtl": true, "yaesu": true, "icom": true,
 var presets = map[string]bool{"off": true, "ssb": true, "weak": true, "cw": true, "am": true, "custom": true}
 
 func defaultSettings() Settings {
-	return Settings{Preset: "ssb", Voice: true, Lo: 300, Hi: 2700, Tone: 700, Width: 200, Notch: true, NrLevel: 1, Comp: true, On: true}
+	return Settings{Preset: "ssb", Voice: true, Lo: 300, Hi: 2700, Tone: 700, Width: 200, Notch: true, NrLevel: 1, Comp: true, On: true, NbLevel: 2, Agc: "medium"}
 }
 
 func clampInt(v, lo, hi, def int) int {
@@ -92,6 +117,14 @@ func (s Settings) clean() Settings {
 	if !radios[s.Radio] {
 		s.Radio = "other"
 	}
+	s.NbLevel = clampInt(s.NbLevel, 1, 3, 2)
+	if !agcSpeeds[s.Agc] {
+		s.Agc = "medium"
+	}
+	s.Sq = clampOr0(s.Sq, -80, -20)
+	s.Bass = clampOr0(s.Bass, -12, 12)
+	s.Treble = clampOr0(s.Treble, -12, 12)
+	s.Mnotch = clampOr0(s.Mnotch, 200, 3000)
 	return s
 }
 

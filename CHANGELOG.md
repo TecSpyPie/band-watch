@@ -1,5 +1,12 @@
 # What's new
 
+## 1.26.0 (19 Nov 2026)
+- **ClearRX 1.2.0: more sound controls.** A **noise blanker** for clicks and crackles (electric fences, ignition,
+  static crashes), an **AGC speed** (Fast, Medium, Slow) for Steady volume, a **squelch** that keeps quiet between
+  signals, **Bass** and **Treble**, and a **manual notch** at a frequency you choose. They stay as they are when you
+  pick a preset (Off switches them off). Band Watch uses them too when it sends your RTL-SDR sound through ClearRX.
+  Download the new `ClearRX-Windows.zip` and unzip it over the old one.
+
 ## 1.25.1 (19 Nov 2026)
 - **The Radio panel's S-meter works with the RTL-SDR.** While your RTL-SDR is playing and no connected radio is
   giving a reading, the needle follows the signal level in the channel you're tuned to, shown as "≈S5 (RTL-SDR)".

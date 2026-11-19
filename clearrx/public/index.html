@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClearRX by M3VRV</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/clearrx.css?v=1.1.0">
+<link rel="stylesheet" href="/clearrx.css?v=1.2.0">
 </head>
 <body>
 <main class="rack" aria-labelledby="title">
@@ -60,7 +60,22 @@
       <label class="sw"><input type="checkbox" id="fxNr"> Noise reduction</label>
       <label class="sub">strength <select id="fxNrLevel"><option value="1">Light</option><option value="2">Medium</option><option value="3">Strong</option></select></label>
     </div>
-    <div class="fx"><label class="sw"><input type="checkbox" id="fxComp"> Steady volume (compressor)</label></div>
+    <div class="fx">
+      <label class="sw"><input type="checkbox" id="fxComp"> Steady volume (compressor)</label>
+      <label class="sub">speed <select id="fxAgc"><option value="fast">Fast</option><option value="medium">Medium</option><option value="slow">Slow</option></select></label>
+    </div>
+    <div class="fx">
+      <label class="sw"><input type="checkbox" id="fxNb"> Noise blanker (clicks and crackles)</label>
+      <label class="sub">strength <select id="fxNbLevel"><option value="1">Light</option><option value="2">Medium</option><option value="3">Strong</option></select></label>
+    </div>
+    <div class="fx">
+      <label class="sub">Notch at <select id="fxMnotch"></select></label>
+      <label class="sub">Squelch <select id="fxSq"></select></label>
+    </div>
+    <div class="fx">
+      <label class="sub">Bass <select id="fxBass"></select></label>
+      <label class="sub">Treble <select id="fxTreble"></select></label>
+    </div>
     <div class="fx"><label class="sw"><input type="checkbox" id="bypass"> Hear it without ClearRX (to compare)</label></div>
   </section>
 
@@ -68,7 +83,7 @@
   <footer class="small">Settings are kept on this PC. While ClearRX is open, Band Watch can send its RTL-SDR sound through it
     (Listen &gt; "Send my RTL-SDR sound through ClearRX"). <a href="#" id="quit">Close ClearRX</a></footer>
 </main>
-<script src="/js/rxfx.js?v=1.1.0"></script>
-<script src="/js/app.js?v=1.1.0"></script>
+<script src="/js/rxfx.js?v=1.2.0"></script>
+<script src="/js/app.js?v=1.2.0"></script>
 </body>
 </html>
