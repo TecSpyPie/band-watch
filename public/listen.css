@@ -69,6 +69,26 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab .dcrsz:hover,.dctab .dcrsz:focus-visible{background:var(--cool);opacity:.6;outline:none}
 .dctab td.num,.dctab th[data-col=snr],.dctab th[data-col=dt],.dctab th[data-col=freq],.dctab th[data-col=rf]{text-align:right}
 .dctab td.dcact{width:6.5em;white-space:nowrap}
+/* CW keyboard */
+.cwkey{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-top:10px}
+.cwkey.air{border-color:#c0392b;box-shadow:inset 3px 0 0 #c0392b}
+.cwtypelbl{display:block;color:var(--muted);margin-top:4px}
+.cwtype{display:block;width:100%;box-sizing:border-box;font:600 1.125rem ui-monospace,Consolas,monospace;text-transform:uppercase;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:8px 10px;margin:4px 0 6px;resize:vertical}
+.cwtype:focus-visible{outline:2px solid var(--cool);outline-offset:1px}
+.cwmorse{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 10px;overflow:hidden;padding:6px 2px;min-height:2.6em;max-height:5.6em;font-family:ui-monospace,Consolas,monospace}
+.cwmorse .cwch{flex:0 0 auto}
+.cwkey .txlvl{display:flex;flex-direction:row;align-items:center;gap:6px}
+.cwkey .txlvl input[type=range]{width:140px;accent-color:var(--cool)}
+.cwkey .txlvl input[type=number]{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:4px 6px}
+.cwmorse .cwch{display:inline-flex;flex-direction:column;align-items:center;line-height:1.15;padding:0 2px;border-radius:3px}
+.cwmorse .cwch b{font-size:.9375rem}
+.cwmorse .cwch i{font-style:normal;font-size:1.125rem;font-weight:800;line-height:1;color:var(--cool);letter-spacing:.12em}
+.cwmorse .cwch.now{background:color-mix(in srgb,var(--warm) 25%,transparent)}
+.cwmorse .cwsp{width:.8em}
+.cwkey input[type=text]{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:4px 6px;text-transform:uppercase}
+.cwmsgs{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.cwmsgs label{display:flex;flex-direction:column;gap:2px}
+.cwmsgs input{width:100%;box-sizing:border-box}
 /* SSTV */
 .dcsstv[hidden]{display:none}
 .sstvmain{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · Band Watch by M3vrv</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.33.0">
+<link rel="stylesheet" href="/style.css?v=1.34.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -250,6 +250,23 @@
     </ol>
     <figure><img src="/help/ft4-decoder.webp" alt="The decoder panel showing decoded FT4 messages" loading="lazy">
       <figcaption>Decoded messages, newest at the top.</figcaption></figure>
+  </section>
+
+  <section class="panel" id="cwkey" aria-labelledby="hCwKey">
+    <h2 id="hCwKey">CW keyboard</h2>
+    <p>With the decoder's <b>Mode</b> on <b>CW (Morse)</b>, the <b>CW keyboard</b> is under the decoded text. Type, and
+      each letter is sent in Morse as you type it; you hear it and see its dots and dashes.</p>
+    <ul>
+      <li><b>Practice</b> (how it starts) plays to your speakers only. Choose a <b>Speed</b>, and <b>Farnsworth</b>
+        spacing to learn: the letters at full speed, the gaps between them longer.</li>
+      <li><b>On the air</b> sends real CW: connect your radio, put it in DATA-USB on a CW frequency (Band Watch sends a
+        clean keyed tone into its USB sound), set the level with <b class="btn">Tune</b>, and switch
+        <b class="btn">Enable TX</b> on. The radio goes back to receive 0.8 s after your last letter.
+        <b class="btn">Stop</b> or <b>Esc</b> stops at once.</li>
+      <li>The buttons send <b>CQ</b>, a <b>Call</b>, a <b>Report</b> and <b>73</b> with your callsign, theirs
+        (type it in <b>Their call</b>) and your locator filled in. Change them under <b>Change the messages</b>.
+        Prosigns are written in angle brackets: &lt;SK&gt;, &lt;KN&gt;, &lt;AR&gt;, &lt;BT&gt;.</li>
+    </ul>
   </section>
 
   <section class="panel" id="sstv" aria-labelledby="hSstv">

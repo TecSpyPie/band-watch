@@ -15,8 +15,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.33.0">
-<link rel="stylesheet" href="/listen.css?v=1.33.0">
+<link rel="stylesheet" href="/style.css?v=1.34.0">
+<link rel="stylesheet" href="/listen.css?v=1.34.0">
 </head>
 <body>
 <div class="wrap">
@@ -394,6 +394,34 @@
     <div class="dccw" id="dcCw" hidden>
       <div class="small muted" id="dcCwInfo"></div>
       <pre class="dccwtext" id="dcCwText" aria-live="polite"></pre>
+      <div class="cwkey" id="cwKeyBox">
+        <h3 class="dctxh">CW keyboard</h3>
+        <div class="dcrow">
+          <label class="small dcchk"><input type="radio" name="cwOut" id="cwOutPractice" checked> Practice (your speakers only)</label>
+          <label class="small dcchk"><input type="radio" name="cwOut" id="cwOutAir"> On the air (needs Enable TX)</label>
+        </div>
+        <div class="dcrow">
+          <label class="small txlvl">Speed <input type="range" id="cwWpm" min="5" max="45" step="1"> <span id="cwWpmVal"></span> WPM</label>
+          <label class="small">Spacing <select id="cwFarns"><option value="0">Normal</option><option value="5">Farnsworth 5 WPM</option><option value="8">Farnsworth 8 WPM</option><option value="10">Farnsworth 10 WPM</option><option value="13">Farnsworth 13 WPM</option><option value="15">Farnsworth 15 WPM</option></select></label>
+          <label class="small txlvl">Tone <input type="number" id="cwHz" min="400" max="1000" step="10" style="width:5em"> Hz</label>
+        </div>
+        <label class="cwtypelbl small" for="cwType">Type here: each letter is sent in Morse as you type it (Enter starts a new line)</label>
+        <textarea id="cwType" class="cwtype" rows="2" spellcheck="false" autocomplete="off" autocapitalize="characters"></textarea>
+        <div class="cwmorse" id="cwMorse" aria-live="off"></div>
+        <div class="dcrow">
+          <label class="small">Their call <input type="text" id="cwTheir" maxlength="12" size="9" spellcheck="false" autocapitalize="characters"></label>
+          <label class="small">Report <input type="text" id="cwRst" maxlength="4" size="4" spellcheck="false"></label>
+          <button type="button" class="ghost" data-send="cq">CQ</button>
+          <button type="button" class="ghost" data-send="call">Call</button>
+          <button type="button" class="ghost" data-send="rpt">Report</button>
+          <button type="button" class="ghost" data-send="tu">73</button>
+          <button type="button" class="ghost" data-send="agn">AGN?</button>
+          <button type="button" class="ghost" data-send="qrz">QRZ?</button>
+          <button type="button" class="txhalt" id="cwStop">Stop</button>
+        </div>
+        <p class="small" id="cwNote" role="status"></p>
+        <details class="small"><summary>Change the messages</summary><div class="cwmsgs" id="cwMsgs"></div></details>
+      </div>
     </div>
     <div class="dctools" id="dcTools">
       <span class="dcclock" id="dcClock" aria-live="off"></span>
@@ -950,45 +978,47 @@
   The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.33.0"></script>
-<script src="/js/bandplan.js?v=1.33.0"></script>
-<script src="/js/core.js?v=1.33.0"></script>
-<script src="/js/modes.js?v=1.33.0"></script>
-<script src="/js/map.js?v=1.33.0"></script>
-<script src="/js/scope.js?v=1.33.0"></script>
-<script src="/js/monitor.js?v=1.33.0"></script>
-<script src="/js/lookup.js?v=1.33.0"></script>
-<script src="/js/worldclock.js?v=1.33.0"></script>
-<script src="/js/locator.js?v=1.33.0"></script>
-<script src="/js/activity.js?v=1.33.0"></script>
-<script src="/js/qrz.js?v=1.33.0"></script>
-<script src="/js/hovercard.js?v=1.33.0"></script>
-<script src="/js/station.js?v=1.33.0"></script>
-<script src="/js/sdr-dsp.js?v=1.33.0"></script>
-<script src="/js/sdr.js?v=1.33.0"></script>
-<script src="/js/rxfx.js?v=1.33.0"></script>
-<script src="/js/clearrx-link.js?v=1.33.0"></script>
-<script src="/js/listen.js?v=1.33.0"></script>
-<script src="/js/rig.js?v=1.33.0"></script>
-<script src="/js/rigrx.js?v=1.33.0"></script>
-<script src="/js/xota.js?v=1.33.0"></script>
-<script src="/js/satmath.js?v=1.33.0"></script>
-<script src="/js/sats.js?v=1.33.0"></script>
-<script src="/js/eibi-data.js?v=1.33.0"></script>
-<script src="/js/eibi.js?v=1.33.0"></script>
-<script src="/js/panel.js?v=1.33.0"></script>
-<script src="/js/logbook.js?v=1.33.0"></script>
-<script src="/js/wanted.js?v=1.33.0"></script>
-<script src="/js/dccols.js?v=1.33.0"></script>
-<script src="/js/decoders.js?v=1.33.0"></script>
-<script src="/js/ft8.js?v=1.33.0"></script>
-<script src="/js/ftxtx.js?v=1.33.0"></script>
-<script src="/js/tx.js?v=1.33.0"></script>
-<script src="/js/sstv.js?v=1.33.0"></script>
-<script src="/js/sstvui.js?v=1.33.0"></script>
-<script src="/js/sun.js?v=1.33.0"></script>
-<script src="/js/options.js?v=1.33.0"></script>
-<script src="/js/windows.js?v=1.33.0"></script>
-<script src="/js/app.js?v=1.33.0"></script>
+<script src="/js/install.js?v=1.34.0"></script>
+<script src="/js/bandplan.js?v=1.34.0"></script>
+<script src="/js/core.js?v=1.34.0"></script>
+<script src="/js/modes.js?v=1.34.0"></script>
+<script src="/js/map.js?v=1.34.0"></script>
+<script src="/js/scope.js?v=1.34.0"></script>
+<script src="/js/monitor.js?v=1.34.0"></script>
+<script src="/js/lookup.js?v=1.34.0"></script>
+<script src="/js/worldclock.js?v=1.34.0"></script>
+<script src="/js/locator.js?v=1.34.0"></script>
+<script src="/js/activity.js?v=1.34.0"></script>
+<script src="/js/qrz.js?v=1.34.0"></script>
+<script src="/js/hovercard.js?v=1.34.0"></script>
+<script src="/js/station.js?v=1.34.0"></script>
+<script src="/js/sdr-dsp.js?v=1.34.0"></script>
+<script src="/js/sdr.js?v=1.34.0"></script>
+<script src="/js/rxfx.js?v=1.34.0"></script>
+<script src="/js/clearrx-link.js?v=1.34.0"></script>
+<script src="/js/listen.js?v=1.34.0"></script>
+<script src="/js/rig.js?v=1.34.0"></script>
+<script src="/js/rigrx.js?v=1.34.0"></script>
+<script src="/js/xota.js?v=1.34.0"></script>
+<script src="/js/satmath.js?v=1.34.0"></script>
+<script src="/js/sats.js?v=1.34.0"></script>
+<script src="/js/eibi-data.js?v=1.34.0"></script>
+<script src="/js/eibi.js?v=1.34.0"></script>
+<script src="/js/panel.js?v=1.34.0"></script>
+<script src="/js/logbook.js?v=1.34.0"></script>
+<script src="/js/wanted.js?v=1.34.0"></script>
+<script src="/js/dccols.js?v=1.34.0"></script>
+<script src="/js/decoders.js?v=1.34.0"></script>
+<script src="/js/ft8.js?v=1.34.0"></script>
+<script src="/js/ftxtx.js?v=1.34.0"></script>
+<script src="/js/tx.js?v=1.34.0"></script>
+<script src="/js/cwtx.js?v=1.34.0"></script>
+<script src="/js/cwkey.js?v=1.34.0"></script>
+<script src="/js/sstv.js?v=1.34.0"></script>
+<script src="/js/sstvui.js?v=1.34.0"></script>
+<script src="/js/sun.js?v=1.34.0"></script>
+<script src="/js/options.js?v=1.34.0"></script>
+<script src="/js/windows.js?v=1.34.0"></script>
+<script src="/js/app.js?v=1.34.0"></script>
 </body>
 </html>

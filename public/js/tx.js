@@ -51,7 +51,7 @@ function txPttCmd(on) {
 const TX_NOT_IN = { none: "has no UK amateur allocation", beacon: "is for beacons only", cw: "is for CW only in the band plan" };
 
 /** Is a signal from lo to hi kHz, bwHz wide, somewhere Band Watch may transmit it? "" if so, or why not. */
-function txBandProblem(lo, hi, bwHz, what) {
+function txBandProblem(lo, hi, bwHz, what, allowCw = false) {
   if (typeof PLAN_BANDS === "undefined" || !PLAN_BANDS.some((b) => lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi)) {
     return `${lo.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
   }
@@ -59,7 +59,7 @@ function txBandProblem(lo, hi, bwHz, what) {
   for (let k = lo; ; k = Math.min(hi, k + 0.02)) {
     const s = planSegment(k);
     if (!s || k < s.from - 1e-9 || k > s.to + 1e-9) return `${k.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
-    if (TX_NOT_IN[s.type]) return `${k.toFixed(3)} kHz ${TX_NOT_IN[s.type]}: Band Watch won't send ${what} there.`;
+    if (TX_NOT_IN[s.type] && !(allowCw && s.type === "cw")) return `${k.toFixed(3)} kHz ${TX_NOT_IN[s.type]}: Band Watch won't send ${what} there.`;
     if (s.bw > 0 && s.bw < bwHz) return `${s.from}–${s.to} kHz is for signals up to ${s.bw} Hz wide in the band plan, and ${what} is about ${bwHz} Hz wide: move to a wider part of the band.`;
     if (k >= hi) break;
   }
@@ -67,7 +67,7 @@ function txBandProblem(lo, hi, bwHz, what) {
 }
 
 /** Why Band Watch can't transmit right now, in plain words, or "" if it can. kind: "ft" (FT8/FT4) or "sstv". */
-function txProblem(kind = dc.mode === "SSTV" ? "sstv" : "ft") {
+function txProblem(kind = dc.mode === "SSTV" ? "sstv" : dc.mode === "CW" ? "cw" : "ft") {
   if (kind === "ft" && dc.mode !== "FT8" && dc.mode !== "FT4") return "Set the decoder's Mode to FT8 or FT4.";
   if (!app.myCall) return "Enter your callsign first (Your callsign, at the top).";
   if (!/^[A-R]{2}\d{2}$/.test(txMyGrid())) return "Enter your locator first (Your locator, at the top).";
@@ -76,14 +76,24 @@ function txProblem(kind = dc.mode === "SSTV" ? "sstv" : "ft") {
   if (!rig.hz) return "Waiting for the radio to say its frequency…";
   const sb = rig.listenMode;
   if (kind === "ft" && sb !== "usb") return "Put the radio in USB (DATA-USB): click the Tune to FT8 button with the radio connected.";
+  // CW is sent as a clean keyed tone into the radio's USB sound, so the radio is in DATA-USB like FT8.
+  if (kind === "cw" && sb !== "usb") return "For CW from the keyboard, put the radio in DATA-USB (USB on Icom and Kenwood): Band Watch sends a keyed tone into its USB sound. Press MODE on the radio, or tune with the radio connected and choose USB.";
   if (kind === "sstv" && sb !== "usb" && sb !== "lsb") return "Put the radio in USB or LSB (DATA-USB / DATA-LSB): click Tune to SSTV with the radio connected.";
   if (rig.kind === "yaesu" && rig.modeName !== (sb === "lsb" ? "DATA-LSB" : "DATA-USB")) {
-    return `Put the radio in ${sb === "lsb" ? "DATA-LSB" : "DATA-USB"}, so it takes its sound from the USB cable and not the microphone: click Tune to ${kind === "ft" ? "FT8" : "SSTV"} (Settings > Radio: tick the data-mode box), or press MODE on the radio.`;
+    return `Put the radio in ${sb === "lsb" ? "DATA-LSB" : "DATA-USB"}, so it takes its sound from the USB cable and not the microphone: ${kind === "cw" ? "press MODE on the radio" : `click Tune to ${kind === "ft" ? "FT8" : "SSTV"} (Settings > Radio: tick the data-mode box), or press MODE on the radio`}.`;
   }
   const dial = rig.hz / 1000;
   let lo, hi, bw, what;
   if (kind === "ft") {
     bw = TX_BW_HZ[dc.mode] || 50; lo = dial + tx.hz / 1000; hi = lo + bw / 1000; what = dc.mode;
+  } else if (kind === "cw") {
+    // the keyed tone sits at the dial plus the tone's pitch; a clean CW signal is about 150 Hz wide
+    const toneHz = typeof cwk !== "undefined" ? cwk.hz : 700;
+    bw = 150; what = "CW"; lo = dial + (toneHz - 75) / 1000; hi = dial + (toneHz + 75) / 1000;
+    const band = txBandProblem(lo, hi, bw, what, true);
+    if (band) return band;
+    if (!tx.dev) return "Choose the radio's sound in Sound to the radio (for the FT-991A: USB Audio CODEC).";
+    return "";
   } else {
     // SSTV audio is 1100-2300 Hz (VIS bits to white): above the dial on USB, below it on LSB.
     bw = 1300; what = "SSTV";
@@ -153,6 +163,7 @@ function txUnkey() {
   const src = tx.src;
   tx.src = null;
   if (src) { src.onended = null; try { src.stop(); } catch { /* already stopped */ } }
+  if (typeof cwStopAll === "function") cwStopAll(); // any CW still queued to go out
   const was = tx.on || tx.tuning;
   tx.on = false;
   tx.tuning = false;
@@ -329,6 +340,7 @@ async function txSetEnabled(on) {
   tx.enabled = true;
   tx.note = "";
   if (dc.mode === "SSTV") tx.note = "Ready: click Send picture.";
+  else if (dc.mode === "CW") tx.note = "Ready: in the CW keyboard, choose On the air, then type or click a message.";
   else if (!tx.state || !tx.state.tx) tx.note = "Click Call CQ, or Reply on a decode, to start a QSO.";
   renderTx();
 }
@@ -402,7 +414,7 @@ function renderTx() {
   const box = $("dcTx");
   if (!box) return;
   const ft = dc.mode === "FT8" || dc.mode === "FT4";
-  const show = ft || dc.mode === "SSTV";
+  const show = ft || dc.mode === "SSTV" || dc.mode === "CW";
   box.hidden = !show;
   if (!show) return;
   box.querySelectorAll(".txft").forEach((e) => { e.hidden = !ft; });

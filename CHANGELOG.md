@@ -1,5 +1,18 @@
 # What's new
 
+## 1.34.0 (19 Nov 2026)
+- **CW keyboard** (Decoder, CW mode). Type, and each letter is sent in Morse as you type it: you hear it and see its
+  dots and dashes, the one sounding now picked out.
+  - **Practice** (how it starts every time) plays to your speakers only: nothing is sent. Good for learning, with
+    **Farnsworth spacing** (letters at full speed, gaps stretched to 5–15 WPM overall).
+  - **On the air** keys your radio and sends a clean keyed tone (5 ms raised-cosine edges, no key clicks) into its
+    USB sound in DATA-USB; it goes back to receive 0.8 s after your last letter (break-in). Same safety as FT8:
+    Enable TX must be on, Stop / Stop TX / Esc stop at once (and clear what's queued), CW only inside the amateur
+    bands (CW segments are fine for CW).
+  - Message buttons: **CQ**, **Call**, **Report**, **73**, **AGN?**, **QRZ?**, with your callsign, theirs, your
+    locator and the report filled in; change them under "Change the messages". Prosigns: `<SK>`, `<KN>`, `<AR>`, `<BT>`…
+  - Speed 5–45 WPM and the tone's pitch. Tested: Band Watch's CW decoder reads back what it sends at 12, 20 and 28 WPM.
+
 ## 1.33.0 (19 Nov 2026)
 - **Decode table your way** (in the Decoder panel and the Results window, which follow each other):
   - **Columns and time zone:** tick which columns to show (Time, Mode, dB, DT, Audio Hz, Frequency).

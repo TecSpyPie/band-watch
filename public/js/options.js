@@ -298,6 +298,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.34.0", "CW keyboard: type and hear Morse as you go (Practice), or send it on the air with break-in, message buttons and Farnsworth spacing"],
   ["1.33.0", "Decode table: choose and resize columns, an on-air Frequency column, times in any time zone with a clock; completed QSOs can log themselves"],
   ["1.32.0", "Send SSTV pictures (any mode, your text on it, preview, countdown), and band checks against the whole UK band plan for all transmitting"],
   ["1.31.0", "SSTV pictures: all the common analogue modes (Martin, Scottie, Robot, PD, Wraase, Pasokon), auto start from the VIS code, slant fix, gallery"],
