@@ -71,6 +71,10 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab td.dcact{width:6.5em;white-space:nowrap}
 /* Add-ons: hidden until ticked in Settings */
 :root:not([data-addons~="rotator"]) #secRot{display:none}
+/* APRS */
+.dcaprs[hidden]{display:none}
+.aprstab td.aprsdet{white-space:normal}
+.aprsmark polygon{fill:#ff8c2e;stroke:var(--surface);stroke-width:.5}
 /* Rotator */
 .rotgrid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:640px){.rotgrid{grid-template-columns:minmax(0,1fr)}}

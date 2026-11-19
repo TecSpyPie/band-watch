@@ -1,0 +1,66 @@
+name: Report a problem
+description: Something in Band Watch isn't working as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing Band Watch! Please don't put passwords, QRZ keys or your home address here: this page is public.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, and what Band Watch did. A screenshot helps a lot (paste it in here).
+      placeholder: "I clicked Reply on a CQ in the FT8 decoder and…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Band Watch version
+      description: Settings > About this build > Version (e.g. 1.37.0).
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where are you running it?
+      options:
+        - The Windows app (BandWatch.exe)
+        - band-watch.ample.run in a browser
+        - band-watch.vercel.app in a browser
+        - On a phone or tablet
+        - Somewhere else
+    validations:
+      required: true
+  - type: input
+    id: radio
+    attributes:
+      label: Radio and receiver
+      description: e.g. Yaesu FT-991A over USB, RTL-SDR Blog V4, Icom IC-7300, none.
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part of Band Watch?
+      options:
+        - Band conditions, spots or map
+        - Decoder (FT8, FT4, WSPR, CW, SSTV, APRS)
+        - Transmitting (FT8, FT4, SSTV, CW)
+        - Listen or the RTL-SDR
+        - Radio panel or radio control (CAT)
+        - Satellites
+        - Logbook or QRZ
+        - Rotator
+        - Installing or updating
+        - Something else
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else?
+      description: Windows version, browser, the time it happened (UTC), anything that might help.

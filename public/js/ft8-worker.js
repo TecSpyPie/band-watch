@@ -3,7 +3,7 @@
  * cycle or two, and decodes each 15 s (FT8) or 7.5 s (FT4) cycle as soon as it is complete,
  * lined up with UTC as WSJT-X does (so the PC clock needs to be right to within a second). */
 "use strict";
-importScripts("/js/ft8.js?v=1.36.0", "/js/wspr.js?v=1.36.0", "/js/cw.js?v=1.36.0", "/js/sstv.js?v=1.36.0");
+importScripts("/js/ft8.js?v=1.37.0", "/js/wspr.js?v=1.37.0", "/js/cw.js?v=1.37.0", "/js/sstv.js?v=1.37.0", "/js/aprs.js?v=1.37.0");
 
 // WSPR: two-minute cycles on the even minute, decoded at 12000 samples a second.
 const WSPR_PROTO = { name: "WSPR", period: 120, fs: 12000 };
@@ -15,6 +15,12 @@ const EARLY_SEC = { FT8: 13.6, FT4: 6.0 };
 let st = null;
 
 function start(mode, rate) {
+  if (mode === "APRS") {
+    const demod = new Aprs.Demod((bytes) => { const p = Aprs.parse(bytes); if (p) postMessage({ type: "aprs", p, at: Date.now() }); });
+    st = { aprs: demod, resampler: new Ftx.Resampler(rate, Aprs.FS) };
+    postMessage({ type: "status", text: "Listening for APRS packets (1200 baud). Tune to 144.800 MHz FM (or the ISS on 145.825)." });
+    return;
+  }
   if (mode === "SSTV") {
     const dec = new Sstv.Decoder({
       onStart: (s) => postMessage({ type: "sstv-start", ...s, at: Date.now() }),
@@ -59,6 +65,7 @@ function push(samples, at) {
   const s = st;
   if (s.cw) return pushCw(samples);
   if (s.sstv) { s.sstv.push(s.resampler.process(samples)); return; }
+  if (s.aprs) { s.aprs.push(s.resampler.process(samples)); return; }
   const out = s.resampler.process(samples);
   if (!out.length) return;
   const fs = s.proto.fs;

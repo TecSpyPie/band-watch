@@ -317,6 +317,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.37.0", "APRS on 2 m: decode packets with your RTL-SDR (144.800 MHz FM or the ISS), stations and weather on the map"],
   ["1.36.0", "Add-ons in Settings; the Rotator add-on: compass dial, point at a locator or callsign (short/long path), follow a satellite"],
   ["1.35.0", "New looks with depth in Settings > Look: Radio front panel, Glass and depth, and Space station (moving stars)"],
   ["1.34.0", "CW keyboard: type and hear Morse as you go (Practice), or send it on the air with break-in, message buttons and Farnsworth spacing"],

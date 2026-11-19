@@ -1,5 +1,14 @@
 # What's new
 
+## 1.37.0 (19 Nov 2026)
+- **APRS on 2 m** (Decoder, Mode: APRS). With your RTL-SDR on **144.800 MHz FM** (Tune to APRS), or the ISS on
+  145.825 MHz, Band Watch decodes APRS packets (1200 baud AFSK, AX.25): who, where (distance and beam heading from
+  you), the path, and what they report: positions (plain, compressed and Mic-E from car and hand-held radios), course,
+  speed and height, weather stations (temperature, wind, humidity, pressure), status and messages. Stations with a
+  position show as orange diamonds on the world map. Tested by making APRS audio, with noise and an FM radio's tone
+  tilt, and decoding it back.
+- **For testers:** "Report a problem" and "Suggest an idea" forms on GitHub (New issue).
+
 ## 1.36.0 (19 Nov 2026)
 - **Add-ons** (Settings, under "Show these sections"): extra panels that stay out of the way until you tick them.
 - **Rotator add-on:** turn your antenna from Band Watch. Connect the rotator controller's own USB port (Chrome or
