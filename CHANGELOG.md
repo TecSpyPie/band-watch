@@ -1,5 +1,12 @@
 # What's new
 
+## Next (not released)
+- **ATS Mini memory slots:** under the ATS Mini panel's buttons, **Memory slots** shows the radio's 99 memory slots
+  (name, frequency, mode, band). Click **Tune** to go to one; **Save what I'm on** puts the frequency you're on in the
+  next free slot, with a name if you like; **Change** and **Clear** edit a slot. Everything is saved in the radio
+  itself. **Save backup file** keeps a copy, and **Load backup file** puts it back (handy after a firmware update).
+  Names need ATS Mini firmware 2.42 or later; older firmware keeps the slots without names.
+
 ## 1.25.0 (19 Nov 2026)
 - **Receive controls on the Radio panel** for Yaesu (FT-991A, FT-710, FTdx10, FTdx101) and Icom (IC-7300, IC-705,
   IC-7610 and others): **AF gain** and **RF gain** sliders, **AGC** (FAST, MID, SLOW, AUTO), the preamp (IPO, AMP1,

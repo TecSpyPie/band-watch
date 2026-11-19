@@ -2894,7 +2894,7 @@ const FAKE_ATS = `(() => {
     ["12M",24800,25000,"USB"],["10M",28000,29700,"USB"],["CB",25000,28000,"AM"]];
   const MODES = ["FM", "LSB", "USB", "AM"];
   const per = BANDS.map((b) => ({ mode: b[3], hz: Math.round((b[1] + b[2]) / 2) * 1000 }));
-  const radio = window.__radio = { band: 0, hz: 103900000, sent: [], opened: null, log: false, errors: 0 };
+  const radio = window.__radio = { band: 0, hz: 103900000, mem: { 1: { band: "VHF", hz: 107900000, mode: "FM", name: "Radio One" }, 5: { band: "31M", hz: 9650000, mode: "AM", name: "" } }, sent: [], opened: null, log: false, errors: 0 };
   Object.defineProperty(radio, "mode", { get: () => per[radio.band].mode });
   let push = null, seq = 0, pending = "";
   const say = (s) => push && push(new TextEncoder().encode(s));
@@ -2925,9 +2925,32 @@ const FAKE_ATS = `(() => {
             else radio.hz = hz;
             continue;
           }
+          if (c === "#") {
+            // Set a memory slot: #NN,BAND,Hz,MODE[,name] (names from firmware 2.42; older firmware reads "MODE,name" as the mode)
+            const end = pending.search(/[\\r\\n]/);
+            if (end < 0) return;
+            const line = pending.slice(1, end); pending = pending.slice(end + 1);
+            radio.sent.push("#" + line);
+            const names = (radio.version || 245) >= 242;
+            const f = line.split(","), slot = Number(f[0]), hz = Number(f[2]);
+            const mode = names ? f[3] : f.slice(3).join(","), name = names && f.length > 4 ? f.slice(4).join(",") : undefined;
+            const fit = BANDS.filter((b) => b[0] === f[1]).find((b) => !hz || (hz >= b[1] * 1000 && hz <= b[2] * 1000 && (b[0] === "VHF") === (mode === "FM")));
+            if (!(slot >= 1 && slot <= 99)) say("\\r\\nError: Invalid memory slot number\\r\\n");
+            else if (!MODES.includes(mode)) say("\\r\\nError: No such mode\\r\\n");
+            else if (!fit) say("\\r\\nError: " + (BANDS.some((b) => b[0] === f[1]) ? "Invalid frequency or mode" : "No such band") + "\\r\\n");
+            else if (!hz) delete radio.mem[slot];
+            else radio.mem[slot] = { band: f[1], hz, mode, name: name !== undefined ? name : (radio.mem[slot] || {}).name || "" };
+            continue;
+          }
           pending = pending.slice(1);
           if (c === "\\r" || c === "\\n") continue;
           radio.sent.push(c);
+          if (c === "$") {
+            const names = (radio.version || 245) >= 242;
+            let out = "";
+            for (let i = 1; i <= 99; i++) { const m = radio.mem[i]; if (m) out += "#" + String(i).padStart(2, "0") + "," + m.band + "," + m.hz + "," + m.mode + (names && m.name ? "," + m.name : "") + "\\r\\n"; }
+            setTimeout(() => say(out), 30);
+          }
           if (c === "t") radio.log = !radio.log;
           else if ((c === "c" && !radio.oldFirmware) || c === "C") {
             // Screen picture: status line off, then a 320 x 170 RGB565 BMP, red with a green top row:
@@ -3088,6 +3111,93 @@ test("ATS Mini panel: shows the radio's screen, its buttons work, and a drawn sc
   await page.selectOption("#optRigKind", "yaesu");
   await page.keyboard.press("Escape");
   assert.equal(await page.isVisible("#secAts"), false);
+  assert.deepEqual(errors, []);
+});
+
+test("ATS Mini memory slots: reads them, tunes to one, saves, changes and clears slots, backs up and loads back", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ATS);
+  await page.addInitScript(() => localStorage.setItem("bw-rig", JSON.stringify({ kind: "atsmini", baud: 115200, autoConnect: false })));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#atsMemBox summary");
+  assert.match(await page.textContent("#atsMemMsg"), /Connect the ATS Mini/);
+  assert.equal(await page.isDisabled("#atsMemRead"), true);
+  await page.click("#atsConnect");
+  // Opening the box with the radio connected reads the slots by itself
+  await page.waitForFunction(() => document.querySelectorAll("#atsMemRows tr").length === 2, null, { timeout: 15000 });
+  assert.match(await page.textContent("#atsMemMsg"), /2 of 99 slots in use/);
+  const rows = await page.$$eval("#atsMemRows tr", (trs) => trs.map((tr) => Array.from(tr.cells).slice(0, 5).map((c) => c.textContent)));
+  assert.deepEqual(rows, [["01", "Radio One", "107.9 MHz", "FM", "VHF"], ["05", "", "9,650 kHz", "AM", "31M"]]);
+  if (process.env.ATS_SHOT) await (await page.$("#atsMemBox")).screenshot({ path: process.env.ATS_SHOT.replace(".png", "-memory.png") });
+  // Tune: the radio goes to the ALL band in AM at 9650 kHz, and Band Watch follows
+  await page.click('#atsMemRows tr[data-slot="5"] [data-act="tune"]');
+  await page.waitForFunction(() => window.__radio.hz === 9650000 && window.__radio.mode === "AM" && listen.kHz === 9650, null, { timeout: 10000 });
+  // Save what I'm on: the first free slot (2), with a name
+  await new Promise((r) => setTimeout(r, 1200));
+  await page.click("#atsMemHere");
+  assert.equal(await page.inputValue("#atsMemSlot"), "2");
+  assert.equal(await page.inputValue("#atsMemMode"), "AM");
+  assert.equal(await page.inputValue("#atsMemFreq"), "9650");
+  await page.fill("#atsMemName", "Night DX");
+  await page.click("#atsMemSave");
+  await page.waitForFunction(() => document.querySelectorAll("#atsMemRows tr").length === 3, null, { timeout: 10000 });
+  assert.deepEqual(await page.evaluate(() => window.__radio.mem[2]), { band: "31M", hz: 9650000, mode: "AM", name: "Night DX" });
+  assert.match(await page.textContent("#atsMemMsg"), /Saved 1 to the radio\. 3 of 99 slots in use/);
+  // Change slot 1 to an FM station typed in MHz
+  await page.click('#atsMemRows tr[data-slot="1"] [data-act="edit"]');
+  assert.equal(await page.inputValue("#atsMemFreq"), "107.9");
+  await page.fill("#atsMemFreq", "98.5");
+  await page.click("#atsMemSave");
+  await page.waitForFunction(() => window.__radio.mem[1].hz === 98500000 && /98\.5 MHz/.test(document.querySelector('#atsMemRows tr[data-slot="1"]').textContent), null, { timeout: 10000 });
+  // A frequency it can't keep: said plainly, nothing sent
+  const writes = () => page.evaluate(() => window.__radio.sent.filter((c) => c[0] === "#").length);
+  const before = await writes();
+  await page.fill("#atsMemSlot", "9");
+  await page.selectOption("#atsMemMode", "USB");
+  await page.fill("#atsMemFreq", "50313");
+  await page.click("#atsMemSave");
+  assert.match(await page.textContent("#atsMemMsg"), /can't keep that frequency/);
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(await writes(), before, "nothing sent");
+  // Clear asks once more first
+  await page.click('#atsMemRows tr[data-slot="5"] [data-act="clear"]');
+  assert.equal(await page.textContent('#atsMemRows tr[data-slot="5"] [data-act="clear"]'), "Sure? Clear");
+  assert.ok(await page.evaluate(() => Boolean(window.__radio.mem[5])), "not cleared yet");
+  await page.click('#atsMemRows tr[data-slot="5"] [data-act="clear"]');
+  await page.waitForFunction(() => !window.__radio.mem[5] && !document.querySelector('#atsMemRows tr[data-slot="5"]'), null, { timeout: 10000 });
+  // Backup file: the radio's own lines
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#atsMemBackup")]);
+  assert.match(dl.suggestedFilename(), /^ats-mini-memories-\d{4}-\d\d-\d\d\.txt$/);
+  const text = require("fs").readFileSync(await dl.path(), "utf8");
+  assert.equal(text, "#01,VHF,98500000,FM,Radio One\r\n#02,31M,9650000,AM,Night DX\r\n");
+  // Load a backup back: its slots go in, the others stay
+  await page.setInputFiles("#atsMemRestore", { name: "backup.txt", mimeType: "text/plain", buffer: Buffer.from("#05,31M,9650000,AM,BBC\n#20,20M,14230000,USB,SSTV\n#21,20M,99,USB\n") });
+  await page.waitForFunction(() => document.querySelectorAll("#atsMemRows tr").length === 4, null, { timeout: 15000 });
+  assert.deepEqual(await page.evaluate(() => [window.__radio.mem[5].name, window.__radio.mem[20].hz, window.__radio.mem[21]]), ["BBC", 14230000, undefined]);
+  assert.deepEqual(errors, []);
+});
+
+test("ATS Mini memory slots: firmware before 2.42 gets no names, and the radio's refusals are shown", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ATS.replace("log: false, errors: 0 }", "log: false, errors: 0, version: 236, oldFirmware: true }"));
+  await page.addInitScript(() => localStorage.setItem("bw-rig", JSON.stringify({ kind: "atsmini", baud: 115200, autoConnect: false })));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#atsConnect");
+  await page.click("#atsMemBox summary");
+  await page.waitForFunction(() => document.querySelectorAll("#atsMemRows tr").length === 2, null, { timeout: 20000 });
+  assert.equal(await page.isVisible("#atsMemName"), false, "no name box");
+  assert.equal(await page.isVisible("#atsMemOldFw"), true);
+  await page.fill("#atsMemSlot", "3");
+  await page.selectOption("#atsMemMode", "LSB");
+  await page.fill("#atsMemFreq", "7150");
+  await page.click("#atsMemSave");
+  await page.waitForFunction(() => window.__radio.mem[3] && window.__radio.mem[3].band === "40M", null, { timeout: 15000 });
+  assert.ok(await page.evaluate(() => window.__radio.sent.includes("#03,40M,7150000,LSB")), "sent without a name");
+  // The radio says no (a band it doesn't have): Band Watch shows what it said
+  await page.evaluate(() => atsMemSend("#04,6M,50313000,USB\r\n", "slot 4"));
+  await page.waitForFunction(() => /said no to 1: slot 4: No such band/.test(document.getElementById("atsMemMsg").textContent), null, { timeout: 15000 });
   assert.deepEqual(errors, []);
 });
 
