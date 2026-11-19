@@ -88,6 +88,29 @@ func TestSettingsSavedCheckedAndLinked(t *testing.T) {
 	}
 }
 
+func TestExtrasCheckedAndKept(t *testing.T) {
+	a := NewApp("", nil)
+	w := do(t, a, "POST", "/api/settings", `{"preset":"ssb","nb":true,"nbLevel":7,"agc":"warp","sq":-200,"bass":30,"treble":-30,"mnotch":20}`, nil)
+	if w.Code != 200 {
+		t.Fatalf("POST = %d %s", w.Code, w.Body)
+	}
+	var s Settings
+	json.Unmarshal(w.Body.Bytes(), &s)
+	if !s.Nb || s.NbLevel != 3 || s.Agc != "medium" || s.Sq != -80 || s.Bass != 12 || s.Treble != -12 || s.Mnotch != 200 {
+		t.Fatalf("extras not cleaned: %+v", s)
+	}
+	// 0 means off for the squelch, tone and manual notch, and stays 0
+	w = do(t, a, "POST", "/api/settings", `{"preset":"ssb","agc":"slow","sq":0,"bass":0,"treble":-3,"mnotch":0}`, nil)
+	json.Unmarshal(w.Body.Bytes(), &s)
+	if s.Agc != "slow" || s.Sq != 0 || s.Bass != 0 || s.Treble != -3 || s.Mnotch != 0 || s.NbLevel != 2 {
+		t.Fatalf("off values changed: %+v", s)
+	}
+	// Settings saved by older ClearRX versions get the extras' defaults
+	if d := (Settings{Preset: "ssb"}).clean(); d.NbLevel != 2 || d.Agc != "medium" || d.Sq != 0 {
+		t.Fatalf("old settings: %+v", d)
+	}
+}
+
 func TestQuitNeedsHeader(t *testing.T) {
 	quit := make(chan bool, 1)
 	a := NewApp("", func() { quit <- true })

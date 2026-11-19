@@ -72,8 +72,61 @@ test("presets", () => {
   for (const k of Object.keys(PRESETS)) assert.ok(new Chain({ preset: k }).process(noise(0.05)).every(Number.isFinite), k);
 });
 
+test("noise blanker silences clicks and leaves the sound between them alone", () => {
+  const sig = tone(800, 1, 0.1);
+  const clicky = Float32Array.from(sig);
+  for (let n = 4800; n < clicky.length; n += 4800) for (let k = 0; k < 20; k++) clicky[n + k] = k % 2 ? -0.9 : 0.9; // 10 clicks
+  const out = through({ nb: true, nbLevel: 2 }, clicky);
+  const worst = (a) => a.slice(4800).reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+  assert.ok(worst(clicky) > 0.8 && worst(out) < 0.2, `clicks ${worst(clicky).toFixed(2)} -> ${worst(out).toFixed(2)}`);
+  assert.ok(Math.abs(db(through({ nb: true, nbLevel: 2 }, sig), sig)) < 0.5, "a clean tone isn't blanked");
+  // A strong station starting suddenly out of near-silence is learnt, not blanked for ever
+  const sudden = Float32Array.from({ length: RATE }, (_, n) => (n < RATE * 0.3 ? 0.001 * rand() : 0.5 * Math.sin((2 * Math.PI * 900 * n) / RATE)));
+  const kept = through({ nb: true, nbLevel: 3 }, sudden);
+  assert.ok(rms(kept.slice(RATE * 0.4)) / rms(sudden.slice(RATE * 0.4)) > 0.95, "a sudden strong signal passes");
+});
+
+test("manual notch removes the chosen whistle and keeps a note 300 Hz away", () => {
+  const s = { mnotch: 1500 };
+  assert.ok(db(through(s, tone(1500, 1)), tone(1500, 1)) < -30, "1500 Hz whistle gone");
+  assert.ok(Math.abs(db(through(s, tone(1200, 1)), tone(1200, 1))) < 1, "1200 Hz kept");
+  assert.equal(new Chain({ mnotch: 50 }).s.mnotch, 200, "kept in range");
+});
+
+test("bass and treble raise and lower the ends and leave the middle", () => {
+  assert.ok(Math.abs(db(through({ bass: 9 }, tone(80, 1)), tone(80, 1)) - 9) < 1, "bass +9 dB at 80 Hz");
+  assert.ok(Math.abs(db(through({ treble: -9 }, tone(6000, 1)), tone(6000, 1)) + 9) < 1, "treble -9 dB at 6 kHz");
+  assert.ok(Math.abs(db(through({ bass: 9, treble: -9 }, tone(1000, 1)), tone(1000, 1))) < 1.5, "1 kHz about the same");
+});
+
+test("squelch: quiet noise is silenced, a signal opens it straight away, and it holds over short gaps", () => {
+  const quiet = noise(1, 0.003); // about -55 dBFS
+  const shut = through({ sq: -40 }, quiet);
+  assert.ok(rms(shut, shut.length >> 1) < 1e-4, "closed on the noise");
+  const strong = tone(1000, 1, 0.3);
+  assert.ok(Math.abs(db(through({ sq: -40 }, strong), strong)) < 0.5, "open on the signal");
+  // A 200 ms gap in the signal is held open; the noise after 1 s of silence isn't
+  const gap = Float32Array.from({ length: RATE }, (_, n) => (n < RATE * 0.4 || n >= RATE * 0.6 ? 0.3 * Math.sin((2 * Math.PI * 1000 * n) / RATE) : 0.003 * rand()));
+  const out = through({ sq: -40 }, gap);
+  assert.ok(rms(out.slice(RATE * 0.45, RATE * 0.55)) > 1e-3, "held open in the gap");
+});
+
+test("AGC speed: fast comes back up sooner than slow after a loud burst", () => {
+  const sig = Float32Array.from({ length: RATE * 2 }, (_, n) => (n < RATE * 0.5 ? 0.9 : 0.02) * Math.sin((2 * Math.PI * 1000 * n) / RATE));
+  const at = (agc) => { const o = through({ comp: true, agc }, sig); return rms(o.slice(RATE * 0.8, RATE * 1.0)); };
+  const fast = at("fast"), medium = at("medium"), slow = at("slow");
+  assert.ok(fast > medium && medium > slow, `level 0.3-0.5 s after the burst: fast ${fast.toFixed(3)}, medium ${medium.toFixed(3)}, slow ${slow.toFixed(3)}`);
+  assert.equal(new Chain({ agc: "warp" }).s.agc, "medium");
+});
+
+test("the extras stay as they are when a preset is picked", () => {
+  const c = new Chain({ nb: true, bass: 6, sq: -50, mnotch: 1000, agc: "slow" });
+  c.configure({ preset: "ssb" });
+  assert.deepEqual([c.s.nb, c.s.bass, c.s.sq, c.s.mnotch, c.s.agc], [true, 6, -50, 1000, "slow"]);
+});
+
 test("fast enough: a second of audio through everything in well under a second", () => {
-  const c = new Chain({ voice: true, cw: false, notch: true, nr: true, nrLevel: 3, comp: true });
+  const c = new Chain({ voice: true, cw: false, notch: true, nr: true, nrLevel: 3, comp: true, nb: true, sq: -60, bass: 6, treble: 3, mnotch: 1500 });
   const x = noise(1);
   const t = process.hrtime.bigint();
   c.process(x);

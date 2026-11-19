@@ -48,7 +48,11 @@ function crxApply(s) {
   if (sig === crx.lastSig && crx.chain) return;
   crx.lastSig = sig;
   const fx = { preset: "custom" };
-  for (const k of ["voice", "lo", "hi", "cw", "tone", "width", "notch", "nr", "nrLevel", "comp"]) fx[k] = s.on === false ? (typeof s[k] === "boolean" ? false : s[k]) : s[k];
+  // ClearRX switched off: switches off, and the squelch, tone and manual notch at 0 (off), which is what they mean
+  const zeroWhenOff = ["sq", "bass", "treble", "mnotch"];
+  for (const k of ["voice", "lo", "hi", "cw", "tone", "width", "notch", "nr", "nrLevel", "comp", "nb", "nbLevel", "agc", ...zeroWhenOff]) {
+    fx[k] = s.on === false ? (typeof s[k] === "boolean" ? false : zeroWhenOff.includes(k) ? 0 : s[k]) : s[k];
+  }
   if (typeof RxFx === "undefined") return;
   if (!crx.chain) crx.chain = new RxFx.Chain(fx);
   else crx.chain.configure(fx);

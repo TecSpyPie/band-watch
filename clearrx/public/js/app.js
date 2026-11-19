@@ -28,11 +28,17 @@ const RADIOS = [
   { id: "other", label: "Other / mixer", tip: "Pick where the sound comes from yourself: a mixer, a sound card or a line-in." },
 ];
 
-const KEYS = ["voice", "lo", "hi", "cw", "tone", "width", "notch", "nr", "nrLevel", "comp"];
+// The extras: noise blanker, AGC speed, squelch, tone and manual notch. Picking a preset leaves them as they are.
+const EXTRAS = ["nb", "nbLevel", "agc", "sq", "bass", "treble", "mnotch"];
+const KEYS = ["voice", "lo", "hi", "cw", "tone", "width", "notch", "nr", "nrLevel", "comp", ...EXTRAS];
+const MNOTCH = [0, ...Array.from({ length: 28 }, (_, i) => 300 + i * 100)]; // Off, 300 Hz to 3 kHz
+const SQUELCH = [[0, "Off"], [-70, "-70 dB (opens easily)"], [-60, "-60 dB"], [-50, "-50 dB"], [-40, "-40 dB"], [-30, "-30 dB (strong signals only)"]];
+const TONE_DB = [-12, -9, -6, -3, 0, 3, 6, 9, 12];
 
 const app = {
   findAfterStart: false,
-  s: { radio: "", preset: "ssb", voice: true, lo: 300, hi: 2700, cw: false, tone: 700, width: 200, notch: true, nr: false, nrLevel: 1, comp: true, on: true },
+  s: { radio: "", preset: "ssb", voice: true, lo: 300, hi: 2700, cw: false, tone: 700, width: 200, notch: true, nr: false, nrLevel: 1, comp: true, on: true,
+    nb: false, nbLevel: 2, agc: "medium", sq: 0, bass: 0, treble: 0, mnotch: 0 },
   ctx: null, node: null, stream: null, before: null, after: null, running: false, bypass: false, gain: 1,
   meter: { inPeak: -120, outPeak: -120, clip: false }, saveTimer: null,
 };
@@ -58,7 +64,10 @@ function applySettings() {
   if (s.preset !== "custom") {
     const p = RxFx.PRESETS[s.preset] || RxFx.PRESETS.off;
     for (const k of KEYS) if (p[k] !== undefined) s[k] = p[k];
-    if (s.preset === "off") for (const k of ["voice", "cw", "notch", "nr", "comp"]) s[k] = false;
+    if (s.preset === "off") {
+      for (const k of ["voice", "cw", "notch", "nr", "comp", "nb"]) s[k] = false;
+      for (const k of ["sq", "bass", "treble", "mnotch"]) s[k] = 0; // Off means everything off
+    }
   }
   const settings = {};
   for (const k of KEYS) settings[k] = s[k];
@@ -91,8 +100,8 @@ async function start() {
       deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 },
     } });
     app.ctx = new AudioContext({ sampleRate: RxFx.RATE, latencyHint: "interactive" });
-    await app.ctx.audioWorklet.addModule("/js/rxfx.js?v=1.1.0");
-    await app.ctx.audioWorklet.addModule("/js/clearrx-worklet.js?v=1.1.0");
+    await app.ctx.audioWorklet.addModule("/js/rxfx.js?v=1.2.0");
+    await app.ctx.audioWorklet.addModule("/js/clearrx-worklet.js?v=1.2.0");
     const src = app.ctx.createMediaStreamSource(app.stream);
     app.node = new AudioWorkletNode(app.ctx, "clearrx", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
     app.node.port.onmessage = (e) => { if (e.data && e.data.meter) app.meter = e.data.meter; };
@@ -177,6 +186,8 @@ function render() {
   $("fxVoice").checked = s.voice; $("fxLo").value = String(s.lo); $("fxHi").value = String(s.hi);
   $("fxCw").checked = s.cw; $("fxTone").value = String(s.tone); $("fxWidth").value = String(s.width);
   $("fxNotch").checked = s.notch; $("fxNr").checked = s.nr; $("fxNrLevel").value = String(s.nrLevel); $("fxComp").checked = s.comp;
+  $("fxAgc").value = s.agc; $("fxNb").checked = s.nb; $("fxNbLevel").value = String(s.nbLevel);
+  $("fxMnotch").value = String(s.mnotch); $("fxSq").value = String(s.sq); $("fxBass").value = String(s.bass); $("fxTreble").value = String(s.treble);
   $("bypass").checked = app.bypass;
   $("power").textContent = app.running ? "Stop" : "Start";
   $("power").setAttribute("aria-pressed", String(app.running));
@@ -261,6 +272,9 @@ async function setup() {
   $("fxHi").innerHTML = HI.map((v) => `<option value="${v}">${(v / 1000).toFixed(1)} kHz</option>`).join("");
   $("fxTone").innerHTML = TONES.map((v) => `<option value="${v}">${v} Hz</option>`).join("");
   $("fxWidth").innerHTML = WIDTHS.map((v) => `<option value="${v}">${v} Hz</option>`).join("");
+  $("fxMnotch").innerHTML = MNOTCH.map((v) => `<option value="${v}">${v ? `${v} Hz` : "Off"}</option>`).join("");
+  $("fxSq").innerHTML = SQUELCH.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("");
+  for (const id of ["fxBass", "fxTreble"]) $(id).innerHTML = TONE_DB.map((v) => `<option value="${v}">${v > 0 ? "+" : ""}${v} dB</option>`).join("");
   $("presets").addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (!b || b.disabled) return;
@@ -270,6 +284,11 @@ async function setup() {
   const custom = (k, v) => { app.s[k] = v; app.s.preset = "custom"; applySettings(); saveSettings(); };
   for (const [id, k] of [["fxVoice", "voice"], ["fxCw", "cw"], ["fxNotch", "notch"], ["fxNr", "nr"], ["fxComp", "comp"]]) $(id).addEventListener("change", (e) => custom(k, e.target.checked));
   for (const [id, k] of [["fxLo", "lo"], ["fxHi", "hi"], ["fxTone", "tone"], ["fxWidth", "width"], ["fxNrLevel", "nrLevel"]]) $(id).addEventListener("change", (e) => custom(k, Number(e.target.value)));
+  // The extras keep the preset (except Off, which would switch them straight off again)
+  const extra = (k, v) => { app.s[k] = v; if (app.s.preset === "off") app.s.preset = "custom"; applySettings(); saveSettings(); };
+  $("fxNb").addEventListener("change", (e) => extra("nb", e.target.checked));
+  $("fxAgc").addEventListener("change", (e) => extra("agc", e.target.value));
+  for (const [id, k] of [["fxNbLevel", "nbLevel"], ["fxMnotch", "mnotch"], ["fxSq", "sq"], ["fxBass", "bass"], ["fxTreble", "treble"]]) $(id).addEventListener("change", (e) => extra(k, Number(e.target.value)));
   $("bypass").addEventListener("change", (e) => { app.bypass = e.target.checked; applySettings(); });
   $("vol").addEventListener("input", (e) => {
     app.gain = Number(e.target.value) / 100;
