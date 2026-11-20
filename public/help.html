@@ -55,6 +55,7 @@
       <li><a href="#pota">Parks on the air (POTA)</a></li>
       <li><a href="#wanted">Wanted alerts</a></li>
       <li><a href="#logbook">Logbook</a></li>
+      <li><a href="#repeaters">My repeaters (2 m and 70 cm)</a></li>
       <li><a href="#activity">Band activity and callsign lookup</a></li>
       <li><a href="#atsmini">ATS Mini</a></li>
       <li><a href="#windows">Own windows and a second screen</a></li>
@@ -224,6 +225,11 @@
         world again. Satellites, POTA activators and APRS stations show here too when you switch them on. <b class="btn">Bowl</b>
         is the older, simpler chart without coastlines; your choice is remembered. It works in the map's own window (⧉) too.
         The map uses the spots Band Watch already has, so it asks PSK Reporter for nothing extra.</li>
+      <li><b>2 m and 70 cm:</b> the band lists, activity table, spots map and band scope include <b>2 m</b> and <b>70 cm</b>, with
+        spots from PSK Reporter (FT8 is on 144.174 and 432.174 MHz). They use the same spots already fetched every 5 minutes, so nothing
+        extra is asked of PSK Reporter. The <b>UK band plan</b> has both bands too: CW and beacons, narrow band and FT8, satellites, FM
+        simplex (calling 145.500 and 433.500), repeater inputs and outputs, APRS (144.800 and 433.800) and digital voice and hotspot areas.
+        It is a simplified summary of the RSGB plan: check the RSGB plan and your licence before you transmit.</li>
       <li><b>Band scope:</b> where on the band the activity is. With an RTL-SDR, click <b class="btn">Start live scope</b>
         for a live spectrum and waterfall. Click anywhere on it to tune there.</li>
     </ul>
@@ -474,6 +480,24 @@
     </ol>
     <figure><img src="/help/logbook.webp" alt="The logbook with contacts and the ADIF buttons" loading="lazy"></figure>
     <p class="warn">The log is kept in this browser on this PC. Export ADIF now and then as a backup.</p>
+  </section>
+
+  <section class="panel" id="repeaters" aria-labelledby="hRpt">
+    <h2 id="hRpt">My repeaters (2 m and 70 cm)</h2>
+    <ul>
+      <li><b>Your own list.</b> Type in the repeaters you use: callsign, output frequency (what the repeater sends, which you listen to),
+        shift, CTCSS tone or DCS/colour code, mode (FM, DMR, C4FM or D-STAR), a locator or town and notes. Only 2 m (144–146 MHz) and
+        70 cm (430–440 MHz) are accepted. The list is kept in this browser. Band Watch comes with no repeater list and doesn't fetch one.</li>
+      <li><b>Nearest first.</b> Give a repeater a locator and Band Watch shows the distance and beam heading from your locator
+        (the one at the top of the page) and sorts the nearest to the top.</li>
+      <li><b>Tune</b> sets your connected radio (with the radio following Band Watch) or your RTL-SDR to the repeater's <b>output</b> in
+        FM, so you can listen. It is listening only: Band Watch never sets the shift or tone on your radio, and never transmits.
+        For a DMR, C4FM or D-STAR repeater, Band Watch can't decode the voice: set the mode on your radio (the Digital voice add-on can put a Yaesu on C4FM).</li>
+      <li><b>Import a CSV you downloaded.</b> Choose a file and Band Watch shows how many repeaters it found before adding them. It reads
+        columns called Callsign, Output or TX (the repeater's transmitter), Input or RX, Offset or Shift, CTCSS or Tone, Mode,
+        Locator and Town. The file is read in your browser and never uploaded. Only import lists you're allowed to use for your own station.</li>
+      <li><b>Find repeaters:</b> buttons open ukrepeater.net, Hearham and RepeaterBook in a new tab. Band Watch sends them nothing.</li>
+    </ul>
   </section>
 
   <section class="panel" id="activity" aria-labelledby="hAct">

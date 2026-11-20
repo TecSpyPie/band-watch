@@ -209,7 +209,7 @@ function renderStationSpots(spots) {
   $("stSpots").innerHTML = spots.length
     ? spots.slice(0, 6).map((p) => {
       const local = p.l ? ` · ${baseCall(p.c) === station.call ? (p.dir === "hears your grid" ? "heard " : "heard by ") : "with "}${esc(baseCall(p.c) === station.call ? p.l : p.c)}` : "";
-      return `<li><span>${ago(p.t)}, ${p.band} m, ${(p.fq * 1000).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kHz</span>` +
+      return `<li><span>${ago(p.t)}, ${bandName(p.band)}, ${(p.fq * 1000).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kHz</span>` +
         `<span>${esc(p.m)}${p.snr != null ? `, ${p.snr} dB` : ""}${local}</span></li>`;
     }).join("")
     : `<li><span class="muted">Not spotted from ${esc(grid4())} in the last 30 minutes.</span></li>`;

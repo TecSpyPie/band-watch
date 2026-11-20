@@ -25,6 +25,7 @@ function start() {
   setupCwKey();
   setupRotator();
   setupDv();
+  setupRepeaters();
   setupAprs();
   const savedGrid = load("bw-grid");
   if (savedGrid && gridToLatLon(savedGrid)) $("grid").value = savedGrid;

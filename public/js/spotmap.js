@@ -291,7 +291,7 @@ function spotMapDraw(keepColors) {
   }
   cv.style.touchAction = V.zoom > 1.01 ? "none" : "pan-y"; // zoomed in: the map takes the finger; whole world: the page scrolls
   cv.setAttribute("aria-label", cur
-    ? `World map of ${cur.b} m spots: ${spots.length} station${spots.length === 1 ? "" : "s"}, ${cur.far ? `the farthest ${kmText(cur.far)} away` : "none heard yet"}. The list below has the same stations. Plus and minus zoom, arrow keys move, 0 resets.`
+    ? `World map of ${bandName(cur.b)} spots: ${spots.length} station${spots.length === 1 ? "" : "s"}, ${cur.far ? `the farthest ${kmText(cur.far)} away` : "none heard yet"}. The list below has the same stations. Plus and minus zoom, arrow keys move, 0 resets.`
     : "World map of spots");
   spotMapLegend();
 }
@@ -319,7 +319,7 @@ function spotMapTip(it) {
     const bear = MapMath.bearing(app.home.lat, app.home.lon, p.lat, p.lon);
     const km = Math.round(MapMath.distanceKm(app.home.lat, app.home.lon, p.lat, p.lon));
     const age = Math.round(it.age);
-    return `<b>${callLink(p.c)}</b> <span class="muted">${esc(p.band || "")} m, ${esc(p.m)}</span>` +
+    return `<b>${callLink(p.c)}</b> <span class="muted">${esc(p.band ? bandName(p.band) : "")}, ${esc(p.m)}</span>` +
       `<br>${kmText(km)}, bearing ${Math.round(bear)}° ${MapMath.compass(bear)}` +
       `<br>${p.snr != null ? `${p.snr} dB (${MapMath.SNR_LABELS[it.lvl].toLowerCase()})` : "no signal report"}, ${ago(age)}` +
       (p.dir ? `<br><span class="muted">${esc(p.dir)}</span>` : "");

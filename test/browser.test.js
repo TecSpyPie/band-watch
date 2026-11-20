@@ -128,7 +128,7 @@ test("loads live data with no errors", { skip }, async (t) => {
   assert.equal(await page.textContent("#mapTitle"), "40 m spots", "map follows the best band");
   assert.match(await page.textContent("#solar"), /113.*Solar flux index.*0.*Kp index, Quiet/s);
   const rows = await page.$$eval("#bands tr", (r) => r.map((x) => x.innerText.replace(/\s+/g, " ").trim()));
-  assert.equal(rows.length, 11, "11 bands, including 60 m");
+  assert.equal(rows.length, 13, "13 bands, including 60 m, 2 m and 70 cm");
   assert.match(rows.find((r) => r.startsWith("20 m")), /40 .* Open$/);
   assert.match(rows.find((r) => r.startsWith("15 m")), /3 .* Closed$/);
   assert.match(rows.find((r) => r.startsWith("10 m")), /8 .* Marginal$/);
@@ -952,7 +952,7 @@ test("scope: drag to zoom, reset, keyboard zoom", { skip }, async (t) => {
 
 test("UK band plan chart: bands, segments, UK notes and click to tune", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
-  assert.equal(await page.$$eval("#planBands button", (b) => b.length), 11);
+  assert.equal(await page.$eval("#planBands button", (b) => b.length), 13);
   assert.equal(await page.$$eval("#planRows tr", (r) => r.length), 9, "20 m has 9 segments");
   assert.match(await page.textContent("#planRows"), /14,099–14,101.*Beacons/s);
   assert.ok(await page.$$eval("#planChart line", (l) => l.length) >= 40, "live spots are ticked on the chart");

@@ -8,7 +8,7 @@ function hoverSpotLine(call) {
   if (!spots.length) return `<p class="small muted">Not spotted from ${esc(grid4())} in the last 30 minutes.</p>`;
   const p = spots[0];
   const remote = baseCall(p.c) === call;
-  return `<p class="small">Last spot ${ago(p.t)}: <b>${p.band} m</b>, ${(p.fq * 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} kHz, ` +
+  return `<p class="small">Last spot ${ago(p.t)}: <b>${bandName(p.band)}</b>, ${(p.fq * 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} kHz, ` +
     `${esc(p.m)}${p.snr != null ? `, ${p.snr} dB` : ""}${remote ? `, ${kmText(p.d)} away` : ""}` +
     `${spots.length > 1 ? ` <span class="muted">(${spots.length} spots)</span>` : ""}</p>`;
 }

@@ -5,7 +5,7 @@
 /* ===================== Band scope ===================== */
 
 // Strip colours for each band plan segment type: [colour variable, how much of it].
-const STRIP = { cw: ["--muted", 0.35], narrow: ["--cool", 0.45], unatt: ["--cool", 0.3], digi: ["--cool", 0.3], all: ["--warm", 0.4], beacon: ["--text", 0.5], fm: ["--warm", 0.65], sat: ["--warm", 0.2], none: ["--wfbg", 0] };
+const STRIP = { cw: ["--muted", 0.35], narrow: ["--cool", 0.45], unatt: ["--cool", 0.3], digi: ["--cool", 0.3], all: ["--warm", 0.4], beacon: ["--text", 0.5], fm: ["--warm", 0.65], rptin: ["--warm", 0.45], rptout: ["--warm", 0.8], dv: ["--cool", 0.6], sat: ["--warm", 0.2], none: ["--wfbg", 0] };
 
 function spanLimits(b, span) {
   if (app.zoom && app.zoom.b === b) return [app.zoom.lo, app.zoom.hi];
@@ -21,7 +21,7 @@ function spanLimits(b, span) {
 }
 
 function renderScopeChips() {
-  $("scopeBands").innerHTML = BANDS.map((b) => `<button type="button" data-b="${b}" aria-pressed="${b === app.sel}">${b} m</button>`).join("");
+  $("scopeBands").innerHTML = BANDS.map((b) => `<button type="button" data-b="${b}" aria-pressed="${b === app.sel}">${bandName(b)}</button>`).join("");
   $("scopeBands").querySelectorAll("button").forEach((btn) => { btn.onclick = () => selectBand(btn.dataset.b); });
   const zoomed = app.zoom && app.zoom.b === app.sel;
   $("scopeSpan").innerHTML = SPANS.map(([k, l]) => `<button type="button" data-s="${k}" aria-pressed="${!zoomed && k === app.span}">${l}</button>`).join("") +
@@ -373,7 +373,7 @@ function drawScope() {
   const n = sp.length;
   cv.setAttribute("aria-label", `${cur.b} metre band scope, ${lo.toFixed(decimals)} to ${hi.toFixed(decimals)} MHz, ${n} station${n === 1 ? "" : "s"} plotted. ` +
     "Arrow keys move the cursor, Enter tunes the receiver there, plus and minus zoom.");
-  $("scopeTitle").textContent = `${cur.b} m band scope${live ? " · live" : ""}`;
+  $("scopeTitle").textContent = `${bandName(cur.b)} band scope${live ? " · live" : ""}`;
   $("scopeNote").textContent = live
     ? "Live from your RTL-SDR: click to tune there, drag to zoom. Top: signal level above the noise, ▼ stations spotted. Middle: UK band plan. Bottom: live waterfall, newest at the top. Shaded: outside what the receiver can see."
     : n

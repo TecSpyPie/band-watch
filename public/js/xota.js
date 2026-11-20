@@ -164,8 +164,8 @@ function xotaScopeMarks(g, lo, hi, fx, top, colour) {
 
 function setupXota() {
   loadXota();
-  const bands = Object.keys(FT8).sort((a, b) => Number(b) - Number(a));
-  $("xtBand").innerHTML = `<option value="all">All bands</option>${bands.map((b) => `<option value="${b}">${b} m</option>`).join("")}`;
+  const bands = BANDS.filter((b) => FT8[b]);
+  $("xtBand").innerHTML = `<option value="all">All bands</option>${bands.map((b) => `<option value="${b}">${bandName(b)}</option>`).join("")}`;
   $("xtBand").addEventListener("change", () => { xota.band = $("xtBand").value; saveXota(); renderXota(); drawMap(); drawScope(); });
   $("xtMode").addEventListener("change", () => { xota.mode = $("xtMode").value; saveXota(); renderXota(); drawMap(); drawScope(); });
   $("xtAlerts").addEventListener("change", () => { xota.alerts = $("xtAlerts").checked; saveXota(); });

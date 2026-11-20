@@ -224,7 +224,7 @@ function setupBackground() {
 
 /* ===================== Profiles ===================== */
 
-const PROFILE_KEYS = ["bw-display", "bw-grid", "bw-call", "bw-mon", "bw-clocks", "bw-clocks-auto", "bw-locauto", "bw-listen", "bw-sdr", "bw-decode", "bw-bg", "bw-rig", "bw-xota", "bw-sats", "bw-log", "bw-wanted"];
+const PROFILE_KEYS = ["bw-display", "bw-grid", "bw-call", "bw-mon", "bw-clocks", "bw-clocks-auto", "bw-locauto", "bw-listen", "bw-sdr", "bw-decode", "bw-bg", "bw-rig", "bw-xota", "bw-sats", "bw-log", "bw-wanted", "bw-repeaters"];
 
 function loadProfiles() {
   try { const p = JSON.parse(load("bw-profiles")); return p && typeof p === "object" && !Array.isArray(p) ? p : {}; } catch { return {}; }

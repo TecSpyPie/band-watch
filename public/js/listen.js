@@ -107,13 +107,13 @@ function listenProblem() {
   if (!rx.base()) return rx.kind === "kiwi" ? "Enter the address of a KiwiSDR, for example http://kiwi.example.org:8073" : "Enter the address of a WebSDR.";
   if (rx.max && listen.kHz > rx.max) {
     return `${rx.name.split(",")[0]} only covers up to ${(rx.max / 1000).toLocaleString()} MHz. ` +
-      (listen.kHz >= 50000 ? "For 6 m, try a WebSDR from the list at websdr.org." : "Try a KiwiSDR (most cover up to 30 MHz).");
+      (listen.kHz >= 144000 ? "For 2 m and 70 cm, use your RTL-SDR or a radio that covers it." : listen.kHz >= 50000 ? "For 6 m, try a WebSDR from the list at websdr.org." : "Try a KiwiSDR (most cover up to 30 MHz).");
   }
   return "";
 }
 
 function renderListen() {
-  $("lsBand").innerHTML = PLAN_BANDS.map((b) => `<option value="${b}"${b === listen.band ? " selected" : ""}>${b} m</option>`).join("");
+  $("lsBand").innerHTML = PLAN_BANDS.map((b) => `<option value="${b}"${b === listen.band ? " selected" : ""}>${bandName(b)}</option>`).join("");
   if (!modesFor(listen.rx).some(([k]) => k === listen.mode)) listen.mode = "usb";
   $("lsMode").innerHTML = modesFor(listen.rx).map(([k, l]) => `<option value="${k}"${k === listen.mode ? " selected" : ""}>${l}</option>`).join("");
   $("lsRx").innerHTML = Object.entries(RECEIVERS).map(([k, r]) => `<option value="${k}"${k === listen.rx ? " selected" : ""}>${esc(r.name)}</option>`).join("");
@@ -261,7 +261,7 @@ function renderStations() {
   const list = stationTunes();
   listen.stations = list;
   const here = list.findIndex((e) => Math.abs(e.kHz - listen.kHz) < 0.005);
-  sel.innerHTML = `<option value="">${list.length ? `Stations heard on ${listen.band} m (${list.length})` : `No stations spotted on ${listen.band} m right now`}</option>` +
+  sel.innerHTML = `<option value="">${list.length ? `Stations heard on ${bandName(listen.band)} (${list.length})` : `No stations spotted on ${bandName(listen.band)} right now`}</option>` +
     list.map((e, i) => `<option value="${i}"${i === here ? " selected" : ""}>${esc(stationLabel(e))}</option>`).join("");
   sel.disabled = !list.length;
   $("lsPrev").disabled = !list.some((e) => e.kHz < listen.kHz - 0.005);

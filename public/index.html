@@ -598,6 +598,61 @@
     <p class="small muted">A Pi-Star or WPSD hotspot shows its dashboard on your home network, e.g. http://pi-star.local/ or its number (192.168.x.x).</p>
   </section>
 
+  <section class="panel" id="secRpt" aria-labelledby="rpTitle">
+    <div class="phead">
+      <h2 id="rpTitle">My repeaters</h2>
+      <span class="small muted">2 m and 70 cm, listed by you. <span id="rpCount"></span></span>
+    </div>
+    <p class="small">Add the repeaters you use, nearest first. <b>Tune</b> puts your radio or RTL-SDR on the repeater's <b>output</b> so you can listen.
+      It is listening only: Band Watch doesn't set the shift or tone on your radio and never transmits. Band Watch comes with no repeater list,
+      so everything here is yours.</p>
+    <form id="rpForm" autocomplete="off">
+      <div class="dcrow">
+        <label>Callsign <input type="text" id="rpCall" maxlength="14" placeholder="GB3XX" spellcheck="false" required></label>
+        <label>Output (MHz) <input type="number" id="rpOut" min="144" max="440" step="0.0125" placeholder="145.6" required></label>
+        <label>Shift (MHz) <input type="number" id="rpOff" min="-10" max="10" step="0.0125" placeholder="-0.6"></label>
+        <label>CTCSS (Hz) <input type="text" id="rpCtcss" inputmode="decimal" list="rpTones" placeholder="82.5" style="width:6em"></label>
+        <datalist id="rpTones"></datalist>
+        <label>DCS / colour code <input type="text" id="rpCode" maxlength="14" placeholder="CC1" style="width:7em"></label>
+        <label>Mode <select id="rpMode"></select></label>
+      </div>
+      <div class="dcrow">
+        <label>Locator <input type="text" id="rpLoc" maxlength="12" placeholder="IO93fa" style="width:7em" spellcheck="false"></label>
+        <label>Town <input type="text" id="rpTown" maxlength="40" placeholder="Sheffield"></label>
+        <label class="grow">Notes <input type="text" id="rpNotes" maxlength="200" placeholder="Open 24 hours, needs 1750 Hz?"></label>
+        <button type="submit" id="rpSave" class="lbtn">Add repeater</button>
+        <button type="button" id="rpCancel" class="ghost" hidden>Cancel</button>
+      </div>
+      <p class="small err" id="rpErr" role="alert"></p>
+    </form>
+    <p class="small muted">Only 2 m (144–146 MHz) and 70 cm (430–440 MHz) are accepted. The shift is where the repeater listens, compared with its output:
+      −0.6 on 2 m, +1.6 on most 70 cm ones. The UK band plan above shows the repeater channels.</p>
+    <p class="small" id="rpNote" role="status" aria-live="polite"></p>
+    <p class="small muted" id="rpHome"></p>
+    <p class="small" id="rpEmpty">Nothing here yet. Add a repeater above, or import a file you downloaded.</p>
+    <div class="scroll">
+      <table class="act rpt" id="rpTable">
+        <thead><tr><th>Repeater</th><th class="num">Output MHz</th><th class="num">Shift</th><th>Tone</th><th>Mode</th><th>Where</th><th class="num">From you</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="rpRows"></tbody>
+      </table>
+    </div>
+    <h3 class="small">Import a CSV you downloaded</h3>
+    <div class="dcrow">
+      <label class="grow">CSV file <input type="file" id="rpFile" accept=".csv,.txt,text/csv,text/plain"></label>
+      <button type="button" class="lbtn" id="rpImpGo" hidden>Add to My repeaters</button>
+    </div>
+    <div id="rpPreview" role="status" aria-live="polite" hidden></div>
+    <p class="small muted"><b>Only import lists you're allowed to use for your own station.</b> The file is read in your browser and never uploaded.
+      Column names such as Callsign, Output (or TX), Input (or RX), Offset, CTCSS, Mode, Locator and Town are picked up automatically.</p>
+    <h3 class="small">Find repeaters near you</h3>
+    <div class="dcrow">
+      <a class="lbtn optlink" href="https://ukrepeater.net/repeaterlist.html" target="_blank" rel="noopener noreferrer">ukrepeater.net</a>
+      <a class="lbtn optlink" href="https://hearham.com/" target="_blank" rel="noopener noreferrer">Hearham</a>
+      <a class="lbtn optlink" href="https://www.repeaterbook.com/" target="_blank" rel="noopener noreferrer">RepeaterBook</a>
+    </div>
+    <p class="small muted">These open each site's own search in a new tab. Band Watch doesn't send them your locator or copy anything from them.</p>
+  </section>
+
   <section class="panel" id="secSats" aria-labelledby="satTitle">
     <div class="phead">
       <h2 id="satTitle">Satellites</h2>
@@ -1223,6 +1278,7 @@
 <script src="/js/rotator.js?v=1.39.0"></script>
 <script src="/js/antenna.js?v=1.39.0"></script>
 <script src="/js/dv.js?v=1.39.0"></script>
+<script src="/js/repeaters.js?v=1.39.0"></script>
 <script src="/js/looks.js?v=1.39.0"></script>
 <script src="/js/app.js?v=1.39.0"></script>
 <script src="/js/nav.js?v=1.39.0"></script>

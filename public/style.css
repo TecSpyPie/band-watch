@@ -218,7 +218,7 @@ dialog.wide{width:min(560px,calc(100vw - 24px))}
 [data-hide~="listen"] #secListen,[data-hide~="sked"] #secSked,[data-hide~="panel"] #secPanel,[data-hide~="plan"] #secPlan,[data-hide~="sun"] #secSun{display:none!important}
 
 /* Background picture (Settings > Background) */
-:root{--sun1:#ffd36b;--sun2:#e8892a;--seg-cw:#9aa7a9;--seg-data:#7cc3ce;--seg-all:#e9c27a;--seg-beacon:#b48ad8;--seg-fm:#e48a5c;--seg-sat:#9cc78a;--seg-none:repeating-linear-gradient(45deg,#c9c9c9 0 4px,#ececec 4px 8px)}
+:root{--sun1:#ffd36b;--sun2:#e8892a;--seg-cw:#9aa7a9;--seg-data:#7cc3ce;--seg-all:#e9c27a;--seg-beacon:#b48ad8;--seg-fm:#e48a5c;--seg-sat:#9cc78a;--seg-dv:#d98fb8;--seg-none:repeating-linear-gradient(45deg,#c9c9c9 0 4px,#ececec 4px 8px)}
 :root.has-bg{background:#000}
 :root.has-bg body{background:transparent}
 :root.has-bg body::before{content:"";position:fixed;inset:0;z-index:-2;background:var(--bgimg) center/cover no-repeat}
@@ -279,6 +279,9 @@ button.khz{border:0;padding:0;font:inherit;color:var(--cool);text-decoration:und
 .t-beacon{fill:var(--seg-beacon);background:var(--seg-beacon)}
 .t-fm{fill:var(--seg-fm);background:var(--seg-fm)}
 .t-sat{fill:var(--seg-sat);background:var(--seg-sat)}
+.t-rptout{fill:var(--seg-fm);background:var(--seg-fm)}
+.t-rptin{fill:var(--seg-fm);background:var(--seg-fm);opacity:.6}
+.t-dv{fill:var(--seg-dv);background:var(--seg-dv)}
 .t-none{fill:#bdbdbd;background:var(--seg-none);opacity:.6}
 .sw{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin:4px 0 10px;color:var(--muted)}

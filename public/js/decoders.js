@@ -268,7 +268,7 @@ function dcRenderTune() {
   const k = dcDialKHz();
   $("dcTune").hidden = dc.src !== "rtl" || !k;
   if (k) $("dcTune").textContent = dc.mode === "APRS" ? "Tune to APRS (144.800 MHz FM)"
-    : `Tune to ${dc.mode} on ${listen.band} m (${k.toLocaleString()} kHz ${dcTuneMode().toUpperCase()})`;
+    : `Tune to ${dc.mode} on ${bandName(listen.band)} (${k.toLocaleString()} kHz ${dcTuneMode().toUpperCase()})`;
 }
 
 function renderDc() {
