@@ -7,8 +7,11 @@
  *   analyse()       match reports by the same receiving station and band, then average the SNR difference
  *   sectorOf(), distanceBin()  8 compass sectors and 4 distance bands
  *   buildQuery(), parseRows()  the wspr.live question and its answer
- * Reports come from wspr.live (public WSPR database, browser access allowed). PSK Reporter (FT8 and others)
- * needs a server route and is not part of this version. */
+ *   myReportsUrl(), parseMyReports()  the Band Watch server's /api/myreports (FT8 and FT4 from PSK Reporter)
+ * WSPR reports come from wspr.live (public WSPR database, browser access allowed). FT8 and FT4 reports come
+ * from PSK Reporter through Band Watch's own server (PSK Reporter doesn't allow browser access, and asks for
+ * at most one request per 5 minutes, which the server keeps to). A report's slot is as long as its mode's
+ * over: WSPR 2 minutes, FT8 15 seconds, FT4 7.5 seconds. */
 (function (root, factory) {
   const rot = (typeof module === "object" && module.exports) ? require("./rotmath.js") : root.RotMath;
   if (typeof module === "object" && module.exports) module.exports = factory(rot);
@@ -17,6 +20,9 @@
   "use strict";
 
   const SLOT_MS = 120000;            // a WSPR over lasts 2 minutes
+  const SLOT_BY_MODE = { FT8: 15000, FT4: 7500 };
+  const SRC_LABEL = { wspr: "WSPR", psk: "FT8/FT4" };
+  const PSK_MAX_MINS = 1440;         // PSK Reporter keeps about 24 hours
   const MAX_DAYS = 7;                // the longest time window we ask wspr.live about
   const MAX_ROWS = 50000;
   const MIN_PAIRS = 10;              // fewer matched receivers than this: say the result is shaky
@@ -133,23 +139,27 @@
 
   /* ---------------------------- the comparison ---------------------------- */
 
-  /** reports: [{ t (ms), band (wspr.live code), rx, snr, lat, lon, dist, az }]. opts: { now, me: {lat, lon} | null }.
-   * Only a receiver that heard you on BOTH antennas on the same band counts as a pair; its average SNR on each
-   * antenna is used (so one station that reports a lot doesn't outweigh the rest). */
+  /** reports: [{ t (ms), band (whole MHz), rx, snr, lat, lon, dist, az, src ("wspr" if missing, or "psk"), slotMs }].
+   * opts: { now, me: {lat, lon} | null }. Only a receiver that heard you on BOTH antennas on the same band and
+   * from the same source counts as a pair (WSPR and FT8 SNRs are not mixed); its average SNR on each antenna is
+   * used (so one station that reports a lot doesn't outweigh the rest). Each report's own slotMs says how long
+   * its over lasted (FT8 15 s, FT4 7.5 s, WSPR 2 minutes), and that whole slot must sit inside one period. */
   function analyse(reports, periods, opts = {}) {
     const now = opts.now == null ? Date.now() : opts.now;
     const me = opts.me || null;
     const groups = new Map();
-    const totals = { reports: 0, spotsA: 0, spotsB: 0, unassigned: 0, ambiguous: 0 };
+    const totals = { reports: 0, spotsA: 0, spotsB: 0, unassigned: 0, ambiguous: 0, bySource: {} };
     for (const r of reports || []) {
       totals.reports++;
-      const ant = assignPeriod(r.t, periods, now, opts.slotMs);
+      const src = r.src || "wspr";
+      totals.bySource[src] = (totals.bySource[src] || 0) + 1;
+      const ant = assignPeriod(r.t, periods, now, r.slotMs || opts.slotMs);
       if (ant === "both") { totals.ambiguous++; continue; }
       if (!ant) { totals.unassigned++; continue; }
       if (ant === "A") totals.spotsA++; else totals.spotsB++;
-      const key = `${r.band}|${r.rx}`;
+      const key = `${r.band}|${r.rx}|${src}`;
       let g = groups.get(key);
-      if (!g) { g = { band: r.band, rx: r.rx, A: [], B: [], lat: r.lat, lon: r.lon, dist: r.dist, az: r.az }; groups.set(key, g); }
+      if (!g) { g = { band: r.band, rx: r.rx, src, A: [], B: [], lat: r.lat, lon: r.lon, dist: r.dist, az: r.az }; groups.set(key, g); }
       g[ant].push(r.snr);
     }
 
@@ -163,18 +173,21 @@
           dist = distKm(me.lat, me.lon, g.lat, g.lon);
           az = RotMath.bearing(me.lat, me.lon, g.lat, g.lon);
         }
-        pairs.push({ band: g.band, rx: g.rx, a, b, diff: b - a, dist, az });
+        pairs.push({ band: g.band, rx: g.rx, src: g.src, a, b, diff: b - a, dist, az });
       } else if (g.A.length) onlyA++; else onlyB++;
     }
 
     const byBand = new Map();
     for (const p of pairs) {
-      if (!byBand.has(p.band)) byBand.set(p.band, []);
-      byBand.get(p.band).push(p);
+      const k = `${p.band}|${p.src}`;
+      if (!byBand.has(k)) byBand.set(k, []);
+      byBand.get(k).push(p);
     }
-    const bands = [...byBand.entries()].sort((x, y) => BAND_ORDER.indexOf(x[0]) - BAND_ORDER.indexOf(y[0]) || x[0] - y[0])
-      .map(([band, list]) => ({
-        band, label: bandName(band), receivers: list.length,
+    const bands = [...byBand.values()].sort((x, y) => BAND_ORDER.indexOf(x[0].band) - BAND_ORDER.indexOf(y[0].band) ||
+      x[0].band - y[0].band || (x[0].src < y[0].src ? -1 : x[0].src > y[0].src ? 1 : 0))
+      .map((list) => ({
+        band: list[0].band, src: list[0].src, srcLabel: SRC_LABEL[list[0].src] || list[0].src,
+        label: bandName(list[0].band), receivers: list.length,
         avgA: mean(list.map((p) => p.a)), avgB: mean(list.map((p) => p.b)),
         diff: mean(list.map((p) => p.diff)), few: list.length < MIN_PAIRS,
       }));
@@ -240,16 +253,81 @@
       const [time, band, rx, lat, lon, snr, dist, az] = row;
       const t = Date.parse(String(time).replace(" ", "T") + "Z");
       if (!Number.isFinite(t) || !rx || !Number.isFinite(Number(snr))) continue;
-      out.push({ t, band: Number(band), rx: String(rx), lat: Number(lat), lon: Number(lon), snr: Number(snr), dist: Number(dist), az: Number(az) });
+      out.push({ t, band: Number(band), rx: String(rx), lat: Number(lat), lon: Number(lon), snr: Number(snr), dist: Number(dist), az: Number(az), src: "wspr", slotMs: SLOT_MS });
     }
     return out;
   }
 
+  /** The Band Watch server's address for FT8 and FT4 reports of `call` (the last `mins` minutes, at most 24 hours).
+   * Throws on a callsign that doesn't look like one. */
+  function myReportsUrl(call, mins = PSK_MAX_MINS) {
+    const c = String(call || "").trim().toUpperCase();
+    if (!CALL_OK.test(c)) throw new Error("Enter your callsign at the top of the page first.");
+    const m = Math.max(1, Math.min(PSK_MAX_MINS, Math.ceil(Number(mins)) || PSK_MAX_MINS));
+    return `/api/myreports?call=${encodeURIComponent(c)}&mins=${m}`;
+  }
+
+  /** The server's /api/myreports answer -> reports (source "psk"; a 15 second slot for FT8, 7.5 seconds for FT4). */
+  function parseMyReports(json) {
+    const out = [];
+    const list = json && Array.isArray(json.reports) ? json.reports : [];
+    for (const r of list) {
+      if (!r || typeof r !== "object") continue;
+      const mode = String(r.m || "").toUpperCase();
+      const t = Number(r.ts), fq = Number(r.fq), snr = Number(r.snr);
+      if (!SLOT_BY_MODE[mode] || !r.c || !(t > 0) || !(fq > 0) || r.snr == null || !Number.isFinite(snr)) continue;
+      out.push({ t, band: Math.floor(fq), rx: String(r.c), lat: Number(r.lat), lon: Number(r.lon), snr, dist: NaN, az: NaN,
+        src: "psk", mode, slotMs: SLOT_BY_MODE[mode] });
+    }
+    return out;
+  }
+
+  /* PSK Reporter keeps only the latest report per receiver, so one reply can never show a receiver on both
+   * antennas. Band Watch therefore collects replies every 5 minutes while you log, and keeps them here. */
+  const HISTORY_DAYS = 7;
+  const HISTORY_MAX = 20000;
+  const POLL_MS = 5 * 60000;         // never ask more often than PSK Reporter's guidance (the server enforces it too)
+
+  /** Saved or fetched rows -> well-formed FT8/FT4 reports only (NaN survives JSON as null, so it is restored). */
+  function cleanHistory(list) {
+    if (!Array.isArray(list)) return [];
+    const out = [];
+    for (const r of list) {
+      if (!r || typeof r !== "object" || !r.rx || !(Number(r.t) > 0) || !Number.isFinite(Number(r.snr)) || r.snr == null) continue;
+      const slotMs = Number(r.slotMs);
+      if (!(Number.isFinite(Number(r.band)) && slotMs > 0)) continue;
+      const n = (v) => (v == null || !Number.isFinite(Number(v)) ? NaN : Number(v));
+      out.push({ t: Number(r.t), band: Number(r.band), rx: String(r.rx), lat: n(r.lat), lon: n(r.lon), snr: Number(r.snr), dist: NaN, az: NaN,
+        src: "psk", mode: String(r.mode || ""), slotMs });
+    }
+    return out;
+  }
+
+  /** The history plus new reports: one row per receiver, band and time, only the last 7 days, newest 20,000, oldest first. */
+  function mergeHistory(history, reports, now, opts = {}) {
+    const keep = now - (opts.days || HISTORY_DAYS) * 864e5;
+    const max = opts.max || HISTORY_MAX;
+    const byKey = new Map();
+    for (const r of [...(history || []), ...(reports || [])]) {
+      if (!r || !(r.t >= keep)) continue;
+      byKey.set(`${r.rx}|${r.band}|${r.t}`, r);
+    }
+    const all = [...byKey.values()].sort((a, b) => a.t - b.t);
+    return all.length > max ? all.slice(all.length - max) : all;
+  }
+
+  /** How many different receivers a history holds. */
+  function receiversIn(history) { return new Set((history || []).map((r) => `${r.band}|${r.rx}`)).size; }
+
+  /** Which sources a choice means: "wspr", "psk" (FT8 and FT4) or "both"; anything else is "wspr". */
+  function sourcesOf(choice) { return choice === "psk" ? ["psk"] : choice === "both" ? ["wspr", "psk"] : ["wspr"]; }
+
   const api = {
-    SLOT_MS, MAX_DAYS, MAX_ROWS, MIN_PAIRS, SECTORS, DIST_BANDS,
+    SLOT_MS, SLOT_BY_MODE, PSK_MAX_MINS, MAX_DAYS, MAX_ROWS, MIN_PAIRS, SECTORS, DIST_BANDS,
     bandName, distKm, locToLatLon, sectorOf, distanceBin,
     assignPeriod, switchTo, stopLog, checkPeriod, parseUtc, fmtUtc, cleanPeriods,
-    analyse, diffText, windowOf, buildQuery, parseRows,
+    analyse, diffText, windowOf, buildQuery, parseRows, myReportsUrl, parseMyReports, sourcesOf,
+    HISTORY_DAYS, HISTORY_MAX, POLL_MS, cleanHistory, mergeHistory, receiversIn,
   };
   if (typeof document === "undefined" || typeof window === "undefined") return api;
 
@@ -258,8 +336,8 @@
   const KEY = "bw-antab";
   const COOLDOWN_MS = 20000;
   const cache = new Map();           // query address -> { at, reports }; kept in memory only
-  let state = { names: { A: "Antenna A", B: "Antenna B" }, periods: [] };
-  let lastFetch = 0;
+  let state = { names: { A: "Antenna A", B: "Antenna B" }, periods: [], source: "wspr" };
+  const lastFetch = { wspr: 0 };           // wspr.live: 20 seconds apart at most (FT8/FT4 has its own 5 minute rule)
   let busy = false;
   const el = (id) => document.getElementById(id);
   const escH = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -270,6 +348,7 @@
       const v = JSON.parse(localStorage.getItem(KEY));
       if (v && typeof v === "object") {
         state.periods = cleanPeriods(v.periods);
+        if (v.source === "psk" || v.source === "both") state.source = v.source;
         for (const k of ["A", "B"]) if (v.names && typeof v.names[k] === "string" && v.names[k].trim()) state.names[k] = v.names[k].trim().slice(0, 30);
       }
     } catch { /* nothing saved, or storage unavailable */ }
@@ -326,13 +405,13 @@
     }
     if (note) h += `<p class="small muted">${escH(note)}</p>`;
     if (res.bands.length) {
-      h += `<div class="scroll"><table class="plan"><thead><tr><th>Band</th><th class="num">Receivers that heard both</th>` +
+      h += `<div class="scroll"><table class="plan"><thead><tr><th>Band</th><th>Source</th><th class="num">Receivers that heard both</th>` +
         `<th class="num">Average SNR ${A}</th><th class="num">Average SNR ${B}</th><th>Result (${B} minus ${A})</th></tr></thead><tbody>` +
-        res.bands.map((b) => `<tr><td>${escH(b.label)}</td><td class="num">${b.receivers}${b.few ? ' <span class="muted" title="Fewer than 10">(few)</span>' : ""}</td>` +
+        res.bands.map((b) => `<tr><td>${escH(b.label)}</td><td>${escH(b.srcLabel)}</td><td class="num">${b.receivers}${b.few ? ' <span class="muted" title="Fewer than 10">(few)</span>' : ""}</td>` +
           `<td class="num">${b.avgA.toFixed(1)} dB</td><td class="num">${b.avgB.toFixed(1)} dB</td>` +
           `<td>${escH(diffText(b.diff, nameOf("A"), nameOf("B")))}</td></tr>`).join("") +
         `</tbody></table></div>`;
-      if (res.overall != null) h += `<p><b>All bands together:</b> ${escH(diffText(res.overall, nameOf("A"), nameOf("B")))} (${t.matched} receiver and band pairs).</p>`;
+      if (res.overall != null) h += `<p><b>All bands together:</b> ${escH(diffText(res.overall, nameOf("A"), nameOf("B")))} (${t.matched} receiver, band and source pairs).</p>`;
       const maxS = Math.max(0, ...res.sectors.map((s) => (s.diff == null ? 0 : Math.abs(s.diff))), ...res.distances.map((s) => (s.diff == null ? 0 : Math.abs(s.diff))));
       const max = Math.max(1, Math.ceil(maxS));
       h += `<div class="antcharts"><div><h3>By direction from you</h3><div class="antkey"><span><i class="antdot A"></i>${A} better</span><span><i class="antdot B"></i>${B} better</span></div>` +
@@ -342,21 +421,22 @@
     } else {
       h += `<p>No receiver heard you on both antennas in these periods yet, so there is nothing to compare.</p>`;
     }
-    h += `<p class="small muted">Reports found: ${t.reports}. Heard on ${A}: ${t.spotsA}, on ${B}: ${t.spotsB}. ` +
+    const bs = Object.keys(t.bySource || {}).sort().map((k) => `${SRC_LABEL[k] || k} ${t.bySource[k]}`).join(", ");
+    h += `<p class="small muted">Reports found: ${t.reports}${bs ? ` (${escH(bs)})` : ""}. Heard on ${A}: ${t.spotsA}, on ${B}: ${t.spotsB}. ` +
       `Receivers that heard only ${A}: ${t.onlyA}, only ${B}: ${t.onlyB} (left out of the comparison). ` +
       `Not counted: ${t.unassigned} outside your logged periods or across a swap` +
       `${t.ambiguous ? `, ${t.ambiguous} in overlapping periods` : ""}.</p>`;
     el("antOut").innerHTML = h;
   }
 
-  /** THE ONLY PLACE THAT TALKS TO THE INTERNET: one wspr.live question per Compare click, cached in memory.
+  /** wspr.live: one question per Compare click, cached in memory (10 minutes), 20 seconds apart at most.
    * wspr.live allows browser access, so no Band Watch server is involved. Throws a plain-English message. */
   async function fetchReports(call, from, to) {
     const url = buildQuery(call, from, to);
     const hit = cache.get(url);
     if (hit && Date.now() - hit.at < 10 * 60000) return { reports: hit.reports, cached: true };
-    if (Date.now() - lastFetch < COOLDOWN_MS) throw new Error("Please wait a few seconds before comparing again. wspr.live is a free service run by volunteers.");
-    lastFetch = Date.now();
+    if (Date.now() - lastFetch.wspr < COOLDOWN_MS) throw new Error("Please wait a few seconds before comparing again. wspr.live is a free service run by volunteers.");
+    lastFetch.wspr = Date.now();
     let r;
     try { r = await fetch(url, { cache: "no-store" }); } catch { throw new Error("Couldn't reach wspr.live just now. Check your connection and try again in a minute."); }
     if (!r.ok) throw new Error("wspr.live couldn't answer just now. Try again in a few minutes.");
@@ -367,6 +447,89 @@
     return { reports, cached: false, full: reports.length >= MAX_ROWS };
   }
 
+  /* ---- FT8 and FT4: collected over time, kept in this browser (bw-antab-ft8, per callsign, 7 days, 20,000 rows) ---- */
+  const HKEY = "bw-antab-ft8";
+  let history = { call: "", rows: [], polledAt: 0 };
+  let polling = false, collectErr = "";
+
+  function loadHistory(call) {
+    history = { call, rows: [], polledAt: 0 };
+    try {
+      const h = (JSON.parse(localStorage.getItem(HKEY)) || {})[call];
+      if (h) history = { call, rows: mergeHistory([], cleanHistory(h.rows), Date.now()), polledAt: Number(h.polledAt) || 0 };
+    } catch { /* nothing saved, or storage unavailable */ }
+  }
+  function saveHistory() {
+    try {
+      let all = JSON.parse(localStorage.getItem(HKEY));
+      if (!all || typeof all !== "object") all = {};
+      all[history.call] = { polledAt: history.polledAt, rows: history.rows.map((r) => ({ t: r.t, band: r.band, rx: r.rx, lat: r.lat, lon: r.lon, snr: r.snr, mode: r.mode, slotMs: r.slotMs })) };
+      const keep = Object.keys(all).sort((a, b) => (all[b].polledAt || 0) - (all[a].polledAt || 0)).slice(0, 2);
+      const out = {};
+      for (const k of keep) out[k] = all[k];
+      localStorage.setItem(HKEY, JSON.stringify(out));
+    } catch { /* storage full or unavailable: the history stays in memory for this visit */ }
+  }
+  const ensureHistory = (call) => { if (history.call !== call) loadHistory(call); };
+
+  /** Ask the server for the FT8/FT4 reports and add them to the history, but never within 5 minutes of the last ask
+   * (PSK Reporter's guidance; the server's own 5-minute cache says the same). Returns { asked, stale }. */
+  async function pollPsk(call) {
+    ensureHistory(call);
+    if (polling || Date.now() - history.polledAt < POLL_MS) return { asked: false };
+    polling = true;
+    history.polledAt = Date.now();     // set first, so a failure doesn't make us retry early
+    try {
+      let r;
+      try { r = await fetch(myReportsUrl(call, PSK_MAX_MINS), { cache: "no-store" }); } catch { throw new Error("Couldn't reach Band Watch's server just now. Check your connection and try again in a minute."); }
+      if (!r.ok) throw new Error("PSK Reporter couldn't answer just now. Band Watch will try again in a few minutes.");
+      let json;
+      try { json = await r.json(); } catch { throw new Error("PSK Reporter's answer couldn't be read. Try again later."); }
+      history.rows = mergeHistory(history.rows, parseMyReports(json), Date.now());
+      collectErr = "";
+      return { asked: true, stale: Boolean(json && json.stale) };
+    } catch (e) {
+      collectErr = e.message;
+      throw e;
+    } finally { polling = false; saveHistory(); renderCollect(); }
+  }
+
+  /** FT8/FT4 for Compare: asks if it is time, then uses everything collected so far. */
+  async function fetchPskReports(call) {
+    ensureHistory(call);
+    let failed = "", stale = false, asked = false;
+    try { const p = await pollPsk(call); asked = p.asked; stale = Boolean(p.stale); } catch (e) { failed = e.message; }
+    if (failed && !history.rows.length) throw new Error(failed);
+    return { reports: history.rows.slice(), cached: !asked, stale, failed };
+  }
+
+  const collecting = () => state.periods.some((p) => p.end == null) && sourcesOf(state.source).includes("psk") && Boolean(typeof app !== "undefined" && app.myCall);
+  function renderCollect() {
+    const box = el("antCollect");
+    if (!box) return;
+    const call = (typeof app !== "undefined" && app.myCall) || "";
+    if (call) ensureHistory(call);
+    const n = receiversIn(history.rows);
+    const last = history.rows.length ? ` last update ${fmtUtc(history.polledAt).slice(11)} UTC` : "";
+    let t = "";
+    if (collecting()) {
+      t = `Collecting FT8/FT4 reports every 5 min: ${n} receiver${n === 1 ? "" : "s"} so far${last ? "," + last : ""}.` +
+        (document.hidden ? " Paused while this page is hidden." : "");
+    } else if (call && history.rows.length) {
+      t = `FT8/FT4 reports saved in this browser: ${n} receiver${n === 1 ? "" : "s"},${last}. Not collecting now (it collects while you are logging a period with FT8/FT4 chosen).`;
+    }
+    if (collectErr && collecting()) t += " " + collectErr;
+    box.textContent = t;
+    const clr = el("antClearFt8");
+    if (clr) clr.disabled = !history.rows.length;
+  }
+  /** Every 30 seconds (and when logging starts or the page shows again): collect if logging and the page is visible. */
+  function tick() {
+    renderCollect();
+    if (!collecting() || document.hidden) return;
+    pollPsk(app.myCall).catch(() => { /* shown in the status line */ }).then(renderCollect);
+  }
+
   async function compare() {
     if (busy) return;
     const call = (typeof app !== "undefined" && app.myCall) || "";
@@ -375,17 +538,28 @@
     const w = windowOf(state.periods, now);
     if (!w) { showMsg("Log at least one period on antenna A and one on B first.", true); return; }
     if (!state.periods.some((p) => p.ant === "A") || !state.periods.some((p) => p.ant === "B")) { showMsg("You need at least one period for each antenna.", true); return; }
-    busy = true; el("antGo").disabled = true; showMsg("Fetching your WSPR reports from wspr.live...");
+    const sources = sourcesOf(state.source);
+    const names = sources.map((k) => (k === "psk" ? "FT8/FT4 reports from PSK Reporter" : "WSPR reports from wspr.live"));
+    busy = true; el("antGo").disabled = true; showMsg(`Fetching your ${names.join(" and ")}...`);
     try {
-      const { reports, cached, full } = await fetchReports(call, w.from, w.to);
+      const got = await Promise.allSettled(sources.map((k) => (k === "psk" ? fetchPskReports(call) : fetchReports(call, w.from, w.to))));
+      const failed = got.filter((x) => x.status === "rejected");
+      if (failed.length === got.length) throw failed[0].reason;
+      const reports = [], notes = [];
+      got.forEach((x, i) => {
+        if (x.status === "rejected") { notes.push(x.reason && x.reason.message ? x.reason.message : "One source didn't answer."); return; }
+        for (const r of x.value.reports) reports.push(r);
+        if (sources[i] === "wspr" && x.value.full) notes.push(`There were more than ${MAX_ROWS} WSPR reports; only the earliest ${MAX_ROWS} are used, so shorten the periods.`);
+        if (sources[i] === "psk" && x.value.failed) notes.push(x.value.failed + " Using what was collected earlier.");
+        if (sources[i] === "psk" && x.value.stale) notes.push("PSK Reporter didn't answer, so FT8/FT4 reports from a few minutes ago are used.");
+      });
+      if (got.some((x) => x.status === "fulfilled" && x.value.cached)) notes.push("Using reports fetched a moment ago.");
+      if (sources.includes("psk") && w.from < now - PSK_MAX_MINS * 60000) notes.push("FT8/FT4 reports only go back 24 hours, so earlier periods have no FT8/FT4 data.");
+      if (w.clamped) notes.push(`Only the latest ${MAX_DAYS} days are used.`);
       const grid = (typeof $ === "function" && $("grid")) ? $("grid").value : "";
       const me = locToLatLon(grid);
+      if (!me) notes.push("Your locator isn't set, so direction and distance come from wspr.live's own figures for each report (FT8/FT4 reports have none).");
       const res = analyse(reports, state.periods, { now, me });
-      const notes = [];
-      if (w.clamped) notes.push(`Only the latest ${MAX_DAYS} days are used.`);
-      if (full) notes.push(`There were more than ${MAX_ROWS} reports; only the earliest ${MAX_ROWS} are used, so shorten the periods.`);
-      if (!me) notes.push("Your locator isn't set, so direction and distance come from wspr.live's own figures for each report.");
-      if (cached) notes.push("Using the reports fetched a moment ago.");
       showMsg("");
       renderResult(res, notes.join(" "));
     } catch (e) {
@@ -401,10 +575,10 @@
       inp.value = nameOf(a);
       inp.addEventListener("input", () => { state.names[a] = inp.value.trim().slice(0, 30) || a; save(); renderLog(); });
     }
-    const swap = (ant) => { state.periods = switchTo(state.periods, ant, Date.now()); save(); renderLog(); };
+    const swap = (ant) => { state.periods = switchTo(state.periods, ant, Date.now()); save(); renderLog(); tick(); };
     el("antOnA").addEventListener("click", () => swap("A"));
     el("antOnB").addEventListener("click", () => swap("B"));
-    el("antStop").addEventListener("click", () => { state.periods = stopLog(state.periods, Date.now()); save(); renderLog(); });
+    el("antStop").addEventListener("click", () => { state.periods = stopLog(state.periods, Date.now()); save(); renderLog(); renderCollect(); });
     el("antList").addEventListener("click", (e) => {
       const id = e.target && e.target.getAttribute && e.target.getAttribute("data-del");
       if (!id) return;
@@ -418,8 +592,18 @@
       state.periods.push({ id: `p${s}-${Math.random().toString(36).slice(2, 6)}`, ant, start: s, end: e });
       save(); renderLog();
     });
+    const srcSel = el("antSrc");
+    if (srcSel) {
+      srcSel.value = state.source;
+      srcSel.addEventListener("change", () => { state.source = srcSel.value === "psk" || srcSel.value === "both" ? srcSel.value : "wspr"; save(); tick(); });
+    }
     el("antGo").addEventListener("click", compare);
+    const clr = el("antClearFt8");
+    if (clr) clr.addEventListener("click", () => { const call = (typeof app !== "undefined" && app.myCall) || ""; ensureHistory(call); history.rows = []; saveHistory(); renderCollect(); showMsg("The saved FT8/FT4 reports were cleared."); });
+    document.addEventListener("visibilitychange", tick);
+    setInterval(tick, 30000);
     renderLog();
+    renderCollect();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   return api;

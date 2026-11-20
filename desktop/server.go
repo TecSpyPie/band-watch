@@ -209,6 +209,10 @@ func errJSON(msg string) map[string]any { return map[string]any{"error": msg} }
 var localHost = regexp.MustCompile(`^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$`)
 var gridRe = regexp.MustCompile(`^[A-R]{2}\d{2}$`)
 
+// callRe is the same callsign check as server.js and public/js/antenna.js.
+var callRe = regexp.MustCompile(`^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(/[A-Z0-9]{1,6})?$`)
+var minsRe = regexp.MustCompile(`^\d+$`)
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The desktop app only answers to this PC, which also stops other web sites reaching it by DNS tricks.
 	if s.cfg.Desktop && !localHost.MatchString(r.Host) {
@@ -290,6 +294,31 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data, err = s.getSpots(grid)
+	case p == "/api/myreports":
+		call := strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("call")))
+		if !callRe.MatchString(call) {
+			sendJSON(w, 400, errJSON("call must be a callsign like M3VRV"), nil)
+			return
+		}
+		mins := myReportsMaxMins
+		if raw := r.URL.Query().Get("mins"); raw != "" {
+			if !minsRe.MatchString(raw) {
+				sendJSON(w, 400, errJSON("mins must be a whole number of minutes"), nil)
+				return
+			}
+			n, e := strconv.Atoi(raw)
+			if e == nil && n < 1 {
+				sendJSON(w, 400, errJSON("mins must be a whole number of minutes"), nil)
+				return
+			}
+			if e == nil && n < myReportsMaxMins {
+				mins = n
+			}
+		}
+		data, err = s.getMyReports(call)
+		if err == nil {
+			data = s.myReportsAnswer(data, mins)
+		}
 	case strings.HasPrefix(p, "/api/"):
 		sendJSON(w, 404, errJSON("not found"), nil)
 		return

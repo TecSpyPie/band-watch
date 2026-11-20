@@ -205,6 +205,122 @@ test("answers 502 without leaking details when a feed is down and nothing is cac
   assert.equal((await get("/api/solar")).status, 502);
 });
 
+/* ---------- /api/myreports: FT8 and FT4 reports of your own callsign (Antenna A/B) ---------- */
+
+const myRx = (o) => report({ senderCallsign: "G4XYZ", senderLocator: "IO93fa", receiverCallsign: "K1ABC", receiverLocator: "FN42aa", frequency: 14074500, mode: "FT8", sNR: -12, ...o });
+const myUpstream = () => {
+  const t = nowSec();
+  up.psk = `<receptionReports>${[
+    myRx({ flowStartSeconds: t - 60 }),
+    myRx({ flowStartSeconds: t - 3000, receiverCallsign: "JA1ZZZ", receiverLocator: "PM95", mode: "FT4", frequency: 7047500, sNR: 3 }),
+    myRx({ flowStartSeconds: t - 7200, receiverCallsign: "DL1OLD", receiverLocator: "JO62", sNR: -20 }),
+    myRx({ flowStartSeconds: t - 100, mode: "WSPR", frequency: 14097100 }),
+    myRx({ flowStartSeconds: t - 100, senderCallsign: "N0OTH" }),
+    myRx({ flowStartSeconds: t - 100, receiverLocator: "" }),
+    myRx({ flowStartSeconds: t - 100, sNR: "" }),
+    myRx({ flowStartSeconds: t - 100, receiverCallsign: "" }),
+    myRx({ receiverCallsign: "NOTIME" }),
+    myRx({ flowStartSeconds: t - 100, receiverCallsign: "AB&amp;C" }),
+  ].join("")}</receptionReports>`;
+};
+
+test("GET /api/myreports validates the callsign and minutes before asking PSK Reporter", async () => {
+  myUpstream();
+  for (const c of ["", "x", "XX", "G4ABC;DROP", "a%20b", "G4ABC%26mins%3D1", "%27%20OR%201=1", "TOOLONGCALL1", "G4ABC/", "G4ABC/TOOLONGSUFFIX"]) {
+    assert.equal((await get(`/api/myreports?call=${c}`)).status, 400, `call ${JSON.stringify(c)}`);
+  }
+  for (const m of ["0", "-5", "abc", "1.5", "1e3", "%20"]) {
+    assert.equal((await get(`/api/myreports?call=G4XYZ&mins=${m}`)).status, 400, `mins ${JSON.stringify(m)}`);
+  }
+  assert.equal((await get("/api/myreports")).status, 400);
+  assert.equal(pskCalls().length, 0, "invalid requests never reach PSK Reporter");
+});
+
+test("GET /api/myreports returns the FT8 and FT4 reports of that sender, compact, and asks PSK Reporter politely", async () => {
+  myUpstream();
+  const r = await get("/api/myreports?call=g4xyz");
+  assert.equal(r.status, 200);
+  assert.equal(r.headers["cache-control"], "no-store");
+  const j = JSON.parse(r.body);
+  assert.equal(j.call, "G4XYZ");
+  assert.equal(j.mins, 1440);
+  assert.equal(typeof j.at, "number");
+  assert.deepEqual(j.reports.map((x) => x.c), ["DL1OLD", "JA1ZZZ", "AB&C", "K1ABC"], "oldest first; WSPR, other senders and unusable rows left out");
+  const ja = j.reports[1];
+  assert.deepEqual({ ...ja, ts: 0 }, { c: "JA1ZZZ", g: "PM95", lat: 35.5, lon: 139, fq: 7.0475, m: "FT4", snr: 3, ts: 0 });
+  assert.deepEqual(Object.keys(ja).sort(), ["c", "fq", "g", "lat", "lon", "m", "snr", "ts"]);
+  assert.equal(pskCalls().length, 1);
+  const q = new URL(pskCalls()[0]).searchParams;
+  assert.equal(q.get("senderCallsign"), "G4XYZ");
+  assert.equal(q.get("flowStartSeconds"), "-86400", "never more than PSK Reporter's 24 hours");
+  assert.equal(q.get("rronly"), "1");
+  assert.equal(q.get("noactive"), "1");
+  assert.ok(Number(q.get("rptlimit")) > 0 && Number(q.get("rptlimit")) <= 5000);
+  assert.match(q.get("appcontact"), /^https:\/\/github\.com\//, "a project address, never an email");
+  assert.ok(!pskCalls()[0].includes("%40"), "no email address anywhere in the request");
+});
+
+test("/api/myreports: mins trims the answer (and is capped at 24 hours) without another PSK Reporter call", async () => {
+  myUpstream();
+  const n = async (m) => JSON.parse((await get(`/api/myreports?call=G4XYZ${m}`)).body);
+  assert.equal((await n("&mins=10")).reports.length, 2, "last 10 minutes");
+  const hour = await n("&mins=60");
+  assert.equal(hour.mins, 60);
+  assert.deepEqual(hour.reports.map((x) => x.c), ["JA1ZZZ", "AB&C", "K1ABC"]);
+  assert.equal((await n("&mins=999999")).mins, 1440);
+  assert.equal((await n("&mins=999999")).reports.length, 4);
+  assert.equal(pskCalls().length, 1, "different windows share one upstream call");
+});
+
+test("/api/myreports: cached per callsign for 5 minutes, concurrent requests share one upstream call", async () => {
+  myUpstream();
+  await Promise.all([1, 2, 3, 4].map(() => get("/api/myreports?call=G4XYZ")));
+  await get("/api/myreports?call=G4XYZ&mins=30");
+  await get("/api/myreports?call=g4xyz");
+  assert.equal(pskCalls().length, 1);
+  await srv.advance(4 * 60e3);
+  await get("/api/myreports?call=G4XYZ");
+  assert.equal(pskCalls().length, 1, "still cached after 4 minutes");
+  await get("/api/myreports?call=M0ABC");
+  assert.equal(pskCalls().length, 2, "another callsign is fetched separately");
+  await srv.advance(2 * 60e3);
+  await get("/api/myreports?call=G4XYZ");
+  assert.equal(pskCalls().length, 3, "asked again only after the 5 minutes");
+});
+
+test("/api/myreports: serves stale data, marked stale, when a refresh fails", async () => {
+  myUpstream();
+  await get("/api/myreports?call=G4XYZ");
+  await srv.advance(6 * 60e3);
+  up.psk = new Error("network down");
+  const r = await get("/api/myreports?call=G4XYZ&mins=1440");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.stale, true);
+  assert.ok(j.reports.length >= 1);
+});
+
+test("/api/myreports: 502 without leaking details when PSK Reporter is down and nothing is cached", async () => {
+  up.psk = { status: 503 };
+  const r = await get("/api/myreports?call=G4XYZ");
+  assert.equal(r.status, 502);
+  assert.deepEqual(JSON.parse(r.body), { error: "upstream feed unavailable" });
+  up.psk = new Error("timeout");
+  const r2 = await get("/api/myreports?call=G4ABC");
+  assert.equal(r2.status, 502);
+  assert.ok(!/pskreporter|127\.0\.0\.1|timeout/i.test(r2.body));
+});
+
+test("/api/myreports: a callsign with a slash works and an empty answer is an empty list", async () => {
+  up.psk = "<receptionReports></receptionReports>";
+  const r = await get("/api/myreports?call=ea8%2Fg4abc");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.call, "EA8/G4ABC");
+  assert.deepEqual(j.reports, []);
+  assert.equal(new URL(pskCalls()[0]).searchParams.get("senderCallsign"), "EA8/G4ABC");
+});
+
 test("NOAA data with no usable values is treated as a failure", async () => {
   up.flux = [{ time_tag: "x", flux: null }];
   assert.equal((await get("/api/solar")).status, 502);

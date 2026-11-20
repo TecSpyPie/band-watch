@@ -212,3 +212,123 @@ test("parseRows: reads wspr.live's JSONCompact and skips broken rows", () => {
   assert.deepEqual(A.parseRows(null), []);
   assert.deepEqual(A.parseRows({}), []);
 });
+
+/* ---------- FT8 and FT4 from PSK Reporter ---------- */
+
+const sec = (s) => T0 + s * 1000;
+const psk = (s, rx, snr, mode = "FT8", fq = 14.074) => ({ ts: sec(s), c: rx, snr, m: mode, fq, lat: 40, lon: -74, g: "FN30" });
+
+test("parseMyReports: FT8 and FT4 become reports with their own slot length; broken rows are skipped", () => {
+  const r = A.parseMyReports({ reports: [
+    psk(0, "K1ABC", -12, "FT8", 14.0745),
+    psk(30, "K1ABC", -9, "FT4", 7.0475),
+    psk(5, "JUNK", -5, "WSPR"),
+    { ...psk(5, "NOSNR", 0), snr: null },
+    { ...psk(5, "", -3) },
+    { ...psk(5, "BADT", -3), ts: "x" },
+    "junk",
+  ] });
+  assert.equal(r.length, 2);
+  assert.deepEqual([r[0].band, r[0].slotMs, r[0].src, r[0].mode], [14, 15000, "psk", "FT8"]);
+  assert.deepEqual([r[1].band, r[1].slotMs], [7, 7500]);
+  assert.equal(r[0].t, sec(0));
+  assert.ok(Number.isNaN(r[0].dist));
+  assert.deepEqual(A.parseMyReports(null), []);
+  assert.deepEqual(A.parseMyReports({}), []);
+});
+
+test("myReportsUrl: callsign checked, minutes bounded to 1..1440", () => {
+  assert.equal(A.myReportsUrl("m3vrv", 120), "/api/myreports?call=M3VRV&mins=120");
+  assert.equal(A.myReportsUrl("EA8/G4ABC", 99999), "/api/myreports?call=EA8%2FG4ABC&mins=1440");
+  assert.equal(A.myReportsUrl("G4ABC", 0.2), "/api/myreports?call=G4ABC&mins=1");
+  for (const bad of ["", "x' OR 1=1", "G4ABC&mins=1", "a b"]) assert.throws(() => A.myReportsUrl(bad), /callsign/);
+});
+
+test("assignPeriod: FT8 needs a 15 s slot inside one period, FT4 7.5 s", () => {
+  const end = T0 + 20 * MIN;
+  assert.equal(A.assignPeriod(end - 15000, periods, now, 15000), "A");     // ends exactly at the swap
+  assert.equal(A.assignPeriod(end - 14000, periods, now, 15000), null);    // straddles it
+  assert.equal(A.assignPeriod(end - 7500, periods, now, 7500), "A");
+  assert.equal(A.assignPeriod(end - 7000, periods, now, 7500), null);
+  assert.equal(A.assignPeriod(end - 14000, periods, now, 7500), "A", "the same time fits a shorter FT4 slot");
+  assert.equal(A.assignPeriod(end - 14000, periods, now), null, "a WSPR (2 minute) slot does not");
+});
+
+test("analyse: FT8 slots are used per report, FT4 shorter than FT8, and sources are not mixed", () => {
+  const end = (T0 + 20 * MIN - T0) / 1000;      // seconds from T0 to the A to B swap
+  const reports = A.parseMyReports({ reports: [
+    psk(100, "K1ABC", -20), psk(end - 15, "K1ABC", -22),        // A (the second ends exactly at the swap)
+    psk(end, "K1ABC", -10), psk(end + 60, "K1ABC", -12),        // B
+    psk(end - 10, "STRAD", -5),                                   // FT8 straddles the swap: dropped
+    psk(end - 5, "STRAD", -5, "FT4"),                             // FT4 (7.5 s) straddles too: dropped
+    psk(end - 7.5, "SHORT", -5, "FT4", 7.0475), psk(end + 5, "SHORT", -1, "FT4", 7.0475),   // FT4 fits A, then B
+  ] });
+  const wspr = [rep(0, "K1ABC", -30), rep(20, "K1ABC", -20)];             // WSPR: same receiver and band
+  const r = A.analyse([...reports, ...wspr], periods, { now });
+  assert.equal(r.totals.unassigned, 2);
+  assert.deepEqual(r.totals.bySource, { psk: 8, wspr: 2 });
+  const f20 = r.bands.find((b) => b.band === 14 && b.src === "psk");
+  assert.equal(f20.srcLabel, "FT8/FT4");
+  assert.equal(f20.receivers, 1);
+  assert.equal(f20.avgA, -21);
+  assert.equal(f20.avgB, -11);
+  assert.equal(f20.diff, 10);
+  const w20 = r.bands.find((b) => b.band === 14 && b.src === "wspr");
+  assert.equal(w20.srcLabel, "WSPR");
+  assert.equal(w20.diff, 10, "WSPR numbers stay separate from the FT8 ones for the same receiver");
+  const f40 = r.bands.find((b) => b.band === 7 && b.src === "psk");
+  assert.equal(f40.receivers, 1);
+  assert.equal(f40.diff, 4);
+  assert.equal(r.totals.matched, 3);
+  assert.deepEqual(r.bands.map((b) => `${b.band}${b.src}`), ["7psk", "14psk", "14wspr"]);
+});
+
+test("analyse: reports without a source are WSPR; sourcesOf maps the switch", () => {
+  const r = A.analyse([rep(0, "R1", -10), rep(20, "R1", -9)], periods, { now });
+  assert.equal(r.bands[0].src, "wspr");
+  assert.deepEqual(r.totals.bySource, { wspr: 2 });
+  assert.deepEqual(A.sourcesOf("wspr"), ["wspr"]);
+  assert.deepEqual(A.sourcesOf("psk"), ["psk"]);
+  assert.deepEqual(A.sourcesOf("both"), ["wspr", "psk"]);
+  assert.deepEqual(A.sourcesOf("nonsense"), ["wspr"]);
+});
+
+/* ---------- the FT8/FT4 history (PSK Reporter keeps only the latest report per receiver) ---------- */
+
+test("mergeHistory: de-duplicated by receiver, band and time; pruned to 7 days; capped, oldest dropped", () => {
+  const N = T0 + 10 * 864e5;
+  const mk = (rx, t, band = 14) => ({ rx, t, band, snr: -10, slotMs: 15000, src: "psk" });
+  const h1 = A.mergeHistory([], [mk("A1", N - 60000), mk("B2", N - 120000)], N);
+  const h2 = A.mergeHistory(h1, [mk("A1", N - 60000), mk("A1", N - 30000), mk("A1", N - 60000, 7), mk("OLD", N - 8 * 864e5)], N);
+  assert.deepEqual(h2.map((r) => `${r.rx}${r.band}@${N - r.t}`), ["B214@120000", "A114@60000", "A17@60000", "A114@30000"]);
+  assert.equal(h2.some((r) => r.rx === "OLD"), false, "older than 7 days is dropped");
+  assert.equal(A.receiversIn(h2), 3, "receiver and band pairs");
+  const many = [];
+  for (let i = 0; i < 10; i++) many.push(mk("R" + i, N - (10 - i) * 1000));
+  const capped = A.mergeHistory([], many, N, { max: 4 });
+  assert.deepEqual(capped.map((r) => r.rx), ["R6", "R7", "R8", "R9"], "the newest are kept");
+  assert.equal(A.mergeHistory(null, null, N).length, 0);
+  assert.equal(A.HISTORY_MAX, 20000);
+});
+
+test("cleanHistory: survives JSON (NaN becomes null) and drops broken rows", () => {
+  const rows = A.parseMyReports({ reports: [psk(0, "K1ABC", -12), psk(5, "K1ABC", -9, "FT4", 7.04)] });
+  const back = A.cleanHistory(JSON.parse(JSON.stringify(rows)));
+  assert.equal(back.length, 2);
+  assert.ok(Number.isNaN(back[0].dist));
+  assert.equal(back[1].slotMs, 7500);
+  assert.deepEqual(A.cleanHistory([null, "x", { rx: "A", t: 1, snr: null, band: 14, slotMs: 15000 }, { rx: "", t: 1, snr: 1, band: 14, slotMs: 1 }]), []);
+  assert.deepEqual(A.cleanHistory("junk"), []);
+});
+
+test("collected history gives matches: the same receiver heard in a poll during A and a poll during B", () => {
+  const N = T0 + 70 * MIN;
+  const pollA = A.parseMyReports({ reports: [psk(300, "K1ABC", -20), psk(310, "DL1X", -15)] });         // seen during A
+  const pollB = A.parseMyReports({ reports: [psk(25 * 60, "K1ABC", -10), psk(25 * 60 + 5, "F5Z", -9)] }); // seen during B
+  const h = A.mergeHistory(A.mergeHistory([], pollA, N), pollB, N);
+  const r = A.analyse(h, periods, { now: N });
+  assert.equal(r.totals.matched, 1);
+  assert.equal(r.bands[0].diff, 10);
+  assert.equal(r.totals.onlyA, 1);
+  assert.equal(r.totals.onlyB, 1);
+});

@@ -435,13 +435,22 @@
         <b>Add a period by typing the times</b> (UTC), and delete any wrong period from the list.</li>
       <li><b>Swap often: every 10 to 20 minutes</b>, A then B then A then B, for a few hours. Band and ionosphere conditions
         change all the time, so one long run on A and then one on B proves little.</li>
-      <li>Press <b class="btn">Compare</b>. Band Watch asks wspr.live (a free public WSPR database) for the reports of your callsign.
-        It makes one request per click and looks at 7 days at most.</li>
+      <li>Pick where the reports come from: <b>WSPR</b> (the default), <b>FT8 and FT4</b>, or <b>Both</b>. Press
+        <b class="btn">Compare</b>. For WSPR, Band Watch asks wspr.live (a free public WSPR database) for the reports of your
+        callsign: one request per click, 7 days at most. For FT8 and FT4 it asks PSK Reporter through Band Watch's own server,
+        which asks PSK Reporter at most once every 5 minutes per callsign and only covers the last 24 hours. Send FT8 or FT4
+        with your usual software (an FT8 over is 15 seconds, FT4 7.5 seconds) and swap antennas as above.
+        <b>For FT8 and FT4, keep Band Watch open while you alternate antennas.</b> PSK Reporter only gives the latest report
+        from each station, so Band Watch collects them for you: while a period is being logged, FT8 or FT4 is chosen and the
+        page is showing, it asks every 5 minutes (and once when you press the antenna button) and saves what it gets in this
+        browser (7 days at most). Compare uses everything collected, so matches build up as stations hear you on each antenna.
+        <b class="btn">Clear FT8 history</b> empties it. A tab that is hidden or closed collects nothing.</li>
     </ol>
     <p><b>How it is made fair.</b> Only a receiving station that heard you on <b>both</b> antennas, on the same band, is
       compared. For each, Band Watch takes its average signal-to-noise ratio (SNR) on A and on B, then averages the
-      differences. A report counts only if its whole 2-minute slot is inside one period, so a swap in the middle never
-      muddies it. Stations that heard only one antenna are counted but left out.</p>
+      differences. A report counts only if its whole slot (2 minutes for WSPR, 15 seconds for FT8, 7.5 seconds for FT4) is inside one period,
+      so a swap in the middle never muddies it. Stations that heard only one antenna are counted but left out. WSPR and
+      FT8/FT4 reports are never mixed: with <b>Both</b>, each band has a row for each source, and the Source column says which.</p>
     <ul>
       <li><b>The table</b> shows each band, how many receivers heard both, the average SNR for each antenna and the
         difference, for example <b>Vertical better by 2.3 dB</b>. About 6 dB is one S-unit; under 1 dB is hard to tell from chance.</li>
@@ -450,7 +459,9 @@
       <li>With <b>fewer than 10</b> receivers matched, Band Watch warns you that the result is shaky. Keep going and compare again.</li>
     </ul>
     <p class="small muted">Use the same power, mode and time of day on both antennas. WSPR reports come from
-      <a href="https://wspr.live" target="_blank" rel="noopener noreferrer">wspr.live</a>. FT8 reports (PSK Reporter) are not included yet.</p>
+      <a href="https://wspr.live" target="_blank" rel="noopener noreferrer">wspr.live</a>, FT8 and FT4 reports from
+      <a href="https://pskreporter.info" target="_blank" rel="noopener noreferrer">PSK Reporter</a>. FT8 and FT4 stations
+      report you only if they run PSK Reporter reporting, so the count can differ from WSPR.</p>
   </section>
 
   <section class="panel" id="pota" aria-labelledby="hPota">

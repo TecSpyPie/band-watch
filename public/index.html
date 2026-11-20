@@ -796,8 +796,8 @@
       <h2 id="antTitle">Antenna A/B</h2>
       <a class="small" href="/help#antab" target="_blank" rel="noopener noreferrer">How to run a fair test</a>
     </div>
-    <p class="small muted">Compare two antennas (or before and after a change) using real reports of your own WSPR signal. This only
-      reads reports: it never controls your radio and never transmits. You send WSPR with your own software and switch antennas yourself.</p>
+    <p class="small muted">Compare two antennas (or before and after a change) using real reports of your own WSPR, FT8 or FT4 signal. This only
+      reads reports: it never controls your radio and never transmits. You send with your own software and switch antennas yourself.</p>
     <div class="antnames">
       <label>Antenna A <input id="antNameA" maxlength="30" autocomplete="off" placeholder="e.g. Dipole"></label>
       <label>Antenna B <input id="antNameB" maxlength="30" autocomplete="off" placeholder="e.g. Vertical"></label>
@@ -820,9 +820,13 @@
       <p class="err" id="antManErr" role="alert"></p>
     </details>
     <div class="antbtns">
+      <label>Reports from <select id="antSrc"><option value="wspr">WSPR</option><option value="psk">FT8 and FT4</option><option value="both">Both</option></select></label>
       <button type="button" id="antGo">Compare</button>
-      <span class="small muted">Looks up WSPR reports of your callsign on wspr.live (up to 7 days).</span>
+      <span class="small muted">Looks up reports of your callsign: WSPR on wspr.live (up to 7 days), FT8 and FT4 on PSK Reporter (last 24 hours).</span>
     </div>
+    <p class="small muted" id="antCollect" role="status"></p>
+    <div class="antbtns"><button type="button" class="ghost" id="antClearFt8" disabled>Clear FT8 history</button>
+      <span class="small muted">FT8 and FT4: keep Band Watch open while you swap antennas. It collects the reports every 5 minutes, and matches build up as stations hear you on each antenna.</span></div>
     <p class="small antmsg" id="antMsg" role="status"></p>
     <div id="antOut"></div>
   </section>
