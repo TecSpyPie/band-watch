@@ -44,6 +44,8 @@ const sdr = {
   sending: Promise.resolve(), lastSpec: 0, rows: null, meterAt: 0,
   // The most recent IQ samples, kept for the live band scope (whole I/Q pairs, oldest first).
   iq: new Uint8Array(65536), iqLen: 0, iqCarry: -1, lastScope: 0,
+  // Stall watch: rtl_tcp connected (header seen) but sending no samples.
+  readId: 0, headerAt: 0, lastIqAt: 0, headerOnly: 0, restarts: [], stallBusy: false, stallShown: false, canRestart: false, watch: null,
 };
 
 /** Keep the latest IQ bytes for the live band scope, always starting on an I byte. */
@@ -134,9 +136,10 @@ const sdrIsLocal = () => /^(127\.\d+\.\d+\.\d+|localhost):\d+$/i.test(sdr.addr);
 const sdrHeaders = { "Content-Type": "application/json", "X-Band-Watch": "sdr" };
 
 /** Start rtl_tcp on this PC (Settings: "Start rtl_tcp for me"). Returns "" or a problem. */
-async function sdrLaunch() {
+async function sdrLaunch(opts = {}) {
   try {
-    const r = await fetch("/api/sdr/launch", { method: "POST", headers: sdrHeaders, body: JSON.stringify({ path: sdr.exePath, port: sdrPort(), device: sdr.device }) });
+    const body = { path: opts.path || sdr.exePath, port: opts.port || sdrPort(), device: opts.device ?? sdr.device };
+    const r = await fetch("/api/sdr/launch", { method: "POST", headers: sdrHeaders, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
     renderRtlProc(j);
     if (!r.ok) return j.error || `rtl_tcp couldn't start (${r.status}).`;
@@ -278,6 +281,9 @@ async function sdrStart() {
   if (!(await checkSdr())) { sdrSetStatus("The RTL-SDR receiver works in Band Watch on your own PC (the Windows app)."); return; }
   sdr.running = true;
   sdr.lastError = "";
+  sdr.headerOnly = 0;
+  sdr.stallShown = sdr.canRestart = false;
+  renderStallUi();
   if (typeof renderScopeSrc === "function") renderScopeSrc();
   sdrNewDemod();
   sdrSetStatus(`Connecting to rtl_tcp at ${sdr.addr}…`);
@@ -312,7 +318,15 @@ async function sdrStart() {
   }
   if (!ok) return;
   sdrSendSettings();
-  readSdrStream(sdr.reader).catch(() => { if (sdr.running) sdrLost("The connection to rtl_tcp was lost."); });
+  sdrStartReading();
+}
+
+/** Read the stream; a newer read (after a reconnect or restart) retires the older one. */
+function sdrStartReading() {
+  const id = ++sdr.readId;
+  sdr.headerAt = sdr.lastIqAt = 0;
+  sdrWatchStart();
+  readSdrStream(sdr.reader, id).catch(() => { if (sdr.running && id === sdr.readId) sdrLost("The connection to rtl_tcp was lost."); });
 }
 
 /** Everything the dongle needs after (re)connecting. */
@@ -354,12 +368,12 @@ async function sdrConnect(tries, { canLaunch = false } = {}) {
   return false;
 }
 
-async function readSdrStream(reader) {
+async function readSdrStream(reader, id) {
   let header = new Uint8Array(0);
   sdr.odd = false; // true when the next byte is a Q byte
   for (;;) {
     const { value, done } = await reader.read();
-    if (done || !sdr.running) break;
+    if (done || !sdr.running || id !== sdr.readId) break;
     let chunk = value;
     if (header !== null) {
       // rtl_tcp starts with 12 bytes: "RTL0", the tuner type, the number of gain steps.
@@ -375,9 +389,16 @@ async function readSdrStream(reader) {
       sdr.tuner = RTL_TUNERS[tuner] || `tuner ${tuner}`;
       sdrSetStatus(`Connected: ${sdr.tuner}${sdr.tuner === "R828D" ? " (RTL-SDR Blog V4)" : ""} at ${sdr.addr}, ${(sdr.rate / 1e6).toLocaleString()} MS/s.`);
       header = null;
+      sdr.headerAt = performance.now();
+      sdr.lastIqAt = 0;
       chunk = joined.subarray(12);
       sdr.iqLen = 0;
       sdr.iqCarry = -1;
+    }
+    if (chunk.length) {
+      sdr.lastIqAt = performance.now();
+      sdr.headerOnly = 0;
+      if (sdr.stallShown) sdrStallClear();
     }
     const startsOdd = sdr.odd;
     sdr.odd = (sdr.odd ? 1 : 0) + chunk.length % 2 === 1;
@@ -404,11 +425,14 @@ async function readSdrStream(reader) {
       if (m) m.textContent = `Signal ${sdr.demod.level.toFixed(0)} dBFS`;
     }
   }
-  if (sdr.running) sdrLost("rtl_tcp closed the connection. Is the dongle still plugged in?");
+  if (sdr.running && id === sdr.readId) sdrLost("rtl_tcp closed the connection. Is the dongle still plugged in?");
 }
 
 /** The connection dropped: reconnect if allowed (Settings), otherwise stop. */
 async function sdrLost(why) {
+  if (sdr.headerAt && !sdr.lastIqAt) sdr.headerOnly++; // that connection got the header and nothing else
+  sdr.headerAt = 0;
+  if (sdr.running && SdrStall.isLoopStalled(sdr.headerOnly) && !sdr.stallBusy) { sdrStall("loop"); return; }
   if (!sdr.reconnect || (sdr.retries || 0) >= SDR_RETRIES) { sdrStop(why); return; }
   sdr.retries = (sdr.retries || 0) + 1;
   sdr.session = null;
@@ -420,9 +444,130 @@ async function sdrLost(why) {
   if (await sdrConnect(3)) {
     sdr.retries = n; // count stays until the connection holds
     sdrSendSettings();
-    readSdrStream(sdr.reader).catch(() => { if (sdr.running) sdrLost("The connection to rtl_tcp was lost."); });
+    sdrStartReading();
     setTimeout(() => { if (sdr.running && sdr.session) sdr.retries = 0; }, 20000);
   }
+}
+
+/* ---------- Stall recovery: rtl_tcp connected but sending no signal ---------- */
+
+function sdrWatchStart() {
+  if (sdr.watch) return;
+  sdr.watch = setInterval(() => {
+    if (!sdr.running || sdr.stallBusy || sdr.stallShown) return;
+    if (SdrStall.isStalled({ headerAt: sdr.headerAt, lastIqAt: sdr.lastIqAt, now: performance.now() })) sdrStall("silent");
+  }, 1000);
+}
+function sdrWatchStop() { if (sdr.watch) clearInterval(sdr.watch); sdr.watch = null; }
+
+function renderStallUi() {
+  const b = $("rtlRestart");
+  if (b) b.hidden = !sdr.canRestart;
+}
+
+function sdrStallClear() {
+  sdr.stallShown = sdr.canRestart = false;
+  renderStallUi();
+  if (sdr.running && sdr.tuner) sdrSetStatus(`Connected: ${sdr.tuner}${sdr.tuner === "R828D" ? " (RTL-SDR Blog V4)" : ""} at ${sdr.addr}, ${(sdr.rate / 1e6).toLocaleString()} MS/s.`);
+}
+
+async function sdrLaunchState() {
+  try {
+    const r = await fetch("/api/sdr/launch", { headers: { "X-Band-Watch": "sdr" }, cache: "no-store" });
+    if (r.ok) return await r.json();
+  } catch { /* unknown */ }
+  return null;
+}
+
+/** Stop our own rtl_tcp and wait for it to go (the server answers before the program has exited). */
+async function sdrStopOurs() {
+  try { await fetch("/api/sdr/launch/stop", { method: "POST", headers: sdrHeaders, body: "{}" }); } catch { /* ignore */ }
+  for (let i = 0; i < 40; i++) {
+    const st = await sdrLaunchState();
+    if (!st || st.running === false) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  await new Promise((r) => setTimeout(r, 500)); // let the port free up
+}
+
+/** Start our own rtl_tcp; "" when it's up, or a plain-English problem (including a foreign rtl_tcp holding the port). */
+async function sdrStartOwn(opts) {
+  const port = opts.port || sdrPort();
+  const problem = await sdrLaunch(opts);
+  if (problem) return problem;
+  await new Promise((r) => setTimeout(r, 1200));
+  const st = await sdrLaunchState();
+  if (st && st.running === false) return SdrStall.msgPortHeld(port);
+  return "";
+}
+
+const sdrDeviceOf = (st) => Number(st.args[st.args.indexOf("-d") + 1]) || 0;
+
+/** rtl_tcp stopped sending signal ("silent": connected and quiet; "loop": reconnects keep getting no samples). */
+async function sdrStall(kind) {
+  if (sdr.stallBusy || !sdr.running) return;
+  sdr.stallBusy = true;
+  try {
+    const local = sdrIsLocal() && sdr.available !== false;
+    const st = local ? await sdrLaunchState() : null;
+    const port = sdrPort();
+    const now = Date.now();
+    const act = SdrStall.plan({ status: st, port, restarts: sdr.restarts, now });
+    if (act === "restart") {
+      sdr.restarts = [...SdrStall.restartBudget(sdr.restarts, now).recent, now];
+      sdr.readId++; // retire the quiet connection
+      if (sdr.abort) sdr.abort.abort();
+      sdrSetStatus("rtl_tcp stopped sending signal. Band Watch is restarting it…");
+      await sdrStopOurs();
+      if (!sdr.running) return;
+      const problem = await sdrStartOwn({ path: st.path, port, device: sdrDeviceOf(st) });
+      if (!sdr.running) return;
+      if (problem) { sdrStop(problem); return; }
+      sdr.headerOnly = 0;
+      sdr.session = null;
+      if (!(await sdrConnect(8))) return;
+      sdrSendSettings();
+      sdrStartReading();
+    } else if (act === "limit") {
+      sdr.readId++;
+      sdrStop(SdrStall.MSG_LIMIT);
+    } else if (kind === "loop") {
+      sdr.canRestart = local;
+      sdrStop(SdrStall.MSG_FOREIGN);
+      renderStallUi();
+    } else {
+      sdr.stallShown = true;
+      sdr.canRestart = local;
+      sdrSetStatus(SdrStall.MSG_FOREIGN);
+      renderStallUi();
+    }
+  } finally { sdr.stallBusy = false; }
+}
+
+/** "Restart receiver": starts Band Watch's own rtl_tcp. It never closes a program Band Watch didn't start. */
+async function sdrRestartClick() {
+  if (sdr.stallBusy) return;
+  const st = await sdrLaunchState();
+  const port = sdrPort();
+  const ours = SdrStall.isOurs(st, port);
+  sdr.stallBusy = true;
+  try {
+    sdr.canRestart = false;
+    renderStallUi();
+    sdrSetStatus("Restarting the receiver…");
+    sdr.readId++;
+    if (sdr.abort) sdr.abort.abort();
+    if (ours) await sdrStopOurs();
+    const problem = await sdrStartOwn(ours ? { path: st.path, port, device: sdrDeviceOf(st) } : {});
+    if (problem) { sdrStop(problem); sdr.canRestart = true; renderStallUi(); return; }
+    sdr.stallShown = false;
+    if (!sdr.running) { sdrSetStatus("rtl_tcp started. Press Listen."); return; }
+    sdr.headerOnly = 0;
+    sdr.session = null;
+    if (!(await sdrConnect(8))) return;
+    sdrSendSettings();
+    sdrStartReading();
+  } finally { sdr.stallBusy = false; }
 }
 
 /** Stop the receiver; `why` is shown if it stopped by itself. */
@@ -430,6 +575,8 @@ function sdrStop(why = "") {
   const wasRunning = sdr.running;
   sdr.running = false;
   sdr.session = null;
+  sdr.readId++;
+  sdrWatchStop();
   if (sdr.abort) sdr.abort.abort();
   sdr.abort = null;
   if (sdr.ctx) sdr.ctx.close().catch(() => {});
@@ -637,6 +784,7 @@ function setupSdr() {
     $("optRtlMsg").textContent = problem || `rtl_tcp started on port ${sdrPort()}. Press Test connection, or Listen.`;
     setTimeout(sdrLaunchStatus, 1500);
   });
+  on("rtlRestart", "click", sdrRestartClick);
   on("optRtlKill", "click", async () => {
     try { await fetch("/api/sdr/launch/stop", { method: "POST", headers: sdrHeaders, body: "{}" }); } catch { /* ignore */ }
     $("optRtlMsg").textContent = "rtl_tcp stopped.";

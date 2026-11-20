@@ -162,6 +162,9 @@
     <h2 id="hRtl">Your RTL-SDR</h2>
     <p>Band Watch comes with rtl_tcp and starts it for you. Windows needs the dongle's driver changed once first, or no
       program can use it (even though Windows shows it's plugged in).</p>
+    <p>If the page says <b>rtl_tcp is connected but not sending any signal</b>, rtl_tcp has got stuck (it can after many hours
+      running). If Band Watch started it, Band Watch restarts it for you (at most twice in 10 minutes). If you started it yourself,
+      Band Watch leaves it alone: close it and start it again, or press <b class="btn">Restart receiver</b> to use Band Watch's own copy.</p>
     <ol>
       <li>Download <b>Zadig</b> from zadig.akeo.ie and run it.</li>
       <li>Click <b class="btn">Options → List All Devices</b>.</li>

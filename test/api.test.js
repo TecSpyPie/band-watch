@@ -634,6 +634,57 @@ test("RTL-SDR: starts rtl_tcp for the user, only the real program name, and stop
   assert.equal(JSON.parse((await get("/api/sdr/launch", { headers: SDR })).body).running, false);
 });
 
+test("RTL-SDR: a stuck rtl_tcp (header, then silence) reaches the page as just the header", async () => {
+  const net = require("net");
+  const header = Buffer.from([0x52, 0x54, 0x4c, 0x30, 0, 0, 0, 6, 0, 0, 0, 29]);
+  const server = net.createServer((sock) => { sock.write(header); sock.on("error", () => {}); sock.on("data", () => {}); });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const s = await openStream(`/api/sdr/stream?addr=127.0.0.1:${server.address().port}`, 12);
+    assert.equal(s.status, 200);
+    assert.deepEqual(s.body, header);
+    // ...and the connection stays open with no samples: the page's stall watch is what notices
+    let extra = 0;
+    s.res.on("data", (c) => { extra += c.length; });
+    await new Promise((r) => setTimeout(r, 400));
+    assert.equal(extra, 0);
+    s.req.destroy();
+  } finally {
+    server.close();
+  }
+});
+
+// What the page does to restart the rtl_tcp it started: stop it, wait until it has gone, start it again.
+// (The fixture is a shell script, so this can't run on Windows.)
+test("RTL-SDR: stop, wait, launch again gives a fresh rtl_tcp that Band Watch started (stall restart)", { skip: process.platform === "win32" }, async () => {
+  const path = require("path");
+  const net = require("net");
+  const exe = path.join(__dirname, "fixtures", "rtl_tcp");
+  const post = (p, body) => get(p, { method: "POST", headers: { ...SDR, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const status = async () => JSON.parse((await get("/api/sdr/launch", { headers: SDR })).body);
+  const port = await new Promise((resolve) => { const s = net.createServer().listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => resolve(p)); }); });
+  const first = JSON.parse((await post("/api/sdr/launch", { path: exe, port, device: 0 })).body);
+  assert.equal(first.running, true);
+  // the page tells ours from someone else's by the port in the args
+  assert.equal(first.args[first.args.indexOf("-p") + 1], String(port));
+  assert.equal((await post("/api/sdr/launch/stop", {})).status, 200);
+  for (let i = 0; i < 60 && (await status()).running; i++) await new Promise((r) => setTimeout(r, 50));
+  assert.equal((await status()).running, false);
+  const again = JSON.parse((await post("/api/sdr/launch", { path: first.path, port, device: 0 })).body);
+  assert.equal(again.running, true);
+  assert.deepEqual(again.args, first.args);
+  let s;
+  for (let i = 0; i < 40; i++) {
+    s = await openStream(`/api/sdr/stream?addr=127.0.0.1:${port}`, 12).catch(() => null);
+    if (s && s.status === 200) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  assert.equal(s.body.subarray(0, 4).toString(), "RTL0");
+  s.req.destroy();
+  await post("/api/sdr/launch/stop", {});
+  for (let i = 0; i < 60 && (await status()).running; i++) await new Promise((r) => setTimeout(r, 50));
+});
+
 test("healthz says when this copy was built and what it runs on", async (t) => {
   const r = await get("/healthz");
   const h = JSON.parse(r.body);
