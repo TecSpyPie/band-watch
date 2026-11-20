@@ -66,9 +66,15 @@ type Settings struct {
 	Treble  int    `json:"treble"`  // dB, -12 to +12
 	Mnotch  int    `json:"mnotch"`  // manual notch: Hz (200-3000), 0 = off
 
+	// The hiss remover (spectral noise reduction): on, how strong (dB), and the noise it was taught with Learn noise
+	// (257 numbers, one per pitch, in tenths of a dB; empty = it follows the noise by itself)
+	Snr        bool  `json:"snr"`
+	SnrLevel   int   `json:"snrLevel"`   // 6 to 30 dB
+	SnrProfile []int `json:"snrProfile"` // empty, or exactly snrBins numbers, each -3000 to 600
+
 	// The rack: the order the modules work in, the graphic EQ and the compressor / limiter.
 	// Files saved by older versions have none of these: they get the defaults (see defaultSettings).
-	// A module is switched on by its own field (voice, cw, notch, nr, comp, nb, eq, cmp); the manual notch, squelch
+	// A module is switched on by its own field (voice, cw, notch, snr, nr, comp, nb, eq, cmp); the manual notch, squelch
 	// and bass/treble are on whenever their value (mnotch, sq, bass or treble) is not 0.
 	Order     []string `json:"order"`     // module ids, top to bottom (see modules); anything missing is added at the end
 	Eq        bool     `json:"eq"`        // graphic EQ on
@@ -84,13 +90,19 @@ type Settings struct {
 var agcSpeeds = map[string]bool{"fast": true, "medium": true, "slow": true}
 
 // modules are the rack's modules in their usual order (the same ids and order as MODULES in rxfx.js).
-var modules = []string{"nb", "voice", "cw", "mnotch", "notch", "nr", "sq", "comp", "eq", "tone", "cmp"}
+var modules = []string{"nb", "voice", "cw", "mnotch", "notch", "snr", "nr", "sq", "comp", "eq", "tone", "cmp"}
+
+// moduleAfter: a module added in a later version goes after this one in an order saved before it existed
+var moduleAfter = map[string]string{"snr": "notch"}
+
+const snrBins = 257 // the hiss remover's pitches (a 512-point FFT)
 
 const eqBands = 10 // the graphic EQ: 100, 200, 300, 500, 800, 1200, 1800, 2500, 3500, 5000 Hz
 
 var eqPresets = map[string]bool{"flat": true, "ssb": true, "weak": true, "cw": true, "am": true, "custom": true}
 
-// cleanOrder keeps a module order safe: unknown ids and repeats are dropped, and missing modules go at the end.
+// cleanOrder keeps a module order safe: unknown ids and repeats are dropped, and missing modules are added in their
+// usual place (at the end, or after their moduleAfter module), the same as normalizeOrder in rxfx.js.
 func cleanOrder(in []string) []string {
 	out := make([]string, 0, len(modules))
 	seen := map[string]bool{}
@@ -98,11 +110,42 @@ func cleanOrder(in []string) []string {
 	for _, m := range modules {
 		known[m] = true
 	}
-	for _, id := range append(append([]string{}, in...), modules...) {
+	for _, id := range in {
 		if known[id] && !seen[id] {
 			seen[id] = true
 			out = append(out, id)
 		}
+	}
+	for _, id := range modules {
+		if !seen[id] && moduleAfter[id] == "" {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	for _, id := range modules {
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		at := len(out)
+		for i, o := range out {
+			if o == moduleAfter[id] {
+				at = i + 1
+			}
+		}
+		out = append(out[:at], append([]string{id}, out[at:]...)...)
+	}
+	return out
+}
+
+// cleanProfile keeps a learnt noise only if it has exactly one number per pitch, each within range.
+func cleanProfile(in []int) []int {
+	if len(in) != snrBins {
+		return []int{}
+	}
+	out := make([]int, snrBins)
+	for i, v := range in {
+		out[i] = max(-3000, min(600, v))
 	}
 	return out
 }
@@ -138,7 +181,7 @@ var presets = map[string]bool{"off": true, "ssb": true, "weak": true, "cw": true
 
 // defaultSettings are what a saved file or a request falls back to for anything it leaves out (so old files keep working).
 func defaultSettings() Settings {
-	return Settings{Preset: "ssb", Voice: true, Lo: 300, Hi: 2700, Tone: 700, Width: 200, Notch: true, NrLevel: 1, Comp: true, On: true, NbLevel: 2, Agc: "medium",
+	return Settings{Preset: "ssb", Voice: true, Lo: 300, Hi: 2700, Tone: 700, Width: 200, Notch: true, NrLevel: 1, Comp: true, On: true, NbLevel: 2, Agc: "medium", SnrLevel: 15, SnrProfile: []int{},
 		Order: cleanOrder(nil), EqPreset: "flat", EqGains: cleanGains(nil), CmpThr: -18, CmpRatio: 3, CmpLimit: true}
 }
 
@@ -179,6 +222,8 @@ func (s Settings) clean() Settings {
 	if !agcSpeeds[s.Agc] {
 		s.Agc = "medium"
 	}
+	s.SnrLevel = clampInt(s.SnrLevel, 6, 30, 15)
+	s.SnrProfile = cleanProfile(s.SnrProfile)
 	s.Sq = clampOr0(s.Sq, -80, -20)
 	s.Bass = clampOr0(s.Bass, -12, 12)
 	s.Treble = clampOr0(s.Treble, -12, 12)
@@ -311,7 +356,7 @@ func (a *App) settingsAPI(w http.ResponseWriter, r *http.Request) {
 			sendJSON(w, 403, map[string]string{"error": "ClearRX's settings are changed in ClearRX"})
 			return
 		}
-		body, err := io.ReadAll(io.LimitReader(r.Body, 4096))
+		body, err := io.ReadAll(io.LimitReader(r.Body, 16384)) // room for a learnt noise (257 numbers)
 		s, perr := parseSettings(body)
 		if err != nil || perr != nil {
 			sendJSON(w, 400, map[string]string{"error": "expected ClearRX settings"})

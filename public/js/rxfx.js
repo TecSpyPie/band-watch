@@ -9,14 +9,17 @@
  *   4. Manual notch: a deep, narrow notch at a frequency you choose, for a whistle that moves too little to matter.
  *   5. Auto notch: an adaptive (LMS) filter that learns steady tones, like carriers and tune-ups, and removes them.
  *      Speech changes too quickly for it to learn, so voices pass.
- *   6. Noise reduction: the same kind of adaptive filter the other way round: it keeps what it can predict (voice,
+ *   6. Hiss remover (spectral noise reduction): splits the sound into 257 pitches, knows how loud the noise is at
+ *      each (from the noise you taught it with Learn noise, or its own running guess) and turns each pitch down by
+ *      how much of it is noise. 11 ms late, much stronger on steady hiss than the noise reduction below.
+ *   7. Noise reduction: the same kind of adaptive filter the other way round: it keeps what it can predict (voice,
  *      tones) and lets go of what it can't (hiss). This is how DSP noise reduction in radios and speakers works.
- *   7. Squelch: quiet between signals. It listens before the compressor, so the compressor can't lift the noise
+ *   8. Squelch: quiet between signals. It listens before the compressor, so the compressor can't lift the noise
  *      over it, opens at once and closes after a short hang.
- *   8. Compressor (AGC): brings quiet and loud stations to a steady level, fast, medium or slow to recover.
- *  9. Graphic EQ: ten bands (100 Hz to 5 kHz), +-12 dB each.
- * 10. Tone: bass and treble shelves.
- * 11. Compressor / limiter: threshold, ratio and make-up gain, and a limiter that holds the sound under -1 dBFS.
+ *   9. Compressor (AGC): brings quiet and loud stations to a steady level, fast, medium or slow to recover.
+ * 10. Graphic EQ: ten bands (100 Hz to 5 kHz), +-12 dB each.
+ * 11. Tone: bass and treble shelves.
+ * 12. Compressor / limiter: threshold, ratio and make-up gain, and a limiter that holds the sound under -1 dBFS.
  * Then a soft limiter so it never clips, and a meter: peak and average level, gain reduction, and whether the sound
  * would have clipped.
  * The numbers above are only the usual order: ClearRX is an effects rack, and "order" (a list of the module ids in
@@ -108,18 +111,172 @@
     }
   }
 
+  /* ---------- Spectral noise reduction ("learn the hiss") ----------
+   * The sound is cut into short overlapping slices (512 samples, about 11 ms, each half over the last) and each slice
+   * is split into 257 pitches with an FFT. For every pitch it knows how loud the noise is there: either the noise you
+   * taught it (Learn noise, on an empty bit of band), or, until then, its own estimate (the quietest that pitch has
+   * been over the last 1.5 seconds: noise is always there, speech comes and goes). Each pitch is turned down by how
+   * much of it is noise (a Wiener filter with Ephraim and Malah's "decision-directed" smoothing, which keeps the hiss
+   * that's left smooth rather than twinkly), never by more than the Strength. The slices are put back together
+   * (sqrt-Hann windows, overlap-add), so with nothing to take out the sound comes out exactly as it went in, 512
+   * samples (11 ms) later. */
+  const SNR_N = 512, SNR_HOP = 256, SNR_BINS = SNR_N / 2 + 1;
+  const SNR_SUB = 48, SNR_SUBS = 6; // its own estimate: the quietest over 6 stretches of 48 slices (about 1.5 s)
+  const SNR_BIAS = 1.6; // the quietest is below the average noise: lift it back up
+  const SNR_OVER = 1.4; // take out a little more than the noise, so less of it gets through
+  const SNR_LEARN_SECS = 1.5;
+  const SNR_RANGE = [6, 30]; // Strength: the most a pitch is turned down, dB
+  const SNR_PROFILE_MIN = -3000, SNR_PROFILE_MAX = 600; // a saved profile: tenths of a dB per pitch
+  let fftTab = null;
+  function fftTables() {
+    if (fftTab) return fftTab;
+    const n = SNR_N, bits = Math.log2(n), rev = new Uint16Array(n), cos = new Float64Array(n / 2), sin = new Float64Array(n / 2);
+    for (let i = 0; i < n; i++) { let r = 0; for (let b = 0; b < bits; b++) r |= ((i >> b) & 1) << (bits - 1 - b); rev[i] = r; }
+    for (let i = 0; i < n / 2; i++) { cos[i] = Math.cos((2 * Math.PI * i) / n); sin[i] = -Math.sin((2 * Math.PI * i) / n); }
+    // sqrt of a periodic Hann, going in and coming out: the two make a Hann, and Hanns half over each other add up to 1
+    const win = new Float64Array(n);
+    for (let i = 0; i < n; i++) win[i] = Math.sqrt(0.5 - 0.5 * Math.cos((2 * Math.PI * i) / n));
+    return (fftTab = { rev, cos, sin, win });
+  }
+  /** In-place radix-2 FFT of SNR_N points (inverse: the other way round, not divided by N). */
+  function fft(re, im, inverse) {
+    const { rev, cos, sin } = fftTables(), n = re.length;
+    for (let i = 0; i < n; i++) { const j = rev[i]; if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+    for (let size = 2; size <= n; size <<= 1) {
+      const half = size >> 1, step = n / size;
+      for (let s = 0; s < n; s += size) {
+        for (let k = 0; k < half; k++) {
+          const wr = cos[k * step], wi = inverse ? -sin[k * step] : sin[k * step];
+          const a = s + k, b = a + half;
+          const tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        }
+      }
+    }
+  }
+
+  class SpectralNr {
+    constructor() {
+      fftTables();
+      this.frame = new Float64Array(SNR_N); // the last 512 samples in
+      this.fill = new Float64Array(SNR_HOP); // new samples waiting for the next slice
+      this.ready = new Float64Array(SNR_HOP); // finished samples going out
+      this.acc = new Float64Array(SNR_N); // overlap-add
+      this.re = new Float64Array(SNR_N); this.im = new Float64Array(SNR_N);
+      this.k = 0;
+      this.smooth = new Float64Array(SNR_BINS); // each pitch's level, smoothed
+      this.curMin = new Float64Array(SNR_BINS).fill(Infinity);
+      this.mins = Array.from({ length: SNR_SUBS }, () => new Float64Array(SNR_BINS).fill(Infinity));
+      this.minAt = 0; this.subCount = 0;
+      this.auto = new Float64Array(SNR_BINS); // its own noise estimate
+      this.profile = null; // the noise you taught it (power per pitch at an input gain of 1), or null
+      this.scale = 1; // the input gain squared: a profile learnt at one volume still fits at another
+      this.gPrev = new Float64Array(SNR_BINS).fill(1);
+      this.postPrev = new Float64Array(SNR_BINS).fill(1);
+      this.floor = Math.pow(10, -15 / 20);
+      this.learnLeft = 0; this.learnSum = null; this.learnN = 0;
+      this.learnt = 0; // goes up by one each time it finishes learning (so the worklet knows to send the profile)
+      this.frames = 0;
+      this.reduction = 0; // how much it's taking out just now, dB
+    }
+    /** Strength in dB: the most any pitch is turned down. */
+    setStrength(db) { this.floor = Math.pow(10, -db / 20); }
+    /** Learn the noise from what passes through in the next few seconds (1.5 by default). */
+    learn(secs = SNR_LEARN_SECS) {
+      this.learnLeft = Math.max(1, Math.round((secs * RATE) / SNR_HOP));
+      this.learnN = 0; this.learnSum = new Float64Array(SNR_BINS);
+    }
+    get learning() { return this.learnLeft > 0; }
+    /** A saved profile (257 numbers, tenths of a dB, as profileOut gives), or anything else to forget it. */
+    setProfile(list) {
+      if (Array.isArray(list) && list.length === SNR_BINS && list.every(Number.isFinite)) this.profile = Float64Array.from(list, (v) => Math.pow(10, v / 100));
+      else this.profile = null;
+    }
+    /** The learnt profile as whole tenths of a dB (small enough for the settings file), or [] if there isn't one. */
+    profileOut() {
+      if (!this.profile) return [];
+      return Array.from(this.profile, (p) => Math.max(SNR_PROFILE_MIN, Math.min(SNR_PROFILE_MAX, Math.round(100 * Math.log10(Math.max(p, 1e-30))))));
+    }
+    /** Empty buffers (when it's switched back on), keeping what it knows about the noise. */
+    clear() { this.frame.fill(0); this.fill.fill(0); this.ready.fill(0); this.acc.fill(0); this.k = 0; this.gPrev.fill(1); this.postPrev.fill(1); }
+    step(x) {
+      const y = this.ready[this.k];
+      this.fill[this.k] = x;
+      if (++this.k === SNR_HOP) { this.k = 0; this.slice(); }
+      return y;
+    }
+    slice() {
+      const { win } = fftTab, N = SNR_N, H = SNR_HOP, re = this.re, im = this.im, fr = this.frame;
+      fr.copyWithin(0, H); fr.set(this.fill, N - H);
+      for (let i = 0; i < N; i++) { re[i] = fr[i] * win[i]; im[i] = 0; }
+      fft(re, im, false);
+      this.frames++;
+      // Its own estimate: each pitch's smoothed level, and the quietest of it over the last 1.5 s
+      const sm = this.smooth, cm = this.curMin;
+      for (let b = 0; b < SNR_BINS; b++) {
+        const p = re[b] * re[b] + im[b] * im[b];
+        sm[b] = this.frames === 1 ? p : 0.85 * sm[b] + 0.15 * p;
+        if (sm[b] < cm[b]) cm[b] = sm[b];
+        if (this.learnLeft > 0) this.learnSum[b] += p;
+      }
+      if (this.learnLeft > 0) {
+        this.learnN++;
+        if (--this.learnLeft === 0) {
+          const sc = Math.max(1e-12, this.scale), n = this.learnN;
+          this.profile = Float64Array.from(this.learnSum, (v) => Math.max(1e-30, v / n / sc));
+          this.learnSum = null; this.learnt++;
+        }
+      }
+      if (++this.subCount === SNR_SUB) {
+        this.subCount = 0;
+        this.mins[this.minAt].set(cm); this.minAt = (this.minAt + 1) % SNR_SUBS;
+        cm.fill(Infinity);
+      }
+      const auto = this.auto;
+      for (let b = 0; b < SNR_BINS; b++) {
+        let m = cm[b];
+        for (let j = 0; j < SNR_SUBS; j++) if (this.mins[j][b] < m) m = this.mins[j][b];
+        auto[b] = (Number.isFinite(m) ? m : sm[b]) * SNR_BIAS;
+      }
+      // Turn each pitch down by how much of it is noise
+      const prof = this.profile, sc = this.scale, floor = this.floor, gp = this.gPrev, pp = this.postPrev;
+      let inSum = 0, outSum = 0;
+      for (let b = 0; b < SNR_BINS; b++) {
+        const p = re[b] * re[b] + im[b] * im[b];
+        const nz = Math.max(1e-20, (prof ? prof[b] * sc : auto[b]) * SNR_OVER);
+        const post = p / nz;
+        const prio = 0.98 * gp[b] * gp[b] * pp[b] + 0.02 * Math.max(post - 1, 0);
+        let g = prio / (1 + prio);
+        if (g < floor) g = floor;
+        gp[b] = g; pp[b] = Math.min(post, 1e6);
+        inSum += p; outSum += p * g * g;
+        re[b] *= g; im[b] *= g;
+        if (b > 0 && b < N / 2) { re[N - b] = re[b]; im[N - b] = -im[b]; } // the mirror half, so it stays real sound
+      }
+      this.reduction = inSum > 1e-20 ? Math.max(0, 10 * Math.log10(inSum / Math.max(outSum, 1e-30))) : 0;
+      fft(re, im, true);
+      const acc = this.acc;
+      for (let i = 0; i < N; i++) acc[i] += (re[i] / N) * win[i];
+      this.ready.set(acc.subarray(0, H));
+      acc.copyWithin(0, H); acc.fill(0, N - H);
+    }
+  }
+
   /* ---------- The rack: modules, their order, the EQ and the compressor's curve (pure, tested on their own) ---------- */
 
   // Every module, in the usual order. The ids are what ClearRX keeps in its settings ("order").
-  const MODULES = ["nb", "voice", "cw", "mnotch", "notch", "nr", "sq", "comp", "eq", "tone", "cmp"];
+  const MODULES = ["nb", "voice", "cw", "mnotch", "notch", "snr", "nr", "sq", "comp", "eq", "tone", "cmp"];
   const MODULE_NAMES = { nb: "Noise blanker", voice: "Band-pass filter", cw: "CW peak filter", mnotch: "Manual notch", notch: "Auto notch",
-    nr: "Noise reduction", sq: "Squelch", comp: "Steady volume (AGC)", eq: "Graphic EQ", tone: "Bass and treble", cmp: "Compressor / limiter" };
+    snr: "Hiss remover", nr: "Noise reduction", sq: "Squelch", comp: "Steady volume (AGC)", eq: "Graphic EQ", tone: "Bass and treble", cmp: "Compressor / limiter" };
+  // A module added in a later version goes after this one in an order saved before it existed (not at the end)
+  const AFTER = { snr: "notch" };
 
-  /** A list of module ids made safe: unknown ids and repeats dropped, missing modules added at the end in the usual order. */
+  /** A list of module ids made safe: unknown ids and repeats dropped, missing modules added in their usual place. */
   function normalizeOrder(order) {
     const out = [];
     if (Array.isArray(order)) for (const id of order) if (MODULES.includes(id) && !out.includes(id)) out.push(id);
-    for (const id of MODULES) if (!out.includes(id)) out.push(id);
+    for (const id of MODULES) if (!out.includes(id) && !AFTER[id]) out.push(id);
+    for (const id of MODULES) if (!out.includes(id)) { const at = out.indexOf(AFTER[id]); out.splice(at < 0 ? out.length : at + 1, 0, id); }
     return out;
   }
   /** The order with one module moved up (dir -1) or down (+1) a place. Returns a new list (the same places if it can't move). */
@@ -182,6 +339,7 @@
   const PRESET_NAMES = { off: "Off", ssb: "SSB voice", weak: "Weak DX", cw: "CW", am: "AM broadcast" };
   // The extras (noise blanker, AGC speed, squelch, tone, manual notch) are kept whichever preset you pick.
   const DEFAULTS = { preset: "off", voice: false, lo: 300, hi: 2700, cw: false, tone: 700, width: 200, notch: false, nr: false, nrLevel: 1, comp: false,
+    snr: false, snrLevel: 15, snrProfile: [],
     nb: false, nbLevel: 2, agc: "medium", sq: 0, bass: 0, treble: 0, mnotch: 0,
     // The rack: module order, graphic EQ, compressor / limiter
     order: MODULES, eq: false, eqGains: EQ_PRESETS.flat, cmp: false, cmpThr: -18, cmpRatio: 3, cmpMakeup: 0, cmpLimit: true };
@@ -200,6 +358,7 @@
       this.order = null; // the order the sound goes through now
       this.pending = null; // a new order waiting for the fade-out to finish
       this.fadeG = 1;
+      this.fadeHold = 0;
       this.eqF = [];
       this.configure(settings);
     }
@@ -214,6 +373,10 @@
       s.tone = Math.max(300, Math.min(1500, Number(s.tone) || 700));
       s.width = Math.max(50, Math.min(800, Number(s.width) || 200));
       s.nrLevel = Math.max(1, Math.min(3, Math.round(Number(s.nrLevel) || 1)));
+      s.snr = Boolean(s.snr);
+      s.snrLevel = Math.max(SNR_RANGE[0], Math.min(SNR_RANGE[1], Math.round(Number(s.snrLevel) || 15)));
+      s.snrProfile = Array.isArray(s.snrProfile) && s.snrProfile.length === SNR_BINS && s.snrProfile.every((v) => Number.isFinite(Number(v)))
+        ? s.snrProfile.map((v) => Math.max(SNR_PROFILE_MIN, Math.min(SNR_PROFILE_MAX, Math.round(Number(v))))) : [];
       s.nb = Boolean(s.nb);
       s.nbLevel = Math.max(1, Math.min(3, Math.round(Number(s.nbLevel) || 2)));
       if (!AGC[s.agc]) s.agc = "medium";
@@ -263,6 +426,12 @@
       if (!this.order) this.order = s.order.slice();
       else if (s.order.join() !== this.order.join()) this.pending = s.order.slice();
       else this.pending = null;
+      // Hiss remover: its slices are 11 ms late, so switching it on or off fades out and in like a change of order (no click)
+      if (!this.snrF) { this.snrF = new SpectralNr(); this.snrLive = s.snr; }
+      else if (s.snr !== this.snrLive) this.pending = this.pending || this.order.slice();
+      this.snrF.setStrength(s.snrLevel);
+      const sig = s.snrProfile.length ? s.snrProfile.join() : "";
+      if (sig !== this.snrSig) { this.snrSig = sig; this.snrF.setProfile(s.snrProfile); }
       this.plan();
       return this.s;
     }
@@ -271,7 +440,7 @@
     plan() {
       const s = this.s;
       const doing = {
-        nb: s.nb, voice: s.voice, cw: s.cw, mnotch: this.mnotchF.length > 0, notch: s.notch, nr: s.nr, sq: s.sq !== 0, comp: s.comp,
+        nb: s.nb, voice: s.voice, cw: s.cw, mnotch: this.mnotchF.length > 0, notch: s.notch, snr: this.snrLive, nr: s.nr, sq: s.sq !== 0, comp: s.comp,
         eq: this.eqF.some(Boolean), tone: this.toneF.length > 0, cmp: s.cmp,
       };
       this.active = this.order.filter((id) => doing[id]);
@@ -284,7 +453,7 @@
     process(buf) {
       const s = this.s;
       let act = this.active, nAct = act.length;
-      const on = nAct > 0;
+      let on = nAct > 0;
       let peakIn = 0, sum = 0, peakOut = 0, grBlock = 0;
       const [relSecs, rise] = AGC[s.agc] || AGC.medium;
       const ATT = 1 - Math.exp(-1 / (RATE * 0.004)), REL = 1 - Math.exp(-1 / (RATE * relSecs));
@@ -320,6 +489,7 @@
               case "cw": for (const f of this.cwf) x = f.run(x); break;
               case "mnotch": for (const f of this.mnotchF) x = f.run(x); break;
               case "notch": x = this.notchF.step(x)[1]; break;
+              case "snr": x = this.snrF.step(x); break;
               case "nr": {
                 const [y] = this.nrF.step(x);
                 x = y * 1.4; // the prediction loses a little level: give it back
@@ -375,10 +545,15 @@
           if (this.fadeG <= 0) {
             this.fadeG = 0;
             this.order = this.pending; this.pending = null;
+            if (this.snrLive !== s.snr) {
+              this.snrLive = s.snr; this.snrF.clear();
+              if (s.snr) this.fadeHold = SNR_N; // it gives silence for its first 512 samples: stay quiet till its sound arrives
+            }
             this.plan();
-            act = this.active; nAct = act.length;
+            act = this.active; nAct = act.length; on = on || nAct > 0; // a module switched on mid-block starts at once
           }
-        } else if (this.fadeG < 1) this.fadeG = Math.min(1, this.fadeG + FADE_STEP);
+        } else if (this.fadeHold > 0) this.fadeHold--;
+        else if (this.fadeG < 1) this.fadeG = Math.min(1, this.fadeG + FADE_STEP);
         if (this.fadeG !== 1) x *= this.fadeG;
         const ao = Math.abs(x);
         if (ao > peakOut) peakOut = ao;
@@ -395,9 +570,15 @@
       if (wouldClip) { m.clip = true; m.clipAt = Date.now(); } else if (Date.now() - m.clipAt > 1500) m.clip = false;
       return buf;
     }
+
+    /** Hiss remover: learn the noise from the next 1.5 s (on an empty bit of band). inGain: the volume it's learnt at. */
+    snrLearn(secs, inGain) { if (inGain > 0) this.snrF.scale = inGain * inGain; this.snrF.learn(secs); }
+    /** The volume (input gain) the sound comes in at, so a learnt noise still fits after you turn it up or down. */
+    set inGain(g) { if (g > 0) this.snrF.scale = g * g; }
+    get snrLearning() { return this.snrF.learning; }
   }
 
-  return { Chain, Biquad, Lms, PRESETS, PRESET_NAMES, DEFAULTS, AGC, RATE,
+  return { Chain, Biquad, Lms, SpectralNr, fft, SNR_N, SNR_HOP, SNR_BINS, SNR_RANGE, PRESETS, PRESET_NAMES, DEFAULTS, AGC, RATE,
     MODULES, MODULE_NAMES, normalizeOrder, moveModule, EQ_FREQS, EQ_Q, EQ_RANGE, EQ_PRESETS, EQ_NAMES, PRESET_EQ, normalizeGains,
     eqResponseDb, magnitudeDb, compGainDb, CMP_CEILING };
 });

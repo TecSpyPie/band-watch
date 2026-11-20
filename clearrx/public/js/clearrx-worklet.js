@@ -14,11 +14,13 @@ class ClearRxProcessor extends AudioWorkletProcessor {
     this.gr = 0; // the most the compressor / limiter turned the sound down since the last report
     this.sent = 0;
     this.buf = new Float32Array(128);
+    this.learnt = 0; // how many times the hiss remover has finished learning (a new one is sent to the page)
     this.port.onmessage = (e) => {
       const m = e.data || {};
       if (m.settings) this.chain.configure(m.settings);
       if (typeof m.bypass === "boolean") this.bypass = m.bypass;
-      if (Number.isFinite(m.gain)) this.gain = Math.max(0, Math.min(4, m.gain));
+      if (Number.isFinite(m.gain)) { this.gain = Math.max(0, Math.min(4, m.gain)); this.chain.inGain = this.gain; }
+      if (m.learn) this.chain.snrLearn(1.5, this.gain); // Learn noise: the next 1.5 seconds are the hiss to take out
     };
   }
 
@@ -47,7 +49,10 @@ class ClearRxProcessor extends AudioWorkletProcessor {
       // "clip": the sound coming in is too loud (it would be clipped before ClearRX can help)
       // "outClip": the sound going out is at its limit (it may sound crunchy); "gr": compressor / limiter gain reduction in dB
       this.port.postMessage({ meter: { inPeak: db(this.inPeak), outPeak: db(this.outPeak), outRms: db(Math.sqrt(this.outSum / count)), gr: this.gr,
-        clip: this.inPeak >= 0.999 || (this.bypass && this.outPeak >= 0.999), outClip: this.outPeak >= 0.95 } });
+        clip: this.inPeak >= 0.999 || (this.bypass && this.outPeak >= 0.999), outClip: this.outPeak >= 0.95,
+        snr: this.chain.s.snr ? { learning: this.chain.snrLearning, cut: this.chain.snrF.reduction } : null } });
+      // The hiss remover has learnt a new noise: the page keeps it in the settings
+      if (this.chain.snrF.learnt !== this.learnt) { this.learnt = this.chain.snrF.learnt; this.port.postMessage({ profile: this.chain.snrF.profileOut() }); }
       this.inPeak = 0;
       this.outPeak = 0;
       this.outSum = 0;

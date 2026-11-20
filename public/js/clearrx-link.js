@@ -54,7 +54,9 @@ function crxApply(s) {
     fx[k] = s.on === false ? (typeof s[k] === "boolean" ? false : zeroWhenOff.includes(k) ? 0 : s[k]) : s[k];
   }
   // The rack (ClearRX 1.3 and later): the EQ, the compressor / limiter and the order of the modules. Older ClearRX sends none of these.
-  for (const k of ["eq", "eqGains", "cmp", "cmpThr", "cmpRatio", "cmpMakeup", "cmpLimit", "order"]) {
+  // The hiss remover (ClearRX 1.4): on and its strength. Not the noise you taught it in ClearRX: that was learnt at your
+  // radio's sound level, and the RTL-SDR's is different, so here it follows the noise by itself.
+  for (const k of ["eq", "eqGains", "cmp", "cmpThr", "cmpRatio", "cmpMakeup", "cmpLimit", "order", "snr", "snrLevel"]) {
     if (s[k] !== undefined) fx[k] = s.on === false && typeof s[k] === "boolean" ? false : s[k];
   }
   if (typeof RxFx === "undefined") return;

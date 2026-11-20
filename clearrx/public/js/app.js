@@ -27,18 +27,18 @@ const RADIOS = [
   { id: "other", label: "Other / mixer", tip: "Pick where the sound comes from yourself: a mixer, a sound card or a line-in." },
 ];
 
-// The extras: noise blanker, AGC speed, squelch, tone, manual notch and the compressor / limiter. Picking a preset leaves them as they are.
-const EXTRAS = ["nb", "nbLevel", "agc", "sq", "bass", "treble", "mnotch", "cmp", "cmpThr", "cmpRatio", "cmpMakeup", "cmpLimit"];
+// The extras: noise blanker, hiss remover, AGC speed, squelch, tone, manual notch and the compressor / limiter. Picking a preset leaves them as they are.
+const EXTRAS = ["nb", "nbLevel", "snr", "snrLevel", "snrProfile", "agc", "sq", "bass", "treble", "mnotch", "cmp", "cmpThr", "cmpRatio", "cmpMakeup", "cmpLimit"];
 // Everything the sound processor is told. The EQ and the module order are set by the presets (the order only by you).
 const KEYS = ["voice", "lo", "hi", "cw", "tone", "width", "notch", "nr", "nrLevel", "comp", "eq", "eqGains", "order", ...EXTRAS];
 
 const app = {
   findAfterStart: false,
   s: { radio: "", preset: "ssb", voice: true, lo: 300, hi: 2700, cw: false, tone: 700, width: 200, notch: true, nr: false, nrLevel: 1, comp: true, on: true,
-    nb: false, nbLevel: 2, agc: "medium", sq: 0, bass: 0, treble: 0, mnotch: 0,
+    nb: false, nbLevel: 2, snr: false, snrLevel: 15, snrProfile: [], agc: "medium", sq: 0, bass: 0, treble: 0, mnotch: 0,
     order: RxFx.MODULES.slice(), eq: false, eqPreset: "flat", eqGains: RxFx.EQ_PRESETS.flat.slice(), cmp: false, cmpThr: -18, cmpRatio: 3, cmpMakeup: 0, cmpLimit: true },
   // What a module that is off by having the value 0 (squelch, manual notch, bass/treble) goes back to when it's switched on again
-  last: { sq: -50, mnotch: 1000, bass: 0, treble: 0 }, armed: { tone: false }, focusMove: null, gr: 0, outClipAt: 0,
+  last: { sq: -50, mnotch: 1000, bass: 0, treble: 0 }, armed: { tone: false }, focusMove: null, gr: 0, outClipAt: 0, snrLearning: 0,
   ctx: null, node: null, stream: null, before: null, after: null, running: false, bypass: false, gain: 1,
   meter: { inPeak: -120, outPeak: -120, outRms: -120, gr: 0, clip: false, outClip: false }, saveTimer: null,
 };
@@ -68,7 +68,7 @@ function applySettings() {
     const eq = RxFx.PRESET_EQ[s.preset] || "flat";
     s.eqPreset = eq; s.eqGains = RxFx.EQ_PRESETS[eq].slice(); s.eq = eq !== "flat";
     if (s.preset === "off") {
-      for (const k of ["voice", "cw", "notch", "nr", "comp", "nb", "cmp"]) s[k] = false;
+      for (const k of ["voice", "cw", "notch", "nr", "comp", "nb", "snr", "cmp"]) s[k] = false;
       for (const k of ["sq", "bass", "treble", "mnotch"]) s[k] = 0; // Off means everything off
     }
   }
@@ -107,7 +107,11 @@ async function start() {
     await app.ctx.audioWorklet.addModule("/js/clearrx-worklet.js?v=1.3.0");
     const src = app.ctx.createMediaStreamSource(app.stream);
     app.node = new AudioWorkletNode(app.ctx, "clearrx", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
-    app.node.port.onmessage = (e) => { if (e.data && e.data.meter) app.meter = e.data.meter; };
+    app.node.port.onmessage = (e) => {
+      const d = e.data || {};
+      if (d.meter) app.meter = d.meter;
+      if (Array.isArray(d.profile)) gotNoiseProfile(d.profile);
+    };
     app.before = app.ctx.createAnalyser(); app.after = app.ctx.createAnalyser();
     for (const a of [app.before, app.after]) { a.fftSize = 4096; a.smoothingTimeConstant = 0.6; }
     src.connect(app.before);
@@ -189,7 +193,7 @@ async function pickRadio(id, byHand) {
 const FMT = {
   lo: (v) => `${v} Hz`, hi: (v) => `${v} Hz`, mnotch: (v) => `${v} Hz`, sq: (v) => `${v} dB`,
   bass: (v) => `${v > 0 ? "+" : ""}${v} dB`, treble: (v) => `${v > 0 ? "+" : ""}${v} dB`,
-  cmpThr: (v) => `${v} dB`, cmpRatio: (v) => `${v}:1`, cmpMakeup: (v) => `+${v} dB`,
+  snrLevel: (v) => `${v} dB`, cmpThr: (v) => `${v} dB`, cmpRatio: (v) => `${v}:1`, cmpMakeup: (v) => `+${v} dB`,
 };
 const rng = (k, label, min, max, step) => `<label class="ctl"><span>${label}</span><input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}"><output data-o="${k}"></output></label>`;
 const sel = (k, label, opts, str) => `<label class="ctl"><span>${label}</span><select data-k="${k}"${str ? " data-str" : ""}>${opts.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join("")}</select></label>`;
@@ -292,6 +296,10 @@ const MOD_UI = {
   cw: { kind: "preset", power: "fxCw", hint: "A narrow filter on the Morse note, for a crowded band.", body: sel("tone", "Note", TONES.map((v) => [v, `${v} Hz`])) + sel("width", "Width", WIDTHS.map((v) => [v, `${v} Hz`])), reset: { tone: 700, width: 200 } },
   mnotch: { kind: "extra", power: "fxMnotch", hint: "Cuts out one whistle at the pitch you choose.", body: rng("mnotch", "Notch at", 200, 3000, 10), reset: { mnotch: 1000 } },
   notch: { kind: "preset", power: "fxNotch", hint: "Learns steady whistles and carriers and removes them; voices pass.", body: "", reset: null },
+  snr: { kind: "extra", power: "fxSnr", hint: "Takes away steady hiss and noise. Tune to an empty bit of the band and press Learn noise, and it learns exactly what to take out.",
+    body: rng("snrLevel", "Strength", 6, 30, 1)
+      + `<div class="chips"><button type="button" class="key mini" data-snrlearn>Learn noise</button><button type="button" class="key mini" data-snrforget>Forget it</button></div>`
+      + `<p class="small" id="snrState" aria-live="polite"></p>`, reset: { snrLevel: 15 } },
   nr: { kind: "preset", power: "fxNr", hint: "Takes the hiss down and keeps voices and tones.", body: sel("nrLevel", "Strength", LEVELS), reset: { nrLevel: 1 } },
   sq: { kind: "extra", power: "fxSq", hint: "Quiet between signals. It listens at this place in the rack, so put it before the compressors.", body: rng("sq", "Opens above", -80, -20, 1), reset: { sq: -50 } },
   comp: { kind: "preset", power: "fxComp", hint: "Brings quiet and loud stations to a steady level.", body: sel("agc", "Speed", [["fast", "Fast"], ["medium", "Medium"], ["slow", "Slow"]], true), reset: { agc: "medium" } },
@@ -306,7 +314,7 @@ const MOD_UI = {
       + `<div class="grrow"><span>Gain reduction</span><div class="bar gr"><i id="grBar"></i></div><b id="grDb">0 dB</b></div>`, reset: { cmpThr: -18, cmpRatio: 3, cmpMakeup: 0, cmpLimit: true } },
 };
 // The setting each switch turns on (the manual notch, squelch and bass/treble are on when their value isn't 0)
-const POWER_KEY = { nb: "nb", voice: "voice", cw: "cw", notch: "notch", nr: "nr", comp: "comp", eq: "eq", cmp: "cmp" };
+const POWER_KEY = { nb: "nb", snr: "snr", voice: "voice", cw: "cw", notch: "notch", nr: "nr", comp: "comp", eq: "eq", cmp: "cmp" };
 
 function isOn(id) {
   const s = app.s;
@@ -366,6 +374,37 @@ function resetModule(id) {
   say(`${RxFx.MODULE_NAMES[id]} is back to its usual settings.`);
 }
 
+/* Hiss remover: Learn noise listens to 1.5 seconds of an empty bit of band, and the sound thread sends back what the
+   noise sounds like (a profile, kept in the settings). Forget it goes back to following the noise by itself. */
+function learnNoise() {
+  if (!app.running) { say("Press Start first, then tune to an empty bit of the band and press Learn noise."); return; }
+  if (app.bypass) { say("Switch Bypass off first, so ClearRX can hear the noise."); return; }
+  if (!app.s.snr) change({ snr: true }, "extra");
+  app.node.port.postMessage({ learn: true });
+  app.snrLearning = performance.now();
+  say("Listening to the noise for a moment. Keep the band quiet...");
+}
+function gotNoiseProfile(profile) {
+  app.snrLearning = 0;
+  change({ snr: true, snrProfile: profile }, "extra");
+  say("Learnt! The hiss remover now takes out the noise it heard. Turn the Strength up or down to taste.");
+}
+function snrStatus() {
+  const el = $("snrState");
+  if (!el) return;
+  const m = app.meter.snr, learnt = (app.s.snrProfile || []).length > 0;
+  let t;
+  if (app.snrLearning && performance.now() - app.snrLearning < 4000) t = "Listening to the noise...";
+  else if (!app.s.snr) t = learnt ? "It remembers the noise you taught it." : "";
+  else {
+    t = learnt ? "Using the noise you taught it." : "Following the noise by itself.";
+    if (app.running && m && m.cut > 0.5) t += ` Taking out about ${Math.round(m.cut)} dB.`;
+  }
+  if (el.textContent !== t) el.textContent = t;
+  const forget = $("mods").querySelector("[data-snrforget]");
+  if (forget) forget.disabled = !learnt;
+}
+
 function moveModule(id, dir) {
   const next = RxFx.moveModule(app.s.order, id, dir);
   if (next.join() === app.s.order.join()) return;
@@ -384,6 +423,11 @@ function setupRack() {
     const id = b.closest("[data-mod]").dataset.mod;
     if (b.dataset.move) moveModule(id, Number(b.dataset.move));
     else if (b.hasAttribute("data-reset")) resetModule(id);
+    else if (b.hasAttribute("data-snrlearn")) learnNoise();
+    else if (b.hasAttribute("data-snrforget")) {
+      change({ snrProfile: [] }, "extra");
+      say("Forgotten. The hiss remover now follows the noise by itself.");
+    }
     else if (b.dataset.bp) { const [lo, hi] = b.dataset.bp.split(",").map(Number); change({ voice: true, lo, hi }, "preset"); }
     else if (b.dataset.eqp) {
       const k = b.dataset.eqp;
@@ -503,6 +547,7 @@ function drawMeters() {
   app.gr = on ? Math.max(m.gr || 0, app.gr * Math.pow(0.92, dt * 60)) : 0; // the same fall-back whatever the frame rate
   const gb = $("grBar");
   if (gb) { gb.style.width = `${Math.min(100, (app.gr / 24) * 100)}%`; $("grDb").textContent = `${app.gr.toFixed(1)} dB`; }
+  snrStatus();
 }
 
 function drawSpectrum() {

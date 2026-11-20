@@ -170,7 +170,7 @@ func postSettings(t *testing.T, a *App, body string) Settings {
 
 func TestRackDefaults(t *testing.T) {
 	d := defaultSettings().clean()
-	if strings.Join(d.Order, ",") != "nb,voice,cw,mnotch,notch,nr,sq,comp,eq,tone,cmp" {
+	if strings.Join(d.Order, ",") != "nb,voice,cw,mnotch,notch,snr,nr,sq,comp,eq,tone,cmp" {
 		t.Fatalf("default order = %v", d.Order)
 	}
 	if d.Eq || d.EqPreset != "flat" || len(d.EqGains) != 10 || d.Cmp || d.CmpThr != -18 || d.CmpRatio != 3 || d.CmpMakeup != 0 || !d.CmpLimit {
@@ -187,7 +187,7 @@ func TestRackOrderChecked(t *testing.T) {
 	a := NewApp("", nil)
 	// Unknown ids and repeats go; missing modules are added at the end, in the usual order
 	s := postSettings(t, a, `{"preset":"ssb","order":["cmp","bogus","eq","cmp","","nb"]}`)
-	if got := strings.Join(s.Order, ","); got != "cmp,eq,nb,voice,cw,mnotch,notch,nr,sq,comp,tone" {
+	if got := strings.Join(s.Order, ","); got != "cmp,eq,nb,voice,cw,mnotch,notch,snr,nr,sq,comp,tone" {
 		t.Fatalf("order = %s", got)
 	}
 	// Always every module exactly once
@@ -288,5 +288,39 @@ func TestRackSavedAndLoadedBack(t *testing.T) {
 	if strings.Join(s.Order[:3], ",") != "cmp,eq,nb" || !s.Eq || s.EqPreset != "cw" || s.EqGains[4] != 6 || s.EqGains[9] != -12 ||
 		!s.Cmp || s.CmpThr != -24 || s.CmpRatio != 6 || s.CmpMakeup != 4 || s.CmpLimit {
 		t.Fatalf("not loaded back: %+v", s)
+	}
+}
+
+func TestHissRemoverChecked(t *testing.T) {
+	a := NewApp("", nil)
+	// Defaults: off, 15 dB, no learnt noise
+	s := postSettings(t, a, `{"preset":"ssb"}`)
+	if s.Snr || s.SnrLevel != 15 || s.SnrProfile == nil || len(s.SnrProfile) != 0 {
+		t.Fatalf("hiss remover defaults: %+v", s)
+	}
+	// Strength clamped to 6..30
+	if s = postSettings(t, a, `{"snr":true,"snrLevel":99}`); !s.Snr || s.SnrLevel != 30 {
+		t.Fatalf("strength high: %d", s.SnrLevel)
+	}
+	if s = postSettings(t, a, `{"snrLevel":-4}`); s.SnrLevel != 6 {
+		t.Fatalf("strength low: %d", s.SnrLevel)
+	}
+	// A learnt noise of the right length is kept (each number clamped); a wrong length is dropped
+	nums := make([]string, snrBins)
+	for i := range nums {
+		nums[i] = "-700"
+	}
+	nums[0], nums[1] = "-99999", "99999"
+	s = postSettings(t, a, `{"snr":true,"snrProfile":[`+strings.Join(nums, ",")+`]}`)
+	if len(s.SnrProfile) != snrBins || s.SnrProfile[0] != -3000 || s.SnrProfile[1] != 600 || s.SnrProfile[2] != -700 {
+		t.Fatalf("profile: len %d, %v", len(s.SnrProfile), s.SnrProfile[:3])
+	}
+	if s = postSettings(t, a, `{"snrProfile":[1,2,3]}`); len(s.SnrProfile) != 0 {
+		t.Fatalf("a short profile should be dropped: %v", s.SnrProfile)
+	}
+	// A saved order from before the hiss remover gets it straight after the auto notch, not at the end
+	s = postSettings(t, a, `{"order":["cmp","notch","nb","voice","cw","mnotch","nr","sq","comp","eq","tone"]}`)
+	if got := strings.Join(s.Order, ","); got != "cmp,notch,snr,nb,voice,cw,mnotch,nr,sq,comp,eq,tone" {
+		t.Fatalf("order = %s", got)
 	}
 }

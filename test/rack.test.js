@@ -22,7 +22,8 @@ test("module order: unknown and repeated ids dropped, missing ones added, and a 
   assert.deepEqual(normalizeOrder(["cmp", "bogus", "cmp", "nb"]), ["cmp", "nb", ...MODULES.filter((m) => m !== "cmp" && m !== "nb")]);
   assert.deepEqual(normalizeOrder("eq"), MODULES, "not a list");
   assert.equal(new Set(normalizeOrder(["eq", "eq", "eq"])).size, MODULES.length);
-  assert.deepEqual(moveModule(MODULES, "sq", -1).slice(5, 8), ["sq", "nr", "comp"]);
+  const sqAt = MODULES.indexOf("sq");
+  assert.deepEqual(moveModule(MODULES, "sq", -1).slice(sqAt - 1, sqAt + 2), ["sq", "nr", "comp"]);
   const up = moveModule(MODULES, "eq", -1), down = moveModule(MODULES, "eq", 1);
   assert.equal(up.indexOf("eq"), MODULES.indexOf("eq") - 1);
   assert.equal(down.indexOf("eq"), MODULES.indexOf("eq") + 1);
