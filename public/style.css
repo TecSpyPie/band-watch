@@ -42,6 +42,25 @@ tbody tr[aria-selected="true"]{background:var(--surface);box-shadow:inset 3px 0 
 .st.marg{color:var(--warm)}
 .st.shut,.st.none{color:var(--muted)}
 .map{width:100%;height:auto;display:block;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+/* The spots map (spotmap.js): a canvas with zoom buttons, a tip for the dot under the pointer and a key. */
+.map[hidden],.spotmapbox[hidden]{display:none}
+.mapview{margin:2px 0 8px}
+.spotmapbox{position:relative}
+.spotmap{aspect-ratio:2/1;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.spotprobe{position:absolute;width:0;height:0;overflow:hidden;visibility:hidden}
+.spotzoom{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px}
+.spotzoom button{width:32px;height:32px;padding:0;font:600 1.125rem Barlow,sans-serif;line-height:1;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer;opacity:.9}
+.spotzoom button:hover{border-color:var(--cool);opacity:1}
+.spotzoom button:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+.spottip{position:absolute;z-index:2;max-width:min(260px,calc(100% - 8px));background:var(--surface);color:var(--text);border:1px solid var(--line);border-left:3px solid var(--cool);border-radius:6px;padding:6px 9px;font-size:.8125rem;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.2);font-variant-numeric:tabular-nums}
+.spottip[hidden]{display:none}
+.spottip .muted{color:var(--muted)}
+.spotlegend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0}
+.spotlegend span{display:inline-flex;align-items:center;gap:5px}
+.spotlegend i{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid var(--line)}
+.spotlegend .smfade{margin-left:auto}
+.popwin .spotmap{max-height:calc(100vh - 150px)}
+@media (max-width:520px){.spotlegend .smfade{margin-left:0;flex-basis:100%}}
 .spots{list-style:none;margin:12px 0 0;padding:0;font-size:0.875rem}
 .spots li{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 .spots span:last-child{color:var(--muted)}

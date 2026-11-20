@@ -42,6 +42,7 @@ function start() {
   setupLocator();
   setupQrz();
   setupHover();
+  setupSpotMap();
   setupModes();
   setupSun();
   // The Windows app says so in /healthz; it shows a Quit button in Settings.

@@ -1,6 +1,15 @@
 # What's new
 
 ## Unreleased
+- **A real world map for the spots panel.** The "40 m spots" panel (any band: it follows the band you pick) now has a
+  **Map / Bowl** switch, **Map** by default (your choice is remembered; **Bowl** is the old simple chart). The map
+  has real coastlines (Natural Earth 110m land, public domain, built in, so no map tiles and no internet map service),
+  you as a ringed dot, a dot for every spot on the band with a curved great-circle path from you, coloured and sized by
+  signal (none, weak, fair, good, strong) and fading as spots get older, the night side shaded with the Sun marked, and
+  satellites, POTA and APRS when switched on. Rest the pointer on a dot (or tap) for callsign, distance, beam heading,
+  signal and mode; click for the station window. Mouse wheel or +/- buttons or pinch to zoom, drag to move, double-click
+  or the home button to reset. Works in all themes, on a phone and in the map's own window. It only uses the spots
+  already fetched: no extra PSK Reporter requests.
 - **Decoders fixes (receive only).** The results window now shows RTTY text the same way it shows CW; the text box replaces the table for CW and RTTY, goes away for other modes, learns the mode even if opened late, and follows Clear. Starting a decoder from the sound input no longer says "Waiting for the next cycle" for CW and RTTY (which have no cycles); SSTV and APRS get their own wording.
 - **Antenna A/B (analysis only).** A new panel to compare two antennas, or before and after a change, using real WSPR
   reports of your own callsign. Press **Now on antenna A / B** whenever you switch (or type the times), name the antennas,

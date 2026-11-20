@@ -142,6 +142,13 @@ function xotaMapSvg(X, Y) {
   return svg;
 }
 
+/** The same activators as plain points, for the spots map (Map view). */
+function xotaMapPoints() {
+  if (!xota.onMap) return [];
+  return xotaShown().filter((x) => x.lat != null && x.lon != null && bandForKHz(x.kHz) === app.sel)
+    .map((x) => ({ lat: x.lat, lon: x.lon, tip: `${x.call} at ${x.ref}, ${x.kHz} kHz ${x.mode}` }));
+}
+
 /** Activators on the band scope: a small flag above the spectrum at their frequency. */
 function xotaScopeMarks(g, lo, hi, fx, top, colour) {
   for (const x of xotaShown()) {

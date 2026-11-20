@@ -101,7 +101,22 @@
     <section>
       <div id="secMap">
       <h2 id="mapTitle">Map</h2>
-      <svg class="map" id="map" viewBox="0 0 360 180" role="img" aria-label="World map with day and night shading and recent spots"></svg>
+      <div class="chips mapview" id="mapView" role="group" aria-label="How the spots are drawn">
+        <button type="button" data-v="map" aria-pressed="true" title="A real world map: coastlines, day and night, curved paths to each station">Map</button>
+        <button type="button" data-v="bowl" aria-pressed="false" title="The simple chart without coastlines">Bowl</button>
+      </div>
+      <div class="spotmapbox" id="spotmapbox">
+        <canvas class="map spotmap" id="spotmap" tabindex="0" role="img" aria-label="World map of spots"></canvas>
+        <span id="spotprobe" class="spotprobe" aria-hidden="true"></span>
+        <div class="spotzoom" role="group" aria-label="Zoom the map">
+          <button type="button" id="mapZoomIn" aria-label="Zoom in" title="Zoom in (or turn the mouse wheel)">+</button>
+          <button type="button" id="mapZoomOut" aria-label="Zoom out" title="Zoom out">&minus;</button>
+          <button type="button" id="mapZoomReset" aria-label="Show the whole world" title="Show the whole world (or double-click the map)">&#8962;</button>
+        </div>
+        <div class="spottip" id="spotTip" role="status" hidden></div>
+      </div>
+      <p class="small muted spotlegend" id="spotLegend" aria-label="Signal strength key"></p>
+      <svg class="map" id="map" viewBox="0 0 360 180" role="img" aria-label="World map with day and night shading and recent spots" hidden></svg>
       </div>
 
       <div id="secScope">
@@ -1154,14 +1169,17 @@
   Solar numbers come from <a href="https://www.swpc.noaa.gov" target="_blank" rel="noopener noreferrer">NOAA SWPC</a>.
   Sunspot regions, X-rays, solar wind and NOAA scales also come from NOAA SWPC.
   Status is judged from spot counts: Open means 15 or more stations, Marginal means 5 to 14, Closed means fewer.
-  The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
+  The scope is drawn from those spot reports, not from a receiver. On the map, the Map view draws curved great-circle paths and the Bowl view draws simple straight lines.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
 <script src="/js/install.js?v=1.39.0"></script>
 <script src="/js/bandplan.js?v=1.39.0"></script>
 <script src="/js/core.js?v=1.39.0"></script>
 <script src="/js/modes.js?v=1.39.0"></script>
+<script src="/js/vendor/land110.js?v=1.39.0"></script>
+<script src="/js/mapmath.js?v=1.39.0"></script>
 <script src="/js/map.js?v=1.39.0"></script>
+<script src="/js/spotmap.js?v=1.39.0"></script>
 <script src="/js/scope.js?v=1.39.0"></script>
 <script src="/js/monitor.js?v=1.39.0"></script>
 <script src="/js/lookup.js?v=1.39.0"></script>

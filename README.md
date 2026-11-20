@@ -135,7 +135,7 @@ export them with their SOTA reference in ADIF.
 
 MIT, see [LICENSE](LICENSE). Data: spots from [PSK Reporter](https://pskreporter.info), park activators from [POTA](https://pota.app), shortwave schedules from [EiBi](http://www.eibispace.de/) (Eike Bierwirth), solar and
 space weather from [NOAA SWPC](https://www.swpc.noaa.gov), satellite orbits from [CelesTrak](https://celestrak.org)
-(worked out with [satellite.js](https://github.com/shashwatak/satellite-js), MIT).
+(worked out with [satellite.js](https://github.com/shashwatak/satellite-js), MIT), world map outline from [Natural Earth](https://www.naturalearthdata.com/) (110m land, public domain).
 
 Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md): ideas as Issues, code as pull requests. Please keep refresh rates modest:
 PSK Reporter is run by a volunteer.

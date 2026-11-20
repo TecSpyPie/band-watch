@@ -276,6 +276,21 @@ function satMapSvg(X, Y) {
   return svg;
 }
 
+/** The same satellites as plain points, for the spots map (Map view): [{ id, name, lat, lon, up, tip }]. */
+function satMapPoints() {
+  if (!sats.onMap || !sats.lib || !sats.gp.length) return [];
+  const now = new Date();
+  const out = [];
+  for (const id of sats.picked) {
+    const rec = satRec(id);
+    const l = rec && SatMath.look(sats.lib, rec, now, satObs());
+    if (!l) continue;
+    out.push({ id, name: satName(id), lat: l.lat, lon: l.lon, up: l.el > 0,
+      tip: `${l.el > 0 ? `up now, ${Math.round(l.el)}° above your horizon` : "below your horizon"}, ${Math.round(l.height)} km high` });
+  }
+  return out;
+}
+
 /* ---------- The card you get by clicking a satellite (in the list, the passes table or on the map) ---------- */
 
 const satCard = { id: null, timer: null, passes: [], passesAt: 0 };
