@@ -126,3 +126,73 @@ test("ClearRX My radio: each radio sets its preset and tip, finds its input, and
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT.replace(".png", "-radio.png"), fullPage: true });
   assert.deepEqual(errors, []);
 });
+
+test("ClearRX rack: modules move and keep their order, the EQ and compressor are kept, presets set the EQ", { skip, timeout: 40000 }, async () => {
+  const page = await (await browser.newContext({ viewport: { width: 1000, height: 900 } })).newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  const saved = async () => { await page.waitForTimeout(600); return (await fetch(base + "/api/settings")).json(); };
+  const domOrder = () => page.$$eval("#mods > li", (els) => els.map((e) => e.dataset.mod).join());
+  await page.goto(base + "/");
+  await page.waitForSelector('#mods [data-mod="eq"]');
+  const usual = "nb,voice,cw,mnotch,notch,nr,sq,comp,eq,tone,cmp";
+  assert.equal(await domOrder(), usual);
+  await page.click("#power");
+  await page.waitForFunction(() => app.running, null, { timeout: 10000 });
+
+  // The SSB preset sets the EQ curve; the CW preset another; Off is flat and off
+  assert.equal(await page.isChecked("#fxEq"), true);
+  assert.equal(await page.getAttribute('[data-eqp="ssb"]', "aria-pressed"), "true");
+  await page.click('#presets button[data-p="cw"]');
+  assert.equal(await page.getAttribute('[data-eqp="cw"]', "aria-pressed"), "true");
+  await page.click('#presets button[data-p="off"]');
+  assert.equal(await page.isChecked("#fxEq"), false);
+  assert.equal(await page.inputValue('[data-eq="5"]'), "0");
+
+  // An EQ slider: moves the gain, switches the EQ on, makes the preset Custom; it's kept
+  await page.locator('[data-eq="5"]').fill("12");
+  assert.equal(await page.isChecked("#fxEq"), true);
+  assert.equal(await page.textContent('[data-ev="5"]'), "+12");
+  let s = await saved();
+  assert.equal(s.eq, true);
+  assert.equal(s.eqGains[5], 12);
+  assert.equal(s.preset, "custom");
+
+  // Compressor / limiter: switch on, set the threshold and ratio, limiter on by default
+  await page.click("#fxCmp");
+  await page.locator('[data-k="cmpThr"]').fill("-30");
+  await page.locator('[data-k="cmpRatio"]').fill("6");
+  assert.equal(await page.textContent('[data-o="cmpRatio"]'), "6:1");
+  s = await saved();
+  assert.deepEqual([s.cmp, s.cmpThr, s.cmpRatio, s.cmpLimit], [true, -30, 6, true]);
+
+  // Move the compressor up two places: the cards, the numbers and the saved order follow, and the keyboard focus stays on the arrow
+  await page.click('[data-mod="cmp"] [data-move="-1"]');
+  await page.click('[data-mod="cmp"] [data-move="-1"]');
+  assert.equal(await domOrder(), "nb,voice,cw,mnotch,notch,nr,sq,comp,cmp,eq,tone");
+  assert.equal(await page.textContent('[data-mod="cmp"] .idx'), "9");
+  assert.equal(await page.evaluate(() => document.activeElement.getAttribute("aria-label")), "Move Compressor / limiter up");
+  assert.equal(await page.isDisabled('[data-mod="nb"] [data-move="-1"]'), true, "the top one can't go up");
+  assert.equal(await page.isDisabled('[data-mod="tone"] [data-move="1"]'), true, "the bottom one can't go down");
+  assert.equal((await saved()).order.join(), "nb,voice,cw,mnotch,notch,nr,sq,comp,cmp,eq,tone");
+
+  // It all comes back on a fresh page; Reset puts a module back; Default order puts them all back
+  await page.reload();
+  await page.waitForSelector('#mods [data-mod="eq"]');
+  assert.equal(await domOrder(), "nb,voice,cw,mnotch,notch,nr,sq,comp,cmp,eq,tone");
+  assert.equal(await page.inputValue('[data-eq="5"]'), "12");
+  assert.equal(await page.inputValue('[data-k="cmpThr"]'), "-30");
+  await page.click('[data-mod="eq"] [data-reset]');
+  assert.equal(await page.inputValue('[data-eq="5"]'), "0");
+  await page.click("#resetOrder");
+  assert.equal(await domOrder(), usual);
+  s = await saved();
+  assert.deepEqual([s.order.join(), s.eqGains.join()], [usual, "0,0,0,0,0,0,0,0,0,0"]);
+
+  // The output meter and the narrow layout
+  assert.equal(await page.isVisible("#outBar"), true);
+  await page.setViewportSize({ width: 360, height: 800 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, "no sideways scrolling on a phone");
+  assert.deepEqual(errors, []);
+});

@@ -1,6 +1,19 @@
 # What's new
 
 ## Unreleased
+- **ClearRX: an effects rack.** ClearRX now works like a rack of effect modules. Each stage is a card with its own
+  **on/off switch**, its controls, a **Reset** button and **up/down arrows** to put it in a different place: the sound goes
+  through the modules from top to bottom, so the order matters (a compressor after the EQ works on the EQ's louder sound).
+  Changing the order fades the sound out and back in over a few milliseconds, so there is no click. The noise blanker,
+  band-pass filter (voice filter, with low and high cut sliders), CW peak, manual notch, auto notch, noise reduction,
+  squelch, steady volume (AGC) and bass/treble are modules now, and the presets (SSB voice, Weak DX, CW, AM broadcast,
+  Off) set them. New: a **10-band graphic EQ** (100 Hz to 5 kHz, plus or minus 12 dB, with Flat, SSB punch, Weak DX, CW
+  and AM warm curves; each preset picks its own), a **compressor / limiter** (threshold, ratio, make-up gain, a limiter
+  that holds the sound under -1 dB, and a gain-reduction meter), and an **Output meter** at the bottom with a CLIP warning.
+  The order, EQ and compressor are kept in `clearrx-settings.json` (older files get the usual order, a flat EQ and the
+  compressor off). Band Watch's Listen uses them too when it sends your RTL-SDR sound through ClearRX; with the usual
+  order and no EQ or compressor it sounds exactly as before. Download the new `ClearRX-Windows.zip` and unzip it over the
+  old one.
 - **Glass look, deeper.** Settings > Look > Glass and depth now has three clear layers: a deep soft gradient behind (a background picture you chose stays, slightly blurred and dimmed), panels as frosted glass with a bevelled light edge and soft stacked shadows, and the header, section menu, buttons, chips, dialogs, toast and map tip raised above them (buttons press in when clicked; dialogs get the deepest shadow and blur the page behind). The map, waterfall and scope stay sharp. Buttons no longer blur on their own, which keeps it light on the computer. Follows "reduce transparency", "more contrast" and "reduce motion" settings; High contrast and Night still stay plain.
 - **A real world map for the spots panel.** The "40 m spots" panel (any band: it follows the band you pick) now has a
   **Map / Bowl** switch, **Map** by default (your choice is remembered; **Bowl** is the old simple chart). The map

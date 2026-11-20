@@ -65,9 +65,58 @@ type Settings struct {
 	Bass    int    `json:"bass"`    // dB, -12 to +12
 	Treble  int    `json:"treble"`  // dB, -12 to +12
 	Mnotch  int    `json:"mnotch"`  // manual notch: Hz (200-3000), 0 = off
+
+	// The rack: the order the modules work in, the graphic EQ and the compressor / limiter.
+	// Files saved by older versions have none of these: they get the defaults (see defaultSettings).
+	// A module is switched on by its own field (voice, cw, notch, nr, comp, nb, eq, cmp); the manual notch, squelch
+	// and bass/treble are on whenever their value (mnotch, sq, bass or treble) is not 0.
+	Order     []string `json:"order"`     // module ids, top to bottom (see modules); anything missing is added at the end
+	Eq        bool     `json:"eq"`        // graphic EQ on
+	EqPreset  string   `json:"eqPreset"`  // flat, ssb, weak, cw, am, or custom: which curve the gains are
+	EqGains   []int    `json:"eqGains"`   // ten bands (100 Hz to 5 kHz), dB, -12 to +12
+	Cmp       bool     `json:"cmp"`       // compressor / limiter on
+	CmpThr    int      `json:"cmpThr"`    // threshold: dBFS, -60 to 0
+	CmpRatio  int      `json:"cmpRatio"`  // 1 to 20 (to 1)
+	CmpMakeup int      `json:"cmpMakeup"` // make-up gain: dB, 0 to 24
+	CmpLimit  bool     `json:"cmpLimit"`  // the limiter: holds the sound under -1 dBFS
 }
 
 var agcSpeeds = map[string]bool{"fast": true, "medium": true, "slow": true}
+
+// modules are the rack's modules in their usual order (the same ids and order as MODULES in rxfx.js).
+var modules = []string{"nb", "voice", "cw", "mnotch", "notch", "nr", "sq", "comp", "eq", "tone", "cmp"}
+
+const eqBands = 10 // the graphic EQ: 100, 200, 300, 500, 800, 1200, 1800, 2500, 3500, 5000 Hz
+
+var eqPresets = map[string]bool{"flat": true, "ssb": true, "weak": true, "cw": true, "am": true, "custom": true}
+
+// cleanOrder keeps a module order safe: unknown ids and repeats are dropped, and missing modules go at the end.
+func cleanOrder(in []string) []string {
+	out := make([]string, 0, len(modules))
+	seen := map[string]bool{}
+	known := map[string]bool{}
+	for _, m := range modules {
+		known[m] = true
+	}
+	for _, id := range append(append([]string{}, in...), modules...) {
+		if known[id] && !seen[id] {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// cleanGains makes exactly ten EQ gains, each -12 to +12 dB (a short list is padded with 0, a long one cut).
+func cleanGains(in []int) []int {
+	out := make([]int, eqBands)
+	for i := range out {
+		if i < len(in) {
+			out[i] = max(-12, min(12, in[i]))
+		}
+	}
+	return out
+}
 
 // clampOr0 keeps 0 as "off" and anything else within lo..hi.
 func clampOr0(v, lo, hi int) int {
@@ -87,8 +136,17 @@ var radios = map[string]bool{"": true, "rtl": true, "yaesu": true, "icom": true,
 
 var presets = map[string]bool{"off": true, "ssb": true, "weak": true, "cw": true, "am": true, "custom": true}
 
+// defaultSettings are what a saved file or a request falls back to for anything it leaves out (so old files keep working).
 func defaultSettings() Settings {
-	return Settings{Preset: "ssb", Voice: true, Lo: 300, Hi: 2700, Tone: 700, Width: 200, Notch: true, NrLevel: 1, Comp: true, On: true, NbLevel: 2, Agc: "medium"}
+	return Settings{Preset: "ssb", Voice: true, Lo: 300, Hi: 2700, Tone: 700, Width: 200, Notch: true, NrLevel: 1, Comp: true, On: true, NbLevel: 2, Agc: "medium",
+		Order: cleanOrder(nil), EqPreset: "flat", EqGains: cleanGains(nil), CmpThr: -18, CmpRatio: 3, CmpLimit: true}
+}
+
+// parseSettings reads settings JSON on top of the defaults: a field that is missing keeps its default.
+func parseSettings(b []byte) (Settings, error) {
+	s := defaultSettings()
+	err := json.Unmarshal(b, &s)
+	return s, err
 }
 
 func clampInt(v, lo, hi, def int) int {
@@ -125,6 +183,14 @@ func (s Settings) clean() Settings {
 	s.Bass = clampOr0(s.Bass, -12, 12)
 	s.Treble = clampOr0(s.Treble, -12, 12)
 	s.Mnotch = clampOr0(s.Mnotch, 200, 3000)
+	s.Order = cleanOrder(s.Order)
+	if !eqPresets[s.EqPreset] {
+		s.EqPreset = "custom"
+	}
+	s.EqGains = cleanGains(s.EqGains)
+	s.CmpThr = max(-60, min(0, s.CmpThr)) // 0 dB is a real threshold, so 0 doesn't mean "not set" here
+	s.CmpRatio = clampInt(s.CmpRatio, 1, 20, 3)
+	s.CmpMakeup = max(0, min(24, s.CmpMakeup))
 	return s
 }
 
@@ -148,8 +214,7 @@ func NewApp(file string, quit func()) *App {
 	a.static = http.FileServer(http.FS(sub))
 	if file != "" {
 		if b, err := os.ReadFile(file); err == nil {
-			var s Settings
-			if json.Unmarshal(b, &s) == nil {
+			if s, err := parseSettings(b); err == nil {
 				a.settings = s.clean()
 			}
 		}
@@ -247,8 +312,8 @@ func (a *App) settingsAPI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		body, err := io.ReadAll(io.LimitReader(r.Body, 4096))
-		var s Settings
-		if err != nil || json.Unmarshal(body, &s) != nil {
+		s, perr := parseSettings(body)
+		if err != nil || perr != nil {
 			sendJSON(w, 400, map[string]string{"error": "expected ClearRX settings"})
 			return
 		}

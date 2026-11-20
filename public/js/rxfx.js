@@ -14,8 +14,13 @@
  *   7. Squelch: quiet between signals. It listens before the compressor, so the compressor can't lift the noise
  *      over it, opens at once and closes after a short hang.
  *   8. Compressor (AGC): brings quiet and loud stations to a steady level, fast, medium or slow to recover.
- *   9. Tone: bass and treble shelves, then a soft limiter so it never clips.
- *  10. Meter: peak and average level, and whether the sound would have clipped.
+ *  9. Graphic EQ: ten bands (100 Hz to 5 kHz), +-12 dB each.
+ * 10. Tone: bass and treble shelves.
+ * 11. Compressor / limiter: threshold, ratio and make-up gain, and a limiter that holds the sound under -1 dBFS.
+ * Then a soft limiter so it never clips, and a meter: peak and average level, gain reduction, and whether the sound
+ * would have clipped.
+ * The numbers above are only the usual order: ClearRX is an effects rack, and "order" (a list of the module ids in
+ * MODULES) puts the modules in any order. Band Watch passes no order, so it gets the usual one, exactly as before.
  * Everything is plain arithmetic per sample: light enough for a modest PC.
  * Used by ClearRX (clearrx/, in its sound worklet) and by Band Watch when it sends its RTL-SDR sound through ClearRX.
  * Works in the browser and an AudioWorklet (globalThis.RxFx) and in Node (tests). */
@@ -40,6 +45,10 @@
       else if (type === "highpass") { b0 = (1 + cos) / 2; b1 = -(1 + cos); b2 = b0; }
       else if (type === "bandpass") { b0 = alpha; b1 = 0; b2 = -alpha; } // 0 dB at the centre
       else if (type === "notch") { b0 = 1; b1 = -2 * cos; b2 = 1; }
+      else if (type === "peaking") { // a bell: gainDb at f, 0 dB far away (the graphic EQ's bands)
+        const A = Math.pow(10, gainDb / 40);
+        b0 = 1 + alpha * A; b1 = -2 * cos; b2 = 1 - alpha * A; a0 = 1 + alpha / A; a2 = 1 - alpha / A;
+      }
       else if (type === "lowshelf" || type === "highshelf") {
         const A = Math.pow(10, gainDb / 40), r = 2 * Math.sqrt(A) * alpha, s = type === "lowshelf" ? 1 : -1;
         b0 = A * ((A + 1) - s * (A - 1) * cos + r);
@@ -58,6 +67,13 @@
       this.y1 = Math.abs(y) < 1e-25 ? 0 : y; // no denormals
       return this.y1;
     }
+  }
+  /** The level (dB) a biquad gives a tone at f Hz: used to draw and test the EQ's response. */
+  function magnitudeDb(b, f, rate = RATE) {
+    const w = (2 * Math.PI * f) / rate, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+    const nr = b.b0 + b.b1 * c1 + b.b2 * c2, ni = -(b.b1 * s1 + b.b2 * s2);
+    const dr = 1 + b.a1 * c1 + b.a2 * c2, di = -(b.a1 * s1 + b.a2 * s2);
+    return 10 * Math.log10((nr * nr + ni * ni) / (dr * dr + di * di));
   }
   // Two biquads with these Qs make a 4th-order Butterworth.
   const BUTTER4 = [0.5411961, 1.3065630];
@@ -92,6 +108,68 @@
     }
   }
 
+  /* ---------- The rack: modules, their order, the EQ and the compressor's curve (pure, tested on their own) ---------- */
+
+  // Every module, in the usual order. The ids are what ClearRX keeps in its settings ("order").
+  const MODULES = ["nb", "voice", "cw", "mnotch", "notch", "nr", "sq", "comp", "eq", "tone", "cmp"];
+  const MODULE_NAMES = { nb: "Noise blanker", voice: "Band-pass filter", cw: "CW peak filter", mnotch: "Manual notch", notch: "Auto notch",
+    nr: "Noise reduction", sq: "Squelch", comp: "Steady volume (AGC)", eq: "Graphic EQ", tone: "Bass and treble", cmp: "Compressor / limiter" };
+
+  /** A list of module ids made safe: unknown ids and repeats dropped, missing modules added at the end in the usual order. */
+  function normalizeOrder(order) {
+    const out = [];
+    if (Array.isArray(order)) for (const id of order) if (MODULES.includes(id) && !out.includes(id)) out.push(id);
+    for (const id of MODULES) if (!out.includes(id)) out.push(id);
+    return out;
+  }
+  /** The order with one module moved up (dir -1) or down (+1) a place. Returns a new list (the same places if it can't move). */
+  function moveModule(order, id, dir) {
+    const o = normalizeOrder(order), i = o.indexOf(id), j = i + (dir < 0 ? -1 : 1);
+    if (i < 0 || j < 0 || j >= o.length) return o;
+    [o[i], o[j]] = [o[j], o[i]];
+    return o;
+  }
+
+  // Graphic EQ: ten bands that suit radio sound (a voice lives between 300 Hz and 3 kHz), each a bell about an octave wide.
+  const EQ_FREQS = [100, 200, 300, 500, 800, 1200, 1800, 2500, 3500, 5000];
+  const EQ_Q = 1.4;
+  const EQ_RANGE = 12; // dB, up or down
+  const EQ_PRESETS = {
+    flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ssb: [-8, -5, -2, 0, 1, 2, 3, 3, 2, -3], // SSB punch: lows trimmed, presence lifted
+    weak: [-12, -9, -5, -1, 2, 4, 5, 4, 0, -8], // Weak DX: speech band forward, rumble and hiss down
+    cw: [-10, -8, -4, 3, 6, 3, -4, -8, -10, -12], // CW: the note's neighbourhood (500-800 Hz) up, the rest down
+    am: [3, 3, 2, 1, 0, -1, -1, -2, -3, -5], // AM warm: fuller lows, softer highs
+  };
+  const EQ_NAMES = { flat: "Flat", ssb: "SSB punch", weak: "Weak DX", cw: "CW", am: "AM warm" };
+  // Which EQ curve each ClearRX preset uses
+  const PRESET_EQ = { off: "flat", ssb: "ssb", weak: "weak", cw: "cw", am: "am" };
+  /** Ten whole-dB gains within +-12 (anything else becomes 0; a short list is padded with 0). */
+  function normalizeGains(g) {
+    return EQ_FREQS.map((_, i) => {
+      const v = Math.round(Number(Array.isArray(g) ? g[i] : 0));
+      return Number.isFinite(v) ? Math.max(-EQ_RANGE, Math.min(EQ_RANGE, v)) : 0;
+    });
+  }
+  /** The EQ's total response (dB) at f Hz for ten gains. */
+  function eqResponseDb(gains, f) {
+    const g = normalizeGains(gains);
+    let total = 0;
+    for (let i = 0; i < g.length; i++) if (g[i]) total += magnitudeDb(Biquad.design("peaking", EQ_FREQS[i], EQ_Q, RATE, g[i]), f);
+    return total;
+  }
+
+  // Compressor: how many dB the gain drops (a number <= 0) for a level, with a soft knee.
+  const CMP_KNEE = 6; // dB
+  function compGainDb(levelDb, thresholdDb, ratio, kneeDb = CMP_KNEE) {
+    if (!(ratio > 1)) return 0;
+    const slope = 1 / ratio - 1, over = levelDb - thresholdDb;
+    if (kneeDb > 0 && 2 * over < -kneeDb) return 0;
+    if (kneeDb > 0 && Math.abs(2 * over) <= kneeDb) { const t = over + kneeDb / 2; return (slope * t * t) / (2 * kneeDb); }
+    return over > 0 ? slope * over : 0;
+  }
+  const CMP_CEILING = Math.pow(10, -1 / 20); // the limiter holds the sound under -1 dBFS
+
   /* ---------- The chain ---------- */
 
   const PRESETS = {
@@ -104,15 +182,25 @@
   const PRESET_NAMES = { off: "Off", ssb: "SSB voice", weak: "Weak DX", cw: "CW", am: "AM broadcast" };
   // The extras (noise blanker, AGC speed, squelch, tone, manual notch) are kept whichever preset you pick.
   const DEFAULTS = { preset: "off", voice: false, lo: 300, hi: 2700, cw: false, tone: 700, width: 200, notch: false, nr: false, nrLevel: 1, comp: false,
-    nb: false, nbLevel: 2, agc: "medium", sq: 0, bass: 0, treble: 0, mnotch: 0 };
+    nb: false, nbLevel: 2, agc: "medium", sq: 0, bass: 0, treble: 0, mnotch: 0,
+    // The rack: module order, graphic EQ, compressor / limiter
+    order: MODULES, eq: false, eqGains: EQ_PRESETS.flat, cmp: false, cmpThr: -18, cmpRatio: 3, cmpMakeup: 0, cmpLimit: true };
   // AGC speed: how quickly the level is let go of, and how quickly the gain comes back up after a loud signal
   const AGC = { fast: [0.08, 0.0015], medium: [0.25, 0.0005], slow: [0.8, 0.00015] };
   const NB_THRESHOLD = [0, 12, 7, 4]; // Light, Medium, Strong: how many times louder than the average a click must be
 
+  // How long a change of order takes: the sound fades out, the modules swap places, and it fades back in (no click)
+  const FADE_SECS = 0.012;
+  const copyState = (to, from) => { if (from) { to.x1 = from.x1; to.x2 = from.x2; to.y1 = from.y1; to.y2 = from.y2; } return to; };
+
   class Chain {
     constructor(settings = {}) {
       this.s = { ...DEFAULTS };
-      this.meter = { peak: -120, rms: -120, clip: false, clipAt: 0 };
+      this.meter = { peak: -120, rms: -120, clip: false, clipAt: 0, gr: 0 };
+      this.order = null; // the order the sound goes through now
+      this.pending = null; // a new order waiting for the fade-out to finish
+      this.fadeG = 1;
+      this.eqF = [];
       this.configure(settings);
     }
 
@@ -133,6 +221,15 @@
       s.bass = Math.max(-12, Math.min(12, Math.round(Number(s.bass) || 0)));
       s.treble = Math.max(-12, Math.min(12, Math.round(Number(s.treble) || 0)));
       s.mnotch = Number(s.mnotch) ? Math.max(200, Math.min(3000, Math.round(Number(s.mnotch)))) : 0; // Hz, 0 = off
+      // The rack: EQ, compressor / limiter, order
+      s.eq = Boolean(s.eq);
+      s.eqGains = normalizeGains(s.eqGains);
+      s.cmp = Boolean(s.cmp);
+      s.cmpThr = Math.max(-60, Math.min(0, Math.round(Number(s.cmpThr) || 0)));
+      s.cmpRatio = Math.max(1, Math.min(20, Number(s.cmpRatio) || 3));
+      s.cmpMakeup = Math.max(0, Math.min(24, Math.round(Number(s.cmpMakeup) || 0)));
+      s.cmpLimit = Boolean(s.cmpLimit);
+      s.order = normalizeOrder(s.order);
       this.voice = [...BUTTER4.map((q) => Biquad.design("highpass", s.lo, q)), ...BUTTER4.map((q) => Biquad.design("lowpass", s.hi, q))];
       // Manual notch: two in a row, about 40 dB deep and some 60 Hz wide
       this.mnotchF = s.mnotch ? [0, 1].map(() => Biquad.design("notch", s.mnotch, 12)) : [];
@@ -140,6 +237,8 @@
       this.toneF = [];
       if (s.bass) this.toneF.push(Biquad.design("lowshelf", 250, Math.SQRT1_2, RATE, s.bass));
       if (s.treble) this.toneF.push(Biquad.design("highshelf", 2500, Math.SQRT1_2, RATE, s.treble));
+      // Graphic EQ: a bell for each band that isn't at 0 dB. A band that moves keeps its filter's memory, so dragging a slider doesn't click.
+      this.eqF = EQ_FREQS.map((f, i) => (s.eq && s.eqGains[i] ? copyState(Biquad.design("peaking", f, EQ_Q, RATE, s.eqGains[i]), this.eqF[i]) : null));
       // Noise blanker and squelch state
       this.nbAvg = this.nbAvg || 0;
       this.nbHold = this.nbHold || 0;
@@ -158,14 +257,35 @@
       // Compressor state
       this.env = this.env || 0;
       this.gain = this.gain || 1;
+      this.cEnv = this.cEnv || 0; // the rack compressor's level follower
+      this.cLim = this.cLim === undefined ? 1 : this.cLim; // and its limiter's gain
+      // Order: the first one is used at once; a change later fades out, swaps and fades in (see process)
+      if (!this.order) this.order = s.order.slice();
+      else if (s.order.join() !== this.order.join()) this.pending = s.order.slice();
+      else this.pending = null;
+      this.plan();
       return this.s;
+    }
+
+    /** Which modules do something, in the order the sound goes through them. */
+    plan() {
+      const s = this.s;
+      const doing = {
+        nb: s.nb, voice: s.voice, cw: s.cw, mnotch: this.mnotchF.length > 0, notch: s.notch, nr: s.nr, sq: s.sq !== 0, comp: s.comp,
+        eq: this.eqF.some(Boolean), tone: this.toneF.length > 0, cmp: s.cmp,
+      };
+      this.active = this.order.filter((id) => doing[id]);
+      // The level meter's "would it have clipped" reading is taken just before the squelch or the AGC, whichever comes first
+      const first = this.order.findIndex((id) => id === "sq" || id === "comp");
+      this.tapAt = this.order.slice(0, first).filter((id) => doing[id]).length;
     }
 
     /** Process a block in place (Float32Array at 48 kHz). Returns the same array. */
     process(buf) {
       const s = this.s;
-      const on = s.voice || s.cw || s.notch || s.nr || s.comp || s.nb || s.sq !== 0 || s.mnotch !== 0 || this.toneF.length > 0;
-      let peakIn = 0, sum = 0, peakOut = 0;
+      let act = this.active, nAct = act.length;
+      const on = nAct > 0;
+      let peakIn = 0, sum = 0, peakOut = 0, grBlock = 0;
       const [relSecs, rise] = AGC[s.agc] || AGC.medium;
       const ATT = 1 - Math.exp(-1 / (RATE * 0.004)), REL = 1 - Math.exp(-1 / (RATE * relSecs));
       const TARGET = 0.25; // about -12 dBFS
@@ -175,48 +295,91 @@
       const SQ_ATT = 1 - Math.exp(-1 / (RATE * 0.002)), SQ_REL = 1 - Math.exp(-1 / (RATE * 0.05));
       const SQ_UP = 1 - Math.exp(-1 / (RATE * 0.005)), SQ_DOWN = 1 - Math.exp(-1 / (RATE * 0.03)), SQ_HANG = Math.round(RATE * 0.4);
       const sqOpenAt = s.sq ? Math.pow(10, s.sq / 20) : 0;
+      // Compressor / limiter: follows the level in 5 ms and lets go in 150 ms; the limiter lets go in 60 ms
+      const C_ATT = 1 - Math.exp(-1 / (RATE * 0.005)), C_REL = 1 - Math.exp(-1 / (RATE * 0.15)), LIM_REL = 1 - Math.exp(-1 / (RATE * 0.06));
+      const FADE_STEP = 1 / (RATE * FADE_SECS);
       for (let i = 0; i < buf.length; i++) {
         let x = buf[i];
         if (on) {
-          if (s.nb) {
-            const a0 = Math.abs(x);
-            const limit = nbK * this.nbAvg;
-            if (this.nbWarm >= NB_WARM && a0 > limit) this.nbHold = NB_HOLD;
-            else if (this.nbWarm < NB_WARM) this.nbWarm++;
-            // Learn the level, counting a click as no louder than the limit: a click barely moves it, but a
-            // station that comes on loud is learnt within a few milliseconds
-            this.nbAvg += NB_AVG * ((this.nbWarm >= NB_WARM ? Math.min(a0, limit) : a0) - this.nbAvg);
-            if (this.nbHold > 0) { this.nbHold--; x = 0; }
+          for (let k = 0; ; k++) {
+            if (k === this.tapAt) { const a0 = Math.abs(x); if (a0 > peakIn) peakIn = a0; }
+            if (k >= nAct) break;
+            switch (act[k]) {
+              case "nb": {
+                const a0 = Math.abs(x);
+                const limit = nbK * this.nbAvg;
+                if (this.nbWarm >= NB_WARM && a0 > limit) this.nbHold = NB_HOLD;
+                else if (this.nbWarm < NB_WARM) this.nbWarm++;
+                // Learn the level, counting a click as no louder than the limit: a click barely moves it, but a
+                // station that comes on loud is learnt within a few milliseconds
+                this.nbAvg += NB_AVG * ((this.nbWarm >= NB_WARM ? Math.min(a0, limit) : a0) - this.nbAvg);
+                if (this.nbHold > 0) { this.nbHold--; x = 0; }
+                break;
+              }
+              case "voice": for (const f of this.voice) x = f.run(x); break;
+              case "cw": for (const f of this.cwf) x = f.run(x); break;
+              case "mnotch": for (const f of this.mnotchF) x = f.run(x); break;
+              case "notch": x = this.notchF.step(x)[1]; break;
+              case "nr": {
+                const [y] = this.nrF.step(x);
+                x = y * 1.4; // the prediction loses a little level: give it back
+                break;
+              }
+              case "sq": {
+                // It listens here; the sound is shut (or opened) after the last module, so a compressor can't lift the noise over it
+                const a = Math.abs(x);
+                this.sqEnv += (a > this.sqEnv ? SQ_ATT : SQ_REL) * (a - this.sqEnv);
+                if (this.sqEnv >= sqOpenAt) this.sqHang = SQ_HANG;
+                else if (this.sqHang > 0) this.sqHang--;
+                const want = this.sqHang > 0 ? 1 : 0;
+                this.sqGain += (want > this.sqGain ? SQ_UP : SQ_DOWN) * (want - this.sqGain);
+                break;
+              }
+              case "comp": {
+                // Envelope follower (fast attack, release set by the AGC speed), gain towards the target, at most +24 dB
+                const a = Math.abs(x);
+                this.env += (a > this.env ? ATT : REL) * (a - this.env);
+                const want = Math.min(16, TARGET / Math.max(1e-4, this.env));
+                this.gain += (want < this.gain ? 0.02 : rise) * (want - this.gain);
+                x *= this.gain;
+                break;
+              }
+              case "eq": for (const f of this.eqF) if (f) x = f.run(x); break;
+              case "tone": for (const f of this.toneF) x = f.run(x); break;
+              case "cmp": {
+                const a = Math.abs(x);
+                this.cEnv += (a > this.cEnv ? C_ATT : C_REL) * (a - this.cEnv);
+                const lvl = this.cEnv > 1e-5 ? 20 * Math.log10(this.cEnv) : -100;
+                const cut = compGainDb(lvl, s.cmpThr, s.cmpRatio); // <= 0
+                let grNow = -cut;
+                x *= Math.pow(10, (cut + s.cmpMakeup) / 20);
+                if (s.cmpLimit) {
+                  const ax = Math.abs(x), need = ax > CMP_CEILING ? CMP_CEILING / ax : 1;
+                  if (need < this.cLim) this.cLim = need; // at once, so it never goes over
+                  else this.cLim += (1 - this.cLim) * LIM_REL;
+                  x *= this.cLim;
+                  grNow -= 20 * Math.log10(this.cLim);
+                }
+                if (grNow > grBlock) grBlock = grNow;
+                break;
+              }
+            }
           }
-          if (s.voice) for (const f of this.voice) x = f.run(x);
-          if (s.cw) for (const f of this.cwf) x = f.run(x);
-          for (const f of this.mnotchF) x = f.run(x);
-          if (s.notch) x = this.notchF.step(x)[1];
-          if (s.nr) {
-            const [y] = this.nrF.step(x);
-            x = y * 1.4; // the prediction loses a little level: give it back
+          if (s.sq) x *= this.sqGain;
+          // Soft limiter: never above ±1, gentle above 0.7
+          if (Math.abs(x) > 0.7) x = Math.sign(x) * (0.7 + 0.3 * Math.tanh((Math.abs(x) - 0.7) / 0.3));
+        }
+        // A new order: fade out, swap the modules over while it's silent, fade back in
+        if (this.pending) {
+          this.fadeG -= FADE_STEP;
+          if (this.fadeG <= 0) {
+            this.fadeG = 0;
+            this.order = this.pending; this.pending = null;
+            this.plan();
+            act = this.active; nAct = act.length;
           }
-        }
-        const a = Math.abs(x);
-        if (a > peakIn) peakIn = a;
-        if (s.sq) {
-          this.sqEnv += (a > this.sqEnv ? SQ_ATT : SQ_REL) * (a - this.sqEnv);
-          if (this.sqEnv >= sqOpenAt) this.sqHang = SQ_HANG;
-          else if (this.sqHang > 0) this.sqHang--;
-          const want = this.sqHang > 0 ? 1 : 0;
-          this.sqGain += (want > this.sqGain ? SQ_UP : SQ_DOWN) * (want - this.sqGain);
-        }
-        if (s.comp) {
-          // Envelope follower (fast attack, release set by the AGC speed), gain towards the target, at most +24 dB
-          this.env += (a > this.env ? ATT : REL) * (a - this.env);
-          const want = Math.min(16, TARGET / Math.max(1e-4, this.env));
-          this.gain += (want < this.gain ? 0.02 : rise) * (want - this.gain);
-          x *= this.gain;
-        }
-        for (const f of this.toneF) x = f.run(x);
-        if (s.sq) x *= this.sqGain;
-        // Soft limiter: never above ±1, gentle above 0.7
-        if (on && Math.abs(x) > 0.7) x = Math.sign(x) * (0.7 + 0.3 * Math.tanh((Math.abs(x) - 0.7) / 0.3));
+        } else if (this.fadeG < 1) this.fadeG = Math.min(1, this.fadeG + FADE_STEP);
+        if (this.fadeG !== 1) x *= this.fadeG;
         const ao = Math.abs(x);
         if (ao > peakOut) peakOut = ao;
         sum += x * x;
@@ -227,11 +390,14 @@
       const m = this.meter;
       m.peak = Math.max(db(peakOut), m.peak - 1.5); // falls back gently
       m.rms = db(Math.sqrt(sum / Math.max(1, buf.length)));
+      m.gr = grBlock; // the most the compressor / limiter turned the sound down in this block (dB)
       const wouldClip = (on ? (s.comp ? peakIn * this.gain : peakIn) : peakOut) >= 0.999;
       if (wouldClip) { m.clip = true; m.clipAt = Date.now(); } else if (Date.now() - m.clipAt > 1500) m.clip = false;
       return buf;
     }
   }
 
-  return { Chain, Biquad, Lms, PRESETS, PRESET_NAMES, DEFAULTS, AGC, RATE };
+  return { Chain, Biquad, Lms, PRESETS, PRESET_NAMES, DEFAULTS, AGC, RATE,
+    MODULES, MODULE_NAMES, normalizeOrder, moveModule, EQ_FREQS, EQ_Q, EQ_RANGE, EQ_PRESETS, EQ_NAMES, PRESET_EQ, normalizeGains,
+    eqResponseDb, magnitudeDb, compGainDb, CMP_CEILING };
 });
