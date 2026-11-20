@@ -108,7 +108,10 @@ function setupOptions() {
     settings[key] = num ? Number(e.target.value) : e.target.value;
     if (id === "optText") $("optTextVal").textContent = `${settings.text}%`;
     if (id === "optZoom") $("optZoomVal").textContent = `${settings.zoom}%`;
-    saveSettings();
+    // A new look or theme fades in softly (where the browser can, and not for people who ask for reduced motion)
+    const fade = (id === "optLook" || id === "optTheme") && document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (fade) document.startViewTransition(saveSettings).ready.catch(() => {}); // a quicker change skips the last fade: fine
+    else saveSettings();
   });
   bind("optTheme", "theme"); bind("optLook", "look"); bind("optText", "text", true);
   for (const id of ["optTheme", "optLook"]) $(id).addEventListener("input", renderOptions); bind("optZoom", "zoom", true); bind("optWidth", "width");
