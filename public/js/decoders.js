@@ -25,7 +25,7 @@ function loadDc() {
       const r = s.rtty;
       if (r && typeof r === "object") {
         if ([45.45, 50, 75].includes(r.baud)) dc.rtty.baud = r.baud;
-        if ([170, 425, 850].includes(r.shift)) dc.rtty.shift = r.shift;
+        if ([170, 425, 450, 850].includes(r.shift)) dc.rtty.shift = r.shift;
         if (Number.isFinite(r.low)) dc.rtty.low = Math.min(3000, Math.max(300, r.low));
         dc.rtty.reverse = r.reverse === true;
         dc.rtty.usos = r.usos !== false;
