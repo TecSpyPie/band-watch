@@ -1,6 +1,7 @@
 # What's new
 
 ## Unreleased
+- **Glass look, deeper.** Settings > Look > Glass and depth now has three clear layers: a deep soft gradient behind (a background picture you chose stays, slightly blurred and dimmed), panels as frosted glass with a bevelled light edge and soft stacked shadows, and the header, section menu, buttons, chips, dialogs, toast and map tip raised above them (buttons press in when clicked; dialogs get the deepest shadow and blur the page behind). The map, waterfall and scope stay sharp. Buttons no longer blur on their own, which keeps it light on the computer. Follows "reduce transparency", "more contrast" and "reduce motion" settings; High contrast and Night still stay plain.
 - **A real world map for the spots panel.** The "40 m spots" panel (any band: it follows the band you pick) now has a
   **Map / Bowl** switch, **Map** by default (your choice is remembered; **Bowl** is the old simple chart). The map
   has real coastlines (Natural Earth 110m land, public domain, built in, so no map tiles and no internet map service),
