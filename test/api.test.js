@@ -710,7 +710,7 @@ test("RTL-SDR bridge: at most two receivers at once", async () => {
   }
 });
 
-test("RTL-SDR: starts rtl_tcp for the user, only the real program name, and stops it", async () => {
+test("RTL-SDR: starts rtl_tcp for the user, only the real program name, and stops it", { skip: process.platform === "win32" && "fixture rtl_tcp is a shell script, which Windows can't run" }, async () => {
   const path = require("path");
   const net = require("net");
   const exe = path.join(__dirname, "fixtures", "rtl_tcp");
