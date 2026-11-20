@@ -237,3 +237,17 @@
 :root[data-look="rig"]:not(#_){--lit-c:rgba(255,255,255,.075)}
 :root[data-look="glass"]:not(#_){--lit-c:var(--g-sheen)}
 :root[data-look="space"]:not(#_){--lit-c:rgba(87,199,255,.13)}
+
+/* ======================= Smooth motion (all three looks) =======================
+   Panels drift gently into place when the page opens or a section is shown, and buttons ease when hovered and
+   pressed. Only for people who haven't asked for reduced motion; High contrast and Night never get a look. */
+@keyframes look-in{from{opacity:0;transform:translate3d(0,10px,0) scale(.99)}}
+@media (prefers-reduced-motion:no-preference){
+  :root[data-look]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero){animation:look-in .5s cubic-bezier(.2,.7,.2,1) backwards}
+  :root[data-look]:not(#_) .wrap > .panel:nth-of-type(2){animation-delay:.04s}
+  :root[data-look]:not(#_) .wrap > .panel:nth-of-type(3){animation-delay:.08s}
+  :root[data-look]:not(#_) .wrap > .panel:nth-of-type(n+4){animation-delay:.12s}
+  :root[data-look]:not(#_) .wrap > #secPanel{animation:none}
+  :root[data-look]:not(#_) :is(.wrap > .panel,.wrap > .cols > section){transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .25s ease}
+  :root[data-look]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button){transition:transform .12s ease,box-shadow .2s ease,background-color .2s ease,filter .2s ease}
+}

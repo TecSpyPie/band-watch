@@ -614,10 +614,15 @@ function drawSdrSpectrum(dB) {
   const spec = $("rtlSpec");
   const fall = $("rtlFall");
   if (!spec || !fall || spec.offsetParent === null) return;
-  const w = (spec.width = fall.width = Math.max(200, Math.round(spec.clientWidth)));
-  const h = (spec.height = 90);
-  fall.height = 110;
+  // Sharp on high-DPI screens: the spectrum has as many pixels as the screen, and we draw in CSS pixels.
+  // The waterfall stays one pixel per CSS pixel (it's a picture) and is resized only when it must be (that wipes it).
+  const w = Math.max(200, Math.round(spec.clientWidth));
+  const h = 90;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (spec.width !== Math.round(w * dpr) || spec.height !== Math.round(h * dpr)) { spec.width = Math.round(w * dpr); spec.height = Math.round(h * dpr); }
+  if (fall.width !== w || fall.height !== 110) { fall.width = w; fall.height = 110; }
   const g = spec.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.fillStyle = "#0b1418";
   g.fillRect(0, 0, w, h);
   // The dial frequency is a quarter of the sample rate below the dongle's centre: show the lower half.
@@ -636,6 +641,8 @@ function drawSdrSpectrum(dB) {
     }
     const hi = lo + sdr.range;
     g.strokeStyle = "#5fd3e6";
+    g.lineWidth = 1.25;
+    g.lineJoin = "round";
     g.beginPath();
     for (let x = 0; x < w; x++) {
       const v = dB[Math.floor((x / w) * half)];
@@ -647,6 +654,7 @@ function drawSdrSpectrum(dB) {
     const fg = fall.getContext("2d");
     const old = sdr.rows;
     if (old && old.width === w) fg.putImageData(old, 0, 1);
+    else fg.clearRect(0, 0, fall.width, fall.height); // new start (retuned, new size): begin a fresh waterfall
     const row = fg.createImageData(w, 1);
     for (let x = 0; x < w; x++) {
       const [r, gg, b] = fallColour((dB[Math.floor((x / w) * half)] - lo) / (hi - lo));
@@ -662,7 +670,7 @@ function drawSdrSpectrum(dB) {
   const left = listen.kHz - (spanHz() / 2000);
   const tick = spanHz() >= 900000 ? 100 : spanHz() >= 400000 ? 50 : 10;
   for (let k = Math.ceil(left / tick) * tick; k < left + spanHz() / 1000; k += tick) {
-    const x = (k - left) / kHzPerPx;
+    const x = Math.round((k - left) / kHzPerPx);
     g.fillRect(x, h - 6, 1, 6);
     if (x > 20 && x < w - 40) g.fillText(`${k.toLocaleString()}`, x + 2, h - 8);
   }

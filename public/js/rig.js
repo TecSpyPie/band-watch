@@ -802,6 +802,7 @@ function atsShowScreen(bmp) {
   if (!c) return;
   if (c.width !== w) c.width = w;
   if (c.height !== h) c.height = h;
+  c.style.imageRendering = ""; // the radio's own pixels: crisp blocks (style.css)
   const g = c.getContext("2d");
   const img = g.createImageData(w, h);
   const d = img.data;
@@ -855,9 +856,12 @@ function atsDrawSim() {
   const c = $("atsScreen");
   if (!c) return;
   const a = rig.ats;
-  if (c.width !== 320) c.width = 320;
-  if (c.height !== 170) c.height = 170;
+  // Drawn at twice the size and shown smooth, so the text stays sharp when the screen is shown big.
+  if (c.width !== 640) c.width = 640;
+  if (c.height !== 340) c.height = 340;
+  c.style.imageRendering = "auto";
   const g = c.getContext("2d");
+  g.setTransform(2, 0, 0, 2, 0, 0);
   g.fillStyle = "#000";
   g.fillRect(0, 0, 320, 170);
   if (!rig.connected) return;
