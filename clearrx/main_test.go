@@ -132,7 +132,7 @@ func TestQuitNeedsHeader(t *testing.T) {
 
 func TestPageServed(t *testing.T) {
 	a := NewApp("", nil)
-	for _, p := range []string{"/", "/js/app.js", "/js/clearrx-worklet.js", "/js/rxfx.js", "/clearrx.css", "/favicon.svg"} {
+	for _, p := range []string{"/", "/js/app.js", "/js/clearrx-worklet.js", "/js/rxfx.js", "/js/scope3d.js", "/clearrx.css", "/favicon.svg"} {
 		w := do(t, a, "GET", p, "", nil)
 		if w.Code != http.StatusOK {
 			t.Fatalf("%s = %d", p, w.Code)
@@ -141,7 +141,7 @@ func TestPageServed(t *testing.T) {
 			t.Fatalf("%s missing security headers", p)
 		}
 	}
-	if !strings.Contains(do(t, a, "GET", "/", "", nil).Body.String(), "ClearRX by M3VRV") {
+	if !strings.Contains(do(t, a, "GET", "/", "", nil).Body.String(), "ClearRX by M3VRV &amp; King Coder") {
 		t.Fatal("page title missing")
 	}
 }
@@ -150,5 +150,143 @@ func TestAppWindowArgs(t *testing.T) {
 	args := appWindowArgs("http://localhost:8074/")
 	if args[0] != "--app=http://localhost:8074/" {
 		t.Fatalf("args = %v", args)
+	}
+}
+
+// The rack: order, graphic EQ and compressor / limiter settings
+
+func postSettings(t *testing.T, a *App, body string) Settings {
+	t.Helper()
+	w := do(t, a, "POST", "/api/settings", body, nil)
+	if w.Code != 200 {
+		t.Fatalf("POST = %d %s", w.Code, w.Body)
+	}
+	var s Settings
+	if err := json.Unmarshal(w.Body.Bytes(), &s); err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
+func TestRackDefaults(t *testing.T) {
+	d := defaultSettings().clean()
+	if strings.Join(d.Order, ",") != "nb,voice,cw,mnotch,notch,nr,sq,comp,eq,tone,cmp" {
+		t.Fatalf("default order = %v", d.Order)
+	}
+	if d.Eq || d.EqPreset != "flat" || len(d.EqGains) != 10 || d.Cmp || d.CmpThr != -18 || d.CmpRatio != 3 || d.CmpMakeup != 0 || !d.CmpLimit {
+		t.Fatalf("defaults: %+v", d)
+	}
+	for _, g := range d.EqGains {
+		if g != 0 {
+			t.Fatalf("EQ should start flat: %v", d.EqGains)
+		}
+	}
+}
+
+func TestRackOrderChecked(t *testing.T) {
+	a := NewApp("", nil)
+	// Unknown ids and repeats go; missing modules are added at the end, in the usual order
+	s := postSettings(t, a, `{"preset":"ssb","order":["cmp","bogus","eq","cmp","","nb"]}`)
+	if got := strings.Join(s.Order, ","); got != "cmp,eq,nb,voice,cw,mnotch,notch,nr,sq,comp,tone" {
+		t.Fatalf("order = %s", got)
+	}
+	// Always every module exactly once
+	for _, in := range []string{`[]`, `null`, `["eq","eq","eq"]`, `["x","y"]`} {
+		s = postSettings(t, a, `{"preset":"ssb","order":`+in+`}`)
+		seen := map[string]int{}
+		for _, id := range s.Order {
+			seen[id]++
+		}
+		if len(s.Order) != len(modules) || len(seen) != len(modules) {
+			t.Fatalf("order %s -> %v", in, s.Order)
+		}
+	}
+	// A wrong type is refused, and the settings stay as they were
+	if w := do(t, a, "POST", "/api/settings", `{"order":"eq"}`, nil); w.Code != 400 {
+		t.Fatalf("order as a string = %d", w.Code)
+	}
+}
+
+func TestRackEqAndCompressorClamped(t *testing.T) {
+	a := NewApp("", nil)
+	s := postSettings(t, a, `{"preset":"custom","eq":true,"eqPreset":"warp","eqGains":[40,-40,3,0,0,0,0,0,0,0,9,9],"cmp":true,"cmpThr":-300,"cmpRatio":99,"cmpMakeup":99,"cmpLimit":false}`)
+	if !s.Eq || s.EqPreset != "custom" {
+		t.Fatalf("eq: %+v", s)
+	}
+	if len(s.EqGains) != 10 || s.EqGains[0] != 12 || s.EqGains[1] != -12 || s.EqGains[2] != 3 {
+		t.Fatalf("gains not clamped or cut to ten: %v", s.EqGains)
+	}
+	if !s.Cmp || s.CmpThr != -60 || s.CmpRatio != 20 || s.CmpMakeup != 24 || s.CmpLimit {
+		t.Fatalf("compressor not clamped: %+v", s)
+	}
+	// The other end, and the values that must be kept as they are (0 dB is a real threshold; the limiter can be off)
+	s = postSettings(t, a, `{"preset":"custom","eqPreset":"ssb","eqGains":[1,2],"cmpThr":0,"cmpRatio":-4,"cmpMakeup":-5,"cmpLimit":true}`)
+	if s.EqPreset != "ssb" || s.EqGains[0] != 1 || s.EqGains[1] != 2 || s.EqGains[9] != 0 || len(s.EqGains) != 10 {
+		t.Fatalf("short gains list should be padded: %v", s.EqGains)
+	}
+	if s.CmpThr != 0 || s.CmpRatio != 1 || s.CmpMakeup != 0 || !s.CmpLimit {
+		t.Fatalf("compressor low end: %+v", s)
+	}
+	// A request without the new fields keeps the defaults (it doesn't switch the limiter off or zero the threshold)
+	s = postSettings(t, a, `{"preset":"cw","cw":true}`)
+	if s.CmpThr != -18 || s.CmpRatio != 3 || !s.CmpLimit || strings.Join(s.Order, ",") != strings.Join(modules, ",") {
+		t.Fatalf("missing fields should be defaults: %+v", s)
+	}
+}
+
+func TestRackOldSettingsFileStillWorks(t *testing.T) {
+	// A clearrx-settings.json written by ClearRX 1.2.0, before the rack
+	old := `{
+  "preset": "weak", "voice": true, "lo": 300, "hi": 2400, "cw": false, "tone": 700, "width": 200, "notch": true, "nr": true, "nrLevel": 2,
+  "comp": true, "on": true, "radio": "yaesu", "nb": true, "nbLevel": 3, "agc": "slow", "sq": -55, "bass": 3, "treble": -3, "mnotch": 1500
+}`
+	file := filepath.Join(t.TempDir(), "clearrx-settings.json")
+	if err := os.WriteFile(file, []byte(old), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s := NewApp(file, nil).settings
+	// Everything that was saved is kept
+	if s.Preset != "weak" || s.Hi != 2400 || !s.Nr || s.NrLevel != 2 || s.Radio != "yaesu" || !s.Nb || s.NbLevel != 3 || s.Agc != "slow" ||
+		s.Sq != -55 || s.Bass != 3 || s.Treble != -3 || s.Mnotch != 1500 || !s.Voice || !s.On {
+		t.Fatalf("old values lost: %+v", s)
+	}
+	// And the rack's fields are the defaults
+	if strings.Join(s.Order, ",") != strings.Join(modules, ",") || s.Eq || s.EqPreset != "flat" || len(s.EqGains) != 10 || s.Cmp || s.CmpThr != -18 || s.CmpRatio != 3 || !s.CmpLimit {
+		t.Fatalf("rack defaults missing: %+v", s)
+	}
+	// The page gets them all from /api/settings
+	a := NewApp(file, nil)
+	w := do(t, a, "GET", "/api/settings", "", nil)
+	for _, key := range []string{`"order":["nb"`, `"eqGains":[0,0,0,0,0,0,0,0,0,0]`, `"cmpLimit":true`, `"eq":false`, `"eqPreset":"flat"`, `"cmpThr":-18`} {
+		if !strings.Contains(w.Body.String(), key) {
+			t.Fatalf("settings JSON missing %s: %s", key, w.Body)
+		}
+	}
+	// A broken or empty file falls back to the defaults
+	for _, junk := range []string{``, `not json`, `{"order": 5}`} {
+		if err := os.WriteFile(file, []byte(junk), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if got := NewApp(file, nil).settings; got.Preset != "ssb" || len(got.Order) != len(modules) || len(got.EqGains) != 10 {
+			t.Fatalf("junk file %q: %+v", junk, got)
+		}
+	}
+}
+
+func TestRackSavedAndLoadedBack(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "s.json")
+	a := NewApp(file, nil)
+	postSettings(t, a, `{"preset":"custom","order":["cmp","eq","nb"],"eq":true,"eqPreset":"cw","eqGains":[-10,-8,-4,3,6,3,-4,-8,-10,-12],"cmp":true,"cmpThr":-24,"cmpRatio":6,"cmpMakeup":4,"cmpLimit":false}`)
+	b, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), `"cmp"`) || !strings.Contains(string(b), `"eqGains"`) {
+		t.Fatalf("not saved: %s", b)
+	}
+	s := NewApp(file, nil).settings
+	if strings.Join(s.Order[:3], ",") != "cmp,eq,nb" || !s.Eq || s.EqPreset != "cw" || s.EqGains[4] != 6 || s.EqGains[9] != -12 ||
+		!s.Cmp || s.CmpThr != -24 || s.CmpRatio != 6 || s.CmpMakeup != 4 || s.CmpLimit {
+		t.Fatalf("not loaded back: %+v", s)
 	}
 }

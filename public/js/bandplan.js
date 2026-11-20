@@ -11,6 +11,9 @@ const PLAN_TYPES = {
   beacon: { label: "Beacons only", short: "Beacons" },
   fm: { label: "FM, repeaters and simplex", short: "FM" },
   sat: { label: "Satellite links", short: "Satellite" },
+  rptin: { label: "Repeater inputs (what repeaters listen on; you normally listen on the output)", short: "Repeater in" },
+  rptout: { label: "Repeater outputs (what repeaters send: listen here)", short: "Repeater out" },
+  dv: { label: "Digital voice, hotspots and gateways", short: "Digital voice" },
   none: { label: "No UK amateur allocation", short: "Not UK" },
 };
 
@@ -194,9 +197,65 @@ const BANDPLAN = {
     ],
     centres: [[50090, "CW calling"], [50110, "DX calling"], [50150, "SSB centre"], [50313, "FT8"], [50318, "FT4"], [51510, "FM calling"]],
   },
+  2: {
+    lo: 144000, hi: 146000,
+    note: "UK 2 m, 144–146 MHz. UK FM repeaters (RV48–RV63) send on 145.600–145.7875 MHz and listen 600 kHz lower (145.000–145.1875). Receive on the output. Simplified from the RSGB VHF band plan: check it, and your licence, before transmitting. Special conditions apply near Scarborough.",
+    // Source: RSGB band plan 2026 (144 MHz sheet), summarised in plain words. Uncertain: FT8 144.174 and FT4 144.170 are
+    // the usual calling channels (IARU Region 1 practice), not separate rows in the RSGB table; they sit in its
+    // "CW, digital and SSB" block.
+    segs: [
+      [144000, 144025, "all", 2700, "All modes, including satellite downlinks"],
+      [144025, 144100, "cw", 500, "CW, including moonbounce (EME); CW centre 144,050"],
+      [144100, 144150, "narrow", 500, "CW and digital modes (moonbounce, meteor scatter calling 144,100)"],
+      [144150, 144400, "all", 2700, "CW, digital and SSB; FT8 144,174, GB2RS news 144,250, SSB centre 144,300, meteor scatter 144,370"],
+      [144400, 144490, "beacon", 0, "Propagation beacons only"],
+      [144490, 144500, "beacon", 0, "Beacon guard band"],
+      [144500, 144794, "all", 12000, "All modes; image 144,500, data centre 144,600, UK digital voice calling 144,6125, ATV talk-back 144,750"],
+      [144794, 144990, "digi", 12000, "Data and digital voice, including unattended; APRS 144,800; internet voice gateways 144,8125–144,9625; ad hoc repeater inputs 144,975 and 144,9875"],
+      [144990, 145193.5, "rptin", 12000, "FM and digital voice repeater inputs RV48–RV63 (145,000–145,1875)"],
+      [145193.5, 145206, "sat", 12000, "Space communications, Earth to space (145,200, e.g. the ISS)"],
+      [145206, 145593.5, "fm", 12000, "FM and digital voice simplex V16–V45; FM calling 145,500; GB2RS news 145,525; rally talk-in 145,550; ad hoc repeater outputs 145,575 and 145,5875"],
+      [145593.5, 145793.5, "rptout", 12000, "FM and digital voice repeater outputs RV48–RV63 (145,600–145,7875)"],
+      [145793.5, 146000, "sat", 12000, "Space to Earth (145,800, e.g. the ISS) and satellites only above 145,806"],
+    ],
+    centres: [[144050, "CW centre"], [144174, "FT8"], [144300, "SSB centre"], [144800, "APRS"], [145500, "FM calling"], [145600, "Repeaters (out)"], [145800, "ISS downlink"]],
+  },
+  70: {
+    lo: 430000, hi: 440000,
+    note: "UK 70 cm, 430–440 MHz. Amateur use is secondary. UK repeaters use several shifts: 1.6 MHz (outputs 433.000–433.375, inputs 434.600–434.975), 5 MHz (inputs 438.000–438.375), 7.6 MHz (outputs 430.8125–430.975, inputs 438.4125–438.575) and 9 MHz for digital voice. 430–432 MHz is limited to 40 W erp, and 431–432 isn't available within 100 km of Charing Cross, London. Simplified from the RSGB band plan: check it before transmitting.",
+    // Source: RSGB band plan 2026 (430 MHz sheet). Uncertain: the published table's columns don't line up cleanly in
+    // places (e.g. 9 MHz digital-voice split blocks and the 439.6–440 digital block overlap), so those blocks are merged
+    // here and described loosely. FT8 on 432.174 MHz is the usual practice, not a separate RSGB row.
+    segs: [
+      [430000, 430800, "dv", 12000, "Digital voice and data: FM internet voice gateways 430,0125–430,100, UK digital voice 9 MHz split repeaters, digital links"],
+      [430800, 431000, "rptout", 12000, "7.6 MHz split repeater outputs RU65–RU78 (430,8125–430,975); talkthrough 430,800"],
+      [431000, 432000, "digi", 12000, "Digital communications; digital voice gateways 431,025–431,250. 40 W erp max, and not near London"],
+      [432000, 432400, "all", 2700, "CW and SSB; FT8 432,174; centre of activity 432,200"],
+      [432400, 432500, "beacon", 500, "Propagation beacons only"],
+      [432500, 433000, "all", 12000, "All modes; SSTV 432,500; digital communications 432,625–432,675"],
+      [433000, 433394, "rptout", 12000, "FM repeater outputs RB0–RB15 (433,000–433,375), 1.6 MHz shift; 5 MHz split outputs RBW (UK only)"],
+      [433394, 433600, "fm", 12000, "FM and digital voice simplex U272–U286; FM calling 433,500; rally talk-in 433,550"],
+      [433600, 433800, "digi", 12000, "Digital communications 433,625–433,675; emergency and community use 433,700–433,775"],
+      [433800, 434000, "digi", 0, "APRS 433,800 (where 144.800 can't be used); digital communications and experiments (including LoRa)"],
+      [434000, 434594, "dv", 12000, "Low-power hotspot 434,000; digital voice gateways; mobile talkthrough 434,375; DV gateways 434,475–434,525"],
+      [434594, 434981, "rptin", 12000, "FM and digital voice repeater inputs RB0–RB15 (434,600–434,975), 1.6 MHz above the output"],
+      [434981, 435000, "all", 0, "Not detailed in the band plan summary"],
+      [435000, 436000, "sat", 0, "Satellites only"],
+      [436000, 438000, "sat", 0, "Satellites and experimental data/DATV; centre 437,000"],
+      [438000, 438400, "rptin", 12000, "5 MHz split repeater inputs RBW00–RBW30 (438,000–438,375); 5 MHz below the output"],
+      [438400, 438600, "rptin", 12000, "7.6 MHz split repeater inputs RU65–RU78 (438,4125–438,575); talkthrough 438,400"],
+      [438600, 439100, "dv", 12000, "UK digital voice calling 438,6125; low-power hotspot 438,800 (alternatives 438,775–438,7875)"],
+      [439100, 439775, "rptout", 12000, "Digital voice 9 MHz split repeater outputs (439,125–439,1375 and 439,400–439,775); ad hoc repeater output 439,1125"],
+      [439775, 440000, "digi", 0, "Digital communications; LoRa gateways 439,900–439,9875; pagers 439,9875"],
+    ],
+    centres: [[432174, "FT8"], [432200, "SSB centre"], [433500, "FM calling"], [433800, "APRS"], [437000, "Satellites"], [438612.5, "DV calling"]],
+  },
 };
 
-const PLAN_BANDS = ["160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6"];
+const PLAN_BANDS = ["160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6", "2", "70"];
+
+/** A band's name for people: "20 m", "70 cm". */
+const bandName = (b) => (String(b) === "70" ? "70 cm" : `${b} m`);
 
 /** The band plan segment containing a frequency (kHz), or null. */
 function planSegment(kHz) {
@@ -213,7 +272,8 @@ function planSegment(kHz) {
 function modeForFreq(kHz) {
   const seg = planSegment(kHz);
   if (seg && seg.type === "cw") return "cw";
-  if (seg && seg.type === "fm") return "fm";
+  if (seg && ["fm", "rptin", "rptout", "dv"].includes(seg.type)) return "fm";
+  if (kHz === 144800 || kHz === 433800) return "fm"; // APRS
   if (seg && ["narrow", "unatt", "digi", "beacon"].includes(seg.type)) return "usb";
   if (seg && seg.band === "60") return "usb";
   return kHz < 10000 ? "lsb" : "usb";
@@ -229,7 +289,7 @@ function bwText(bw) {
 const plan = { band: "20", hover: null };
 
 function renderPlan() {
-  $("planBands").innerHTML = PLAN_BANDS.map((b) => `<button type="button" data-b="${b}" aria-pressed="${b === plan.band}">${b} m</button>`).join("");
+  $("planBands").innerHTML = PLAN_BANDS.map((b) => `<button type="button" data-b="${b}" aria-pressed="${b === plan.band}">${bandName(b)}</button>`).join("");
   $("planBands").querySelectorAll("button").forEach((btn) => {
     btn.onclick = () => { plan.band = btn.dataset.b; renderPlan(); };
   });
@@ -259,7 +319,7 @@ function renderPlan() {
   if (listen.kHz >= p.lo && listen.kHz <= p.hi) {
     svg += `<path d="M${x(listen.kHz).toFixed(1)} ${BAR_Y - 1} l-5 -7 h10 z" fill="var(--warm)"><title>Tuned to ${listen.kHz} kHz</title></path>`;
   }
-  $("planChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${plan.band} metre UK band plan, ${p.lo} to ${p.hi} kHz">${svg}</svg>`;
+  $("planChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${bandName(plan.band)} UK band plan, ${p.lo} to ${p.hi} kHz">${svg}</svg>`;
   $("planNote").textContent = p.note;
   $("planRows").innerHTML = p.segs.map(([a, z, type, bw, use], i) =>
     `<tr data-i="${i}" tabindex="0" title="Listen here"><td><span class="sw t-${type}"></span>${a.toLocaleString()}–${z.toLocaleString()}</td>` +
@@ -284,3 +344,5 @@ function renderPlan() {
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tuneSeg(Number(el.dataset.i)); } });
   });
 }
+
+if (typeof module === "object" && module.exports) module.exports = { BANDPLAN, PLAN_BANDS, PLAN_TYPES, planSegment, modeForFreq, bandName };

@@ -3,12 +3,12 @@
 
 /* ===================== Constants ===================== */
 
-const BANDS = ["160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6"];
+const BANDS = ["160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6", "2", "70"];
 
 // Band limits used to sort live spots into bands (widest of the three ITU regions).
 const BAND_LIMITS = {
   160: [1.8, 2], 80: [3.5, 4], 60: [5.25, 5.45], 40: [7, 7.3], 30: [10.1, 10.15], 20: [14, 14.35],
-  17: [18.068, 18.168], 15: [21, 21.45], 12: [24.89, 24.99], 10: [28, 29.7], 6: [50, 54],
+  17: [18.068, 18.168], 15: [21, 21.45], 12: [24.89, 24.99], 10: [28, 29.7], 6: [50, 54], 2: [144, 146], 70: [430, 440],
 };
 
 // Scope span "Full band" and the band plan strip come from the UK band plan (bandplan.js), in MHz.
@@ -17,10 +17,11 @@ const SEG = Object.fromEntries(BANDS.map((b) => [b, BANDPLAN[b].segs.map(([lo, h
 const DIGI = {
   160: [1.835, 1.845], 80: [3.565, 3.58], 60: [5.354, 5.358], 40: [7.035, 7.08], 30: [10.13, 10.145], 20: [14.07, 14.1],
   17: [18.095, 18.111], 15: [21.07, 21.15], 12: [24.91, 24.93], 10: [28.07, 28.19], 6: [50.29, 50.33],
+  2: [144.165, 144.18], 70: [432.165, 432.18], // FT8 and FT4 calling areas (usual practice)
 };
-const FT8 = { 160: 1.84, 80: 3.573, 60: 5.357, 40: 7.074, 30: 10.136, 20: 14.074, 17: 18.1, 15: 21.074, 12: 24.915, 10: 28.074, 6: 50.313 };
-const FT4 = { 80: 3.575, 40: 7.0475, 30: 10.14, 20: 14.08, 17: 18.104, 15: 21.14, 12: 24.919, 10: 28.18, 6: 50.318 };
-const WSPR = { 160: 1.8366, 80: 3.5686, 60: 5.2872, 40: 7.0386, 30: 10.1387, 20: 14.0956, 17: 18.1046, 15: 21.0946, 12: 24.9246, 10: 28.1246, 6: 50.293 };
+const FT8 = { 160: 1.84, 80: 3.573, 60: 5.357, 40: 7.074, 30: 10.136, 20: 14.074, 17: 18.1, 15: 21.074, 12: 24.915, 10: 28.074, 6: 50.313, 2: 144.174, 70: 432.174 };
+const FT4 = { 80: 3.575, 40: 7.0475, 30: 10.14, 20: 14.08, 17: 18.104, 15: 21.14, 12: 24.919, 10: 28.18, 6: 50.318, 2: 144.17 }; // 2 m FT4 144.170 is the usual WSJT-X channel; no 70 cm one is listed (unverified)
+const WSPR = { 160: 1.8366, 80: 3.5686, 60: 5.2872, 40: 7.0386, 30: 10.1387, 20: 14.0956, 17: 18.1046, 15: 21.0946, 12: 24.9246, 10: 28.1246, 6: 50.293, 2: 144.489, 70: 432.3 }; // dial frequencies on 2 m and 70 cm (usual WSPR practice; unverified)
 // Occupied bandwidth per mode, in MHz.
 const BANDWIDTH = {
   FT8: 5e-5, FT4: 9e-5, WSPR: 6e-6, FST4W: 6e-6, FST4: 3e-5, JT65: 1.8e-4, JT9: 1.6e-5, Q65: 2e-4, MSK144: 2.4e-3,
@@ -271,7 +272,7 @@ function renderHero() {
     html = `<h2 class="big">${app.feedError ? "Live data unavailable" : "Checking the bands…"}</h2>
       <p>${app.feedError ? "PSK Reporter could not be reached. Band status will appear as soon as it answers." : "Fetching the latest spots for your grid square."}</p>`;
   } else if (best.sp.length) {
-    html = `<h2 class="big"><span>${best.b} m</span> is your best band right now</h2>
+    html = `<h2 class="big"><span>${bandName(best.b)}</span> is your best band right now</h2>
       <p>${best.sp.length.toLocaleString()} stations spotted in the last 30 minutes, the farthest ${kmText(best.far)} away.</p>`;
   } else if (app.allPairs.length && !app.pairs.length) {
     html = `<h2 class="big">Nothing in your chosen modes</h2>
@@ -300,7 +301,7 @@ function renderTable() {
     const count = x.none ? "–" : x.sp.length;
     const far = x.none ? "–" : x.far ? kmText(x.far) : "none";
     return `<tr tabindex="0" data-b="${x.b}" aria-selected="${x.b === app.sel}">
-      <td class="bn">${x.b} m</td>
+      <td class="bn">${bandName(x.b)}</td>
       <td><span class="bar"><i style="width:${Math.min(100, (x.sp.length / max) * 100)}%"></i></span></td>
       <td>${count}</td><td>${far}</td><td class="st ${st}">${STATUS_LABEL[st]}</td></tr>`;
   }).join("");

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Help · Band Watch by M3vrv</title>
+<title>Help · Band Watch by M3VRV &amp; King Coder</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.38.0">
+<link rel="stylesheet" href="/style.css?v=1.40.0">
 <script>
   // The same colours as Band Watch itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -50,9 +50,12 @@
       <li><a href="#bands">Bands, map and band scope</a></li>
       <li><a href="#shortwave">Shortwave stations on air</a></li>
       <li><a href="#decoders">Decoders: FT8, FT4, WSPR, CW</a></li>
+      <li><a href="#rtty">RTTY (radioteletype)</a></li>
+      <li><a href="#antab">Antenna A/B: compare two antennas</a></li>
       <li><a href="#pota">Parks on the air (POTA)</a></li>
       <li><a href="#wanted">Wanted alerts</a></li>
       <li><a href="#logbook">Logbook</a></li>
+      <li><a href="#repeaters">My repeaters (2 m and 70 cm)</a></li>
       <li><a href="#activity">Band activity and callsign lookup</a></li>
       <li><a href="#atsmini">ATS Mini</a></li>
       <li><a href="#windows">Own windows and a second screen</a></li>
@@ -159,6 +162,9 @@
     <h2 id="hRtl">Your RTL-SDR</h2>
     <p>Band Watch comes with rtl_tcp and starts it for you. Windows needs the dongle's driver changed once first, or no
       program can use it (even though Windows shows it's plugged in).</p>
+    <p>If the page says <b>rtl_tcp is connected but not sending any signal</b>, rtl_tcp has got stuck (it can after many hours
+      running). If Band Watch started it, Band Watch restarts it for you (at most twice in 10 minutes). If you started it yourself,
+      Band Watch leaves it alone: close it and start it again, or press <b class="btn">Restart receiver</b> to use Band Watch's own copy.</p>
     <ol>
       <li>Download <b>Zadig</b> from zadig.akeo.ie and run it.</li>
       <li>Click <b class="btn">Options → List All Devices</b>.</li>
@@ -173,7 +179,7 @@
 
   <section class="panel" id="clearrx" aria-labelledby="hCrx">
     <h2 id="hCrx">ClearRX: cleaner radio sound</h2>
-    <p><b>ClearRX by M3VRV</b> is a radio audio processor for Windows that works with Band Watch. It's a program of its own,
+    <p><b>ClearRX by M3VRV &amp; King Coder</b> is a radio audio processor for Windows that works with Band Watch. It's a program of its own,
       a separate download. It takes the sound from your radio and plays it back cleaned up: less hiss, no
       whistles, and a steady volume.</p>
     <ol>
@@ -212,7 +218,21 @@
     <ul>
       <li><b>Bands from your location:</b> each band shows Open, Marginal or Closed, from how many stations heard or were heard
         from your area in the last 30 minutes. Click a band to see it on the map and the scope.</li>
-      <li><b>Map:</b> the paths of those reports, with the day and night line.</li>
+      <li><b>Map:</b> the "<i>40 m</i> spots" panel (it follows the band you pick) is a real world map, with no internet
+        map service behind it. You are the ringed dot; every station on that band is a dot with a curved path to it, the
+        way the radio wave goes. Colour and size show the signal (grey: no report, then Weak, Fair, Good, Strong) and a
+        path fades as its spot gets older (spots older than 30 minutes drop off). The shaded side is night, with the Sun
+        marked. Rest the pointer on a dot (or tap it) to see the callsign, distance, beam heading, signal and mode; click
+        it for the station window. Turn the mouse wheel or use the <b class="btn">+</b> and <b class="btn">&minus;</b>
+        buttons (or pinch) to zoom, drag to move the map, double-click or press <b class="btn">&#8962;</b> to see the whole
+        world again. Satellites, POTA activators and APRS stations show here too when you switch them on. <b class="btn">Bowl</b>
+        is the older, simpler chart without coastlines; your choice is remembered. It works in the map's own window (⧉) too.
+        The map uses the spots Band Watch already has, so it asks PSK Reporter for nothing extra.</li>
+      <li><b>2 m and 70 cm:</b> the band lists, activity table, spots map and band scope include <b>2 m</b> and <b>70 cm</b>, with
+        spots from PSK Reporter (FT8 is on 144.174 and 432.174 MHz). They use the same spots already fetched every 5 minutes, so nothing
+        extra is asked of PSK Reporter. The <b>UK band plan</b> has both bands too: CW and beacons, narrow band and FT8, satellites, FM
+        simplex (calling 145.500 and 433.500), repeater inputs and outputs, APRS (144.800 and 433.800) and digital voice and hotspot areas.
+        It is a simplified summary of the RSGB plan: check the RSGB plan and your licence before you transmit.</li>
       <li><b>Band scope:</b> where on the band the activity is. With an RTL-SDR, click <b class="btn">Start live scope</b>
         for a live spectrum and waterfall. Click anywhere on it to tune there.</li>
     </ul>
@@ -237,7 +257,7 @@
     <h2 id="hDec">Decoders: FT8, FT4, WSPR, CW</h2>
     <p>Band Watch can decode what your receiver hears, like WSJT-X. Your PC's clock must be right to within a second.</p>
     <ol>
-      <li>Pick the <b>Mode</b>: FT8, FT4, WSPR or CW.</li>
+      <li>Pick the <b>Mode</b>: FT8, FT4, WSPR, CW or RTTY (see <a href="#rtty">RTTY</a>).</li>
       <li>Pick <b>Audio from</b>: <b>My RTL-SDR</b>, or <b>This computer's sound input</b> for a radio's audio
         (the IC-7300's USB sound card, or a cable from the radio's speaker).</li>
       <li>Tune to the right frequency (click a band key in the Radio panel, then pick DATA/USB), and click
@@ -377,6 +397,73 @@
       where in each band your licence allows you to transmit, are for you to set on the radio.</p>
   </section>
 
+  <section class="panel" id="rtty" aria-labelledby="hRtty">
+    <h2 id="hRtty">RTTY (radioteletype)</h2>
+    <p>RTTY is typing sent as two audio tones, one for each of the two states (<b>mark</b> and <b>space</b>). Band Watch
+      only <b>receives</b> it: it never transmits RTTY. The usual amateur RTTY is <b>45.45 baud</b> with a <b>170 Hz</b>
+      shift, 5-bit Baudot (ITA2) letters and figures. Contests and DX use it a lot.</p>
+    <ol>
+      <li>Set the decoder's <b>Mode</b> to <b>RTTY (radioteletype)</b>. The RTTY settings appear only for this mode.</li>
+      <li>Tune the radio to a signal. Typical places: <b>14.080 to 14.099 MHz</b> on 20 m (7.040 to 7.050 MHz on 40 m;
+        contests spread out). Use the radio's <b>LSB</b> for RTTY (the amateur convention) or its DATA/FSK mode, with the
+        tones near 2125 and 2295 Hz.</li>
+      <li>Choose <b>Audio from</b> (your RTL-SDR, or the radio's sound), then click <b class="btn">Start decoding</b>.</li>
+      <li>Click <b class="btn">Find the tones</b> while a signal is coming in, or type the <b>Lower tone</b> in Hz
+        (the standard pair is 2125 Hz and 2295 Hz). The line under the settings says which tone is mark and which is space,
+        and whether a signal is heard.</li>
+      <li>The text appears in the box, and scrolls. <b class="btn">Clear</b> empties it.</li>
+    </ol>
+    <ul>
+      <li><b>Reverse</b> swaps mark and space. If you get nonsense from a clear signal, tick it. On <b>USB</b> the
+        sidebands are the wrong way round for the usual RTTY, so <b>tick Reverse when you listen in USB</b>.</li>
+      <li><b>Speed and shift</b> are 45.45 baud and 170 Hz for amateur RTTY. Also offered: 50 and 75 baud, and 425, 450 and 850 Hz shift. To try it now: the German weather service (DWD) sends RTTY all day on 10,100.8 kHz, 7,646 kHz and 4,583 kHz at 50 baud and 450 Hz shift (listen on USB about 1.8 kHz below, then Find the tones).</li>
+      <li><b>Unshift on space (USOS)</b> is on by default: after a space, the next character is read as a letter again,
+        as most amateur software sends it. If the numbers after a space come out as letters, untick it.</li>
+      <li>Short bursts of garbage before and after a signal are normal. Poor signals lose letters; that's RTTY.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="antab" aria-labelledby="hAntab">
+    <h2 id="hAntab">Antenna A/B: compare two antennas</h2>
+    <p>This panel compares two antennas (or the same antenna before and after a change) using what other stations
+      actually heard of <b>your own WSPR signal</b>. It only <b>reads reports</b>: it never controls your radio and never
+      transmits. You send WSPR with your own software and switch antennas yourself. Your callsign (top of the page) must be set.</p>
+    <ol>
+      <li>Give the antennas names (say Dipole and Vertical). Start sending WSPR on the first one with your usual WSPR software.</li>
+      <li>Press <b class="btn">Now on antenna A</b> when you start. When you swap, press <b class="btn">Now on antenna B</b>, and so on.
+        Each press ends the last period and starts a new one. <b class="btn">Stop logging</b> ends it. Forgot to press? Use
+        <b>Add a period by typing the times</b> (UTC), and delete any wrong period from the list.</li>
+      <li><b>Swap often: every 10 to 20 minutes</b>, A then B then A then B, for a few hours. Band and ionosphere conditions
+        change all the time, so one long run on A and then one on B proves little.</li>
+      <li>Pick where the reports come from: <b>WSPR</b> (the default), <b>FT8 and FT4</b>, or <b>Both</b>. Press
+        <b class="btn">Compare</b>. For WSPR, Band Watch asks wspr.live (a free public WSPR database) for the reports of your
+        callsign: one request per click, 7 days at most. For FT8 and FT4 it asks PSK Reporter through Band Watch's own server,
+        which asks PSK Reporter at most once every 5 minutes per callsign and only covers the last 24 hours. Send FT8 or FT4
+        with your usual software (an FT8 over is 15 seconds, FT4 7.5 seconds) and swap antennas as above.
+        <b>For FT8 and FT4, keep Band Watch open while you alternate antennas.</b> PSK Reporter only gives the latest report
+        from each station, so Band Watch collects them for you: while a period is being logged, FT8 or FT4 is chosen and the
+        page is showing, it asks every 5 minutes (and once when you press the antenna button) and saves what it gets in this
+        browser (7 days at most). Compare uses everything collected, so matches build up as stations hear you on each antenna.
+        <b class="btn">Clear FT8 history</b> empties it. A tab that is hidden or closed collects nothing.</li>
+    </ol>
+    <p><b>How it is made fair.</b> Only a receiving station that heard you on <b>both</b> antennas, on the same band, is
+      compared. For each, Band Watch takes its average signal-to-noise ratio (SNR) on A and on B, then averages the
+      differences. A report counts only if its whole slot (2 minutes for WSPR, 15 seconds for FT8, 7.5 seconds for FT4) is inside one period,
+      so a swap in the middle never muddies it. Stations that heard only one antenna are counted but left out. WSPR and
+      FT8/FT4 reports are never mixed: with <b>Both</b>, each band has a row for each source, and the Source column says which.</p>
+    <ul>
+      <li><b>The table</b> shows each band, how many receivers heard both, the average SNR for each antenna and the
+        difference, for example <b>Vertical better by 2.3 dB</b>. About 6 dB is one S-unit; under 1 dB is hard to tell from chance.</li>
+      <li><b>By direction</b> (8 compass sectors from your locator) and <b>by distance</b> show where one antenna does better,
+        for example a vertical often wins far away and a low dipole nearby. Bars to the right favour B, to the left favour A.</li>
+      <li>With <b>fewer than 10</b> receivers matched, Band Watch warns you that the result is shaky. Keep going and compare again.</li>
+    </ul>
+    <p class="small muted">Use the same power, mode and time of day on both antennas. WSPR reports come from
+      <a href="https://wspr.live" target="_blank" rel="noopener noreferrer">wspr.live</a>, FT8 and FT4 reports from
+      <a href="https://pskreporter.info" target="_blank" rel="noopener noreferrer">PSK Reporter</a>. FT8 and FT4 stations
+      report you only if they run PSK Reporter reporting, so the count can differ from WSPR.</p>
+  </section>
+
   <section class="panel" id="pota" aria-labelledby="hPota">
     <h2 id="hPota">Parks on the air (POTA)</h2>
     <p>Activators on the air from parks right now, refreshed every two minutes.</p>
@@ -407,6 +494,24 @@
     </ol>
     <figure><img src="/help/logbook.webp" alt="The logbook with contacts and the ADIF buttons" loading="lazy"></figure>
     <p class="warn">The log is kept in this browser on this PC. Export ADIF now and then as a backup.</p>
+  </section>
+
+  <section class="panel" id="repeaters" aria-labelledby="hRpt">
+    <h2 id="hRpt">My repeaters (2 m and 70 cm)</h2>
+    <ul>
+      <li><b>Your own list.</b> Type in the repeaters you use: callsign, output frequency (what the repeater sends, which you listen to),
+        shift, CTCSS tone or DCS/colour code, mode (FM, DMR, C4FM or D-STAR), a locator or town and notes. Only 2 m (144–146 MHz) and
+        70 cm (430–440 MHz) are accepted. The list is kept in this browser. Band Watch comes with no repeater list and doesn't fetch one.</li>
+      <li><b>Nearest first.</b> Give a repeater a locator and Band Watch shows the distance and beam heading from your locator
+        (the one at the top of the page) and sorts the nearest to the top.</li>
+      <li><b>Tune</b> sets your connected radio (with the radio following Band Watch) or your RTL-SDR to the repeater's <b>output</b> in
+        FM, so you can listen. It is listening only: Band Watch never sets the shift or tone on your radio, and never transmits.
+        For a DMR, C4FM or D-STAR repeater, Band Watch can't decode the voice: set the mode on your radio (the Digital voice add-on can put a Yaesu on C4FM).</li>
+      <li><b>Import a CSV you downloaded.</b> Choose a file and Band Watch shows how many repeaters it found before adding them. It reads
+        columns called Callsign, Output or TX (the repeater's transmitter), Input or RX, Offset or Shift, CTCSS or Tone, Mode,
+        Locator and Town. The file is read in your browser and never uploaded. Only import lists you're allowed to use for your own station.</li>
+      <li><b>Find repeaters:</b> buttons open ukrepeater.net, Hearham and RepeaterBook in a new tab. Band Watch sends them nothing.</li>
+    </ul>
   </section>
 
   <section class="panel" id="activity" aria-labelledby="hAct">
@@ -442,7 +547,25 @@
       <li><b>Updates:</b> <b class="btn">Settings → Updates → Install update</b> gets the newest Band Watch and
         installs it over the old one. Your settings and log are kept.</li>
       <li><b>Colours:</b> Light, Dark or "Match my device" have the 3D look; High contrast and Night stay plain for easy reading.</li>
+      <li><b>Look:</b> <b class="btn">Settings → Look</b> changes the style. <b>Glass and depth</b> puts frosted-glass panels over a soft background (your own background picture shows through, blurred), with the title bar, section menu, buttons and pop-up windows raised above them. It follows your device's "reduce transparency" and "reduce motion" settings.</li>
     </ul>
+    <p><b>Section menu and folding.</b> The bar under the title has a button for each part that is showing (Clock,
+      Radio panel, Listen, Decoders, POTA and so on). Click one to glide to that part; the button for the part you are
+      looking at is highlighted. On a narrow screen the bar slides sideways. Each part also has a small arrow by its
+      name: click it to <b>fold</b> the part so only its name shows, and again to unfold it. Folding only hides the
+      part, so decoders, your radio and Listen keep working. Folded parts stay folded next time, and show
+      in the menu with a dashed outline; clicking one unfolds it. If you don't want the bar, untick
+      <b class="btn">Settings → Show the section menu</b>.</p>
+  </section>
+
+  <section class="panel" id="support" data-support-section hidden aria-labelledby="hSupport">
+    <h2 id="hSupport">Support the project</h2>
+    <p>Band Watch and ClearRX are free and open source, and always will be. Nothing is locked and nothing nags you.
+      If you'd like to say thanks, you can <a data-support href="#" hidden>support the project here</a>. It is entirely optional.</p>
+    <div id="supporters" hidden>
+      <h3>Supporters</h3>
+      <ul id="supportersList"></ul>
+    </div>
   </section>
 
   <section class="panel" id="problems" aria-labelledby="hProb">
@@ -457,9 +580,10 @@
       <li><b>The website version is blank at first:</b> it sleeps when nobody is using it. Wait a few seconds and reload.</li>
       <li><b>Nothing new on the bands:</b> Band Watch only shows what stations report. Quiet bands, or a wrong locator, show less.</li>
     </ul>
-    <p>Band Watch by M3vrv is free (MIT licence). Ideas and problems are welcome on
+    <p>Band Watch by M3VRV &amp; King Coder is free (MIT licence). Ideas and problems are welcome on
       <a href="https://github.com/TecSpyPie/band-watch" target="_blank" rel="noopener">github.com/TecSpyPie/band-watch</a>.</p>
   </section>
 </div>
+<script src="/js/support.js?v=1.40.0"></script>
 </body>
 </html>

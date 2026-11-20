@@ -40,16 +40,16 @@ function New-Shortcut([string]$path, [string]$target, [string]$arguments, [strin
 }
 
 New-Item -ItemType Directory -Force -Path $menu | Out-Null
-New-Shortcut (Join-Path $desktop "$name.lnk") $start "" "Open Band Watch by M3vrv"
-New-Shortcut (Join-Path $menu "$name.lnk") $start "" "Open Band Watch by M3vrv"
+New-Shortcut (Join-Path $desktop "$name.lnk") $start "" "Open Band Watch by M3VRV & King Coder"
+New-Shortcut (Join-Path $menu "$name.lnk") $start "" "Open Band Watch by M3VRV & King Coder"
 New-Shortcut (Join-Path $menu "Stop Band Watch.lnk") $stop "" "Stop Band Watch"
 if (Test-Path $crxExe) {
-  New-Shortcut (Join-Path $desktop "$crxName.lnk") $crxExe "" "Open ClearRX by M3VRV, the radio audio processor" $crxIcon 1
-  New-Shortcut (Join-Path $menu "$crxName.lnk") $crxExe "" "Open ClearRX by M3VRV, the radio audio processor" $crxIcon 1
+  New-Shortcut (Join-Path $desktop "$crxName.lnk") $crxExe "" "Open ClearRX by M3VRV & King Coder, the radio audio processor" $crxIcon 1
+  New-Shortcut (Join-Path $menu "$crxName.lnk") $crxExe "" "Open ClearRX by M3VRV & King Coder, the radio audio processor" $crxIcon 1
 }
-New-Shortcut (Join-Path $menu "Uninstall Band Watch.lnk") (Join-Path $InstallDir "uninstall.bat") "" "Remove Band Watch by M3vrv"
+New-Shortcut (Join-Path $menu "Uninstall Band Watch.lnk") (Join-Path $InstallDir "uninstall.bat") "" "Remove Band Watch by M3VRV & King Coder"
 
 $startupLink = Join-Path $startupDir "$name.lnk"
-if ($Startup -eq "yes") { New-Shortcut $startupLink $start "--background" "Start Band Watch by M3vrv in the background" }
+if ($Startup -eq "yes") { New-Shortcut $startupLink $start "--background" "Start Band Watch by M3VRV & King Coder in the background" }
 else { Remove-Item -Force -ErrorAction SilentlyContinue $startupLink }
 exit 0

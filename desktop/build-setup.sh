@@ -15,7 +15,7 @@ cp build/BandWatch.exe ../windows/README-Windows.txt ../LICENSE "$P/"
 # can't stop Band Watch installing.
 cp ../windows/app/* "$P/"
 cp ../server.js ../qrz.js ../clock.js ../package.json ../build-info.json "$P/server/"
-printf 'Band Watch by M3vrv\r\nVersion %s\r\nBuilt %s\r\n' "$VERSION" "$BUILD_DATE" > "$P/BUILD-INFO.txt"
+printf 'Band Watch by M3VRV & King Coder\r\nVersion %s\r\nBuilt %s\r\n' "$VERSION" "$BUILD_DATE" > "$P/BUILD-INFO.txt"
 cp -R ../public "$P/server/public"
 # rtl_tcp and what it needs, next to BandWatch.exe, so Listen > "My RTL-SDR" works straight away.
 sh ../tools/fetch-rtl-sdr.sh build/rtl-sdr

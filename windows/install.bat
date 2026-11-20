@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-title Band Watch by M3vrv - Installer
+title Band Watch by M3VRV ^& King Coder - Installer
 cd /d "%~dp0"
 
 rem "install.bat /auto" installs answering every question with its default.
@@ -13,7 +13,7 @@ if "%SystemDrive%"=="" (set "DEST=C:\BandWatch") else (set "DEST=%SystemDrive%\B
 set "OLD=%LOCALAPPDATA%\BandWatch"
 
 echo.
-echo   Band Watch by M3vrv - Windows installer
+echo   Band Watch by M3VRV ^& King Coder - Windows installer
 echo   ========================================
 echo.
 
@@ -59,8 +59,8 @@ if /i not "%DEST%"=="%OLD%" if exist "%OLD%" (
 
 rem ---------- List Band Watch in Settings, Apps, so it can be uninstalled from there ----------
 set "UKEY=HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\BandWatchM3vrv"
-reg add "%UKEY%" /v DisplayName /t REG_SZ /d "Band Watch by M3vrv" /f >nul 2>nul
-reg add "%UKEY%" /v Publisher /t REG_SZ /d "M3vrv" /f >nul 2>nul
+reg add "%UKEY%" /v DisplayName /t REG_SZ /d "Band Watch by M3VRV ^& King Coder" /f >nul 2>nul
+reg add "%UKEY%" /v Publisher /t REG_SZ /d "M3VRV ^& King Coder" /f >nul 2>nul
 reg add "%UKEY%" /v DisplayIcon /t REG_SZ /d "%DEST%\bandwatch.ico" /f >nul 2>nul
 reg add "%UKEY%" /v InstallLocation /t REG_SZ /d "%DEST%" /f >nul 2>nul
 reg add "%UKEY%" /v UninstallString /t REG_SZ /d "\"%DEST%\uninstall.bat\"" /f >nul 2>nul
@@ -87,7 +87,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%DEST%\make-shortcuts.ps1" 
 if errorlevel 1 echo   Shortcuts could not be created. You can still run "%DEST%\start-bandwatch.bat".
 
 echo.
-echo   Done. Band Watch by M3vrv is installed.
+echo   Done. Band Watch by M3VRV ^& King Coder is installed.
 echo   Use the "Band Watch by M3vrv" shortcut on your desktop or in the Start menu.
 echo   It opens at http://localhost:8073 in your web browser.
 echo.

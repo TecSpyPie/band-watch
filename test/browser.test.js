@@ -121,14 +121,14 @@ const tooWide = (page) => page.evaluate(() => [...document.querySelectorAll("bod
 
 test("loads live data with no errors", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
-  assert.equal(await page.title(), "Band Watch by M3vrv");
-  assert.equal((await page.textContent("h1")).replace(/\s+/g, " "), "Band Watch by M3vrv");
+  assert.equal(await page.title(), "Band Watch by M3VRV & King Coder");
+  assert.equal((await page.textContent("h1")).replace(/\s+/g, " "), "Band Watch by M3VRV & King Coder");
   assert.match(await page.textContent("#banner"), /^Live spots for grid IO93, updated just now\.$/);
   assert.match(await page.textContent("#hero"), /40 m is your best band/);
   assert.equal(await page.textContent("#mapTitle"), "40 m spots", "map follows the best band");
   assert.match(await page.textContent("#solar"), /113.*Solar flux index.*0.*Kp index, Quiet/s);
   const rows = await page.$$eval("#bands tr", (r) => r.map((x) => x.innerText.replace(/\s+/g, " ").trim()));
-  assert.equal(rows.length, 11, "11 bands, including 60 m");
+  assert.equal(rows.length, 13, "13 bands, including 60 m, 2 m and 70 cm");
   assert.match(rows.find((r) => r.startsWith("20 m")), /40 .* Open$/);
   assert.match(rows.find((r) => r.startsWith("15 m")), /3 .* Closed$/);
   assert.match(rows.find((r) => r.startsWith("10 m")), /8 .* Marginal$/);
@@ -952,7 +952,7 @@ test("scope: drag to zoom, reset, keyboard zoom", { skip }, async (t) => {
 
 test("UK band plan chart: bands, segments, UK notes and click to tune", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
-  assert.equal(await page.$$eval("#planBands button", (b) => b.length), 11);
+  assert.equal(await page.$eval("#planBands button", (b) => b.length), 13);
   assert.equal(await page.$$eval("#planRows tr", (r) => r.length), 9, "20 m has 9 segments");
   assert.match(await page.textContent("#planRows"), /14,099–14,101.*Beacons/s);
   assert.ok(await page.$$eval("#planChart line", (l) => l.length) >= 40, "live spots are ticked on the chart");
@@ -1281,7 +1281,7 @@ test("app: installable (manifest and service worker), works offline, and setting
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
   await page.context().setOffline(true);
   await page.reload();
-  assert.equal(await page.title(), "Band Watch by M3vrv");
+  assert.equal(await page.title(), "Band Watch by M3VRV & King Coder");
   await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
   assert.ok(await page.evaluate(() => document.getElementById("banner").classList.contains("err") || /couldn|offline|not|fail/i.test(document.getElementById("banner").textContent)));
   await page.context().setOffline(false);
@@ -2190,7 +2190,7 @@ test("Help: the button opens the guide; it follows the colours and fits a phone"
   const { page, errors } = await openPage(t);
   const [help] = await Promise.all([page.waitForEvent("popup"), page.click("#helpBtn")]);
   await help.waitForLoadState("load");
-  assert.equal(await help.title(), "Help · Band Watch by M3vrv");
+  assert.equal(await help.title(), "Help · Band Watch by M3VRV & King Coder");
   assert.ok((await help.$$("section.panel")).length >= 15);
   // The pictures load
   const broken = await help.evaluate(async () => {
@@ -3168,5 +3168,58 @@ test("ATS Mini panel: older firmware (before 2.41) gets its screen with the hex 
   // and the radio still tunes between pictures
   await page.evaluate(() => tuneTo(14074, "usb", { quiet: true }));
   await page.waitForFunction(() => window.__radio.band === 22 && window.__radio.hz === 14074000, null, { timeout: 12000 });
+  assert.deepEqual(errors, []);
+});
+
+test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991A on C4FM, never transmits; hotspot link", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true"));
+  await page.reload();
+  await page.waitForFunction(() => rig.connected && rig.hz === 7074000);
+  assert.equal(await page.isVisible("#secDv"), false, "hidden until the add-on is ticked");
+  await page.click("#optBtn");
+  await page.check('#optAddons input[data-addon="dv"]');
+  await page.keyboard.press("Escape");
+  assert.equal(await page.isVisible("#secDv"), true);
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-display"))).addons, ["dv"]);
+  // 2 m DV calling: frequency, then C4FM
+  await page.click('#dvChans button[data-mhz="145.375"]');
+  await page.waitForFunction(() => window.__radio.hz === 145375000 && window.__radio.mode === "E");
+  assert.match(await page.textContent("#dvNote"), /145\.375 MHz, C4FM \(2 m\)/);
+  // A typed frequency on 70 cm
+  await page.fill("#dvFreq", "430.4");
+  await page.click("#dvGo");
+  await page.waitForFunction(() => window.__radio.hz === 430400000 && window.__radio.mode === "E");
+  // Outside 2 m / 70 cm: says so, sends nothing
+  const before = await page.evaluate(() => window.__radio.sent.length);
+  await page.fill("#dvFreq", "28.12");
+  await page.click("#dvGo");
+  assert.match(await page.textContent("#dvNote"), /2 m \(144–146 MHz\) and 70 cm/);
+  assert.equal(await page.evaluate(() => window.__radio.hz), 430400000);
+  assert.ok(await page.evaluate((n) => !window.__radio.sent.slice(n).some((c) => /^(FA\d|MD0)/.test(c)), before));
+  // Only frequency and mode were ever set: no transmit, MOX or power commands
+  assert.deepEqual(await page.evaluate(() => window.__radio.sent.filter((c) => /^(TX|MX|PC|AC)/.test(c))), []);
+  // The radio's C4FM shows up in Band Watch (FM listen mode)
+  await page.waitForFunction(() => rig.modeName === "C4FM" && listen.kHz === 430400, null, { timeout: 6000 });
+  // Links to BrandMeister and ukrepeater.net open in a new tab
+  assert.equal(await page.getAttribute('#secDv a[href="https://hose.brandmeister.network/"]', "target"), "_blank");
+  assert.ok(await page.$('#secDv a[href="https://ukrepeater.net/multimode.html?dmode=FUSION"]'));
+  // DMR over the internet: listen in a browser, talk needs AMBE (radio + hotspot, or an app with an AMBE stick)
+  assert.match(await page.textContent("#dvNet"), /To listen.*Hoseline.*To talk.*AMBE.*DMR ID/s);
+  assert.ok(await page.$('#secDv a[href="https://radioid.net/"]'));
+  // Hotspot dashboard: tidied, saved and offered as a link; nonsense refused
+  assert.equal(await page.isVisible("#dvHotspotOpen"), false);
+  await page.fill("#dvHotspot", "pi-star.local");
+  await page.dispatchEvent("#dvHotspot", "change");
+  assert.equal(await page.getAttribute("#dvHotspotOpen", "href"), "http://pi-star.local/");
+  assert.equal(await page.isVisible("#dvHotspotOpen"), true);
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-dv"))).hotspot, "http://pi-star.local/");
+  await page.fill("#dvHotspot", "javascript:alert(1)");
+  await page.dispatchEvent("#dvHotspot", "change");
+  assert.match(await page.textContent("#dvHotNote"), /doesn't look like a web address/);
+  assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem("bw-dv"))).hotspot, "http://pi-star.local/");
+  // Fits a phone
+  await page.setViewportSize({ width: 380, height: 800 });
+  assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#secDv *")].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).map((e) => e.tagName + "#" + e.id).slice(0, 5)), []);
   assert.deepEqual(errors, []);
 });

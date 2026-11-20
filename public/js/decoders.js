@@ -1,4 +1,4 @@
-/* FT8 / FT4 / WSPR / CW decoder panel: audio from your RTL-SDR (Listen panel) or this computer's sound input,
+/* FT8 / FT4 / WSPR / CW / RTTY decoder panel: audio from your RTL-SDR (Listen panel) or this computer's sound input,
  * decoded in a background worker (ft8-worker.js), with a results table here and in a separate
  * results window (decodes.html) that can sit beside Band Watch or on another screen. */
 "use strict";
@@ -9,8 +9,10 @@ const dc = {
   running: false, worker: null, rows: [], status: "", progress: 0,
   ctx: null, stream: null, node: null, channel: null, lastCycle: null,
   cwText: "", cwWpm: 0, cwTone: 0,
+  rtty: { baud: 45.45, shift: 170, low: 2125, reverse: false, usos: true }, // saved
+  rttyText: "", rttyLocked: false,
 };
-const DC_MODES = ["FT8", "FT4", "WSPR", "CW", "SSTV", "APRS"];
+const DC_MODES = ["FT8", "FT4", "WSPR", "CW", "RTTY", "SSTV", "APRS"];
 
 function loadDc() {
   try {
@@ -20,10 +22,18 @@ function loadDc() {
       if (s.src === "rtl" || s.src === "mic") dc.src = s.src;
       if (typeof s.device === "string") dc.device = s.device;
       dc.cqOnly = s.cqOnly === true;
+      const r = s.rtty;
+      if (r && typeof r === "object") {
+        if ([45.45, 50, 75].includes(r.baud)) dc.rtty.baud = r.baud;
+        if ([170, 425, 450, 850].includes(r.shift)) dc.rtty.shift = r.shift;
+        if (Number.isFinite(r.low)) dc.rtty.low = Math.min(3000, Math.max(300, r.low));
+        dc.rtty.reverse = r.reverse === true;
+        dc.rtty.usos = r.usos !== false;
+      }
     }
   } catch { /* defaults */ }
 }
-const saveDc = () => store("bw-decode", { mode: dc.mode, src: dc.src, device: dc.device, cqOnly: dc.cqOnly });
+const saveDc = () => store("bw-decode", { mode: dc.mode, src: dc.src, device: dc.device, cqOnly: dc.cqOnly, rtty: dc.rtty });
 
 function dcSetStatus(text) {
   dc.status = text;
@@ -35,7 +45,7 @@ function decoderFeed(samples, rate) {
   if (!dc.running || !dc.worker) return;
   if (dc.rate !== rate) {
     dc.rate = rate;
-    dc.worker.postMessage({ type: "start", mode: dc.mode, rate });
+    dc.worker.postMessage({ type: "start", mode: dc.mode, rate, cfg: dc.mode === "RTTY" ? { ...dc.rtty } : undefined });
   }
   dc.worker.postMessage({ type: "audio", samples, at: Date.now() }, [samples.buffer]);
 }
@@ -45,7 +55,8 @@ async function dcStart() {
   dc.running = true;
   dc.rate = 0;
   if (dc.mode === "CW") dc.cwText = "";
-  dc.worker = new Worker("/js/ft8-worker.js?v=1.38.0");
+  if (dc.mode === "RTTY") { dc.rttyText = ""; dc.rttyLocked = false; }
+  dc.worker = new Worker("/js/ft8-worker.js?v=1.40.0");
   dc.worker.onmessage = (e) => onDecoderMessage(e.data);
   dc.worker.onerror = (e) => { dcStop(); dcSetStatus(`The decoder stopped: ${e.message}`); };
   if (dc.src === "mic") {
@@ -54,22 +65,22 @@ async function dcStart() {
       if (dc.device) constraints.deviceId = { exact: dc.device };
       dc.stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
       dc.ctx = new AudioContext();
-      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.38.0");
+      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.40.0");
       const srcNode = dc.ctx.createMediaStreamSource(dc.stream);
       dc.node = new AudioWorkletNode(dc.ctx, "bw-capture");
       dc.node.port.onmessage = (e) => decoderFeed(e.data, dc.ctx.sampleRate);
       srcNode.connect(dc.node);
       listDcDevices(); // labels become available once allowed
-      dcSetStatus("Listening to the sound input. Waiting for the next cycle…");
+      dcSetStatus(DcWording.micStart(dc.mode));
     } catch (err) {
       dcStop();
       dcSetStatus(err && err.name === "NotAllowedError" ? "Band Watch wasn't allowed to use the sound input." : `Couldn't open the sound input (${err.message}).`);
       return;
     }
   } else {
-    const where = dc.mode === "APRS" ? "144.800 MHz FM (Tune to APRS), or the ISS on 145.825" : dc.mode === "CW" ? "a CW signal in CW mode" : dc.mode === "SSTV" ? "an SSTV frequency (Tune to SSTV), or the ISS on 145.800 MHz FM" : `the ${dc.mode} frequency in USB`;
+    const where = dc.mode === "APRS" ? "144.800 MHz FM (Tune to APRS), or the ISS on 145.825" : dc.mode === "CW" ? "a CW signal in CW mode" : dc.mode === "RTTY" ? "an RTTY signal (14.080 to 14.099 MHz on 20 m; LSB by custom, or USB with Reverse ticked)" : dc.mode === "SSTV" ? "an SSTV frequency (Tune to SSTV), or the ISS on 145.800 MHz FM" : `the ${dc.mode} frequency in USB`;
     dcSetStatus(sdr.running
-      ? `Decoding the RTL-SDR audio. Tune to ${where}.${["CW", "SSTV", "APRS"].includes(dc.mode) ? "" : " Waiting for the next cycle…"}`
+      ? `Decoding the RTL-SDR audio. Tune to ${where}.${["CW", "RTTY", "SSTV", "APRS"].includes(dc.mode) ? "" : " Waiting for the next cycle…"}`
       : `Start your RTL-SDR in the Listen panel (receiver: My RTL-SDR), on ${where}.`);
   }
   renderDc();
@@ -92,6 +103,18 @@ function onDecoderMessage(m) {
   if (typeof m.type === "string" && m.type.startsWith("sstv-")) { if (typeof sstvOnMessage === "function") sstvOnMessage(m); return; }
   if (m.type === "aprs") { if (typeof aprsOnPacket === "function") aprsOnPacket(m); return; }
   if (m.type === "status") dcSetStatus(m.text);
+  else if (m.type === "rtty") {
+    dc.rttyText = (dc.rttyText + (m.text || "")).slice(-4000);
+    dc.rttyLocked = Boolean(m.locked);
+    renderRtty();
+    if (m.text && dc.channel) dc.channel.postMessage({ type: "rtty", text: dc.rttyText, locked: dc.rttyLocked });
+    dcSetStatus(m.locked ? "RTTY: a signal is coming in." : "RTTY: waiting for a signal…");
+  }
+  else if (m.type === "rtty-tone") {
+    if (m.low) { dc.rtty.low = m.low; saveDc(); rttyPost(); dcSetStatus(`RTTY: found tones at ${m.low} and ${m.low + dc.rtty.shift} Hz.`); }
+    else dcSetStatus("RTTY: couldn't find a tone pair. Wait until a signal is coming in, and check the shift.");
+    renderRtty();
+  }
   else if (m.type === "cw") {
     dc.cwText = (dc.cwText + (m.text || "")).slice(-3000);
     dc.cwWpm = m.wpm; dc.cwTone = m.tone;
@@ -205,9 +228,26 @@ function renderCw() {
   $("dcCwInfo").textContent = dc.cwTone ? `${dc.cwWpm} WPM · ${dc.cwTone} Hz tone` : "";
 }
 
+/** RTTY: the tones, the text and the checkboxes; the worker gets the same settings. */
+function renderRtty() {
+  if (!$("dcRtty")) return;
+  const r = dc.rtty, hi = r.low + r.shift;
+  const active = document.activeElement;
+  if (active !== $("rttyLow")) $("rttyLow").value = r.low;
+  $("rttyBaud").value = String(r.baud);
+  $("rttyShift").value = String(r.shift);
+  $("rttyReverse").checked = r.reverse;
+  $("rttyUsos").checked = r.usos;
+  $("rttyInfo").textContent = `Mark ${r.reverse ? hi : r.low} Hz, space ${r.reverse ? r.low : hi} Hz.${dc.running ? (dc.rttyLocked ? " Signal heard." : " No signal heard yet.") : ""}`;
+  $("dcRttyText").textContent = dc.rttyText || (dc.running ? "Listening…" : "Press Start decoding.");
+  $("dcRttyText").scrollTop = $("dcRttyText").scrollHeight;
+}
+
+function rttyPost() { if (dc.worker && dc.mode === "RTTY") dc.worker.postMessage({ type: "rtty-config", cfg: { ...dc.rtty } }); }
+
 /** The FT8, FT4 or WSPR dial frequency (kHz) on the Listen panel's band. */
 function dcDialKHz() {
-  if (dc.mode === "CW") return null;
+  if (dc.mode === "CW" || dc.mode === "RTTY") return null;
   if (dc.mode === "SSTV") { const f = typeof sstvTuneKHz === "function" ? sstvTuneKHz() : null; return f ? f[0] : null; }
   if (dc.mode === "APRS") return 144800; // Europe and the UK (IARU Region 1)
   const table = dc.mode === "FT4" ? FT4 : dc.mode === "WSPR" ? WSPR : FT8;
@@ -228,7 +268,7 @@ function dcRenderTune() {
   const k = dcDialKHz();
   $("dcTune").hidden = dc.src !== "rtl" || !k;
   if (k) $("dcTune").textContent = dc.mode === "APRS" ? "Tune to APRS (144.800 MHz FM)"
-    : `Tune to ${dc.mode} on ${listen.band} m (${k.toLocaleString()} kHz ${dcTuneMode().toUpperCase()})`;
+    : `Tune to ${dc.mode} on ${bandName(listen.band)} (${k.toLocaleString()} kHz ${dcTuneMode().toUpperCase()})`;
 }
 
 function renderDc() {
@@ -238,17 +278,20 @@ function renderDc() {
   $("dcDevRow").hidden = dc.src !== "mic";
   $("dcCqOnly").checked = dc.cqOnly;
   const cw = dc.mode === "CW";
+  const rtty = dc.mode === "RTTY";
   const sstv = dc.mode === "SSTV";
   const aprs = dc.mode === "APRS";
   $("dcCw").hidden = !cw;
+  if ($("dcRtty")) $("dcRtty").hidden = !rtty;
   if ($("dcSstv")) $("dcSstv").hidden = !sstv;
   if ($("dcAprs")) $("dcAprs").hidden = !aprs;
-  $("dcTable").hidden = cw || sstv || aprs;
-  if ($("dcTools")) $("dcTools").hidden = cw || sstv || aprs;
-  $("dcCqRow").hidden = cw || sstv || aprs || dc.mode === "WSPR";
+  $("dcTable").hidden = cw || rtty || sstv || aprs;
+  if ($("dcTools")) $("dcTools").hidden = cw || rtty || sstv || aprs;
+  $("dcCqRow").hidden = cw || rtty || sstv || aprs || dc.mode === "WSPR";
   if (aprs && typeof renderAprs === "function") renderAprs();
   if (sstv && typeof sstvRenderInfo === "function") sstvRenderInfo();
   renderCw();
+  renderRtty();
   $("dcStart").textContent = dc.running ? "Stop decoding" : "Start decoding";
   $("dcStart").classList.toggle("ghost", dc.running);
   dcRenderTune();
@@ -256,6 +299,13 @@ function renderDc() {
   $("dcStatus").textContent = dc.status;
   $("dcProg").style.width = dc.running ? `${Math.round(dc.progress * 100)}%` : "0";
   renderDcRows();
+}
+
+/** Tell the results window everything: rows, status, the mode and the CW / RTTY text (it may have opened late). */
+function dcBroadcastAll() {
+  if (!dc.channel) return;
+  const text = dc.mode === "CW" ? dc.cwText : dc.mode === "RTTY" ? dc.rttyText : "";
+  dc.channel.postMessage({ type: "all", rows: dc.rows, status: dc.status, mode: dc.mode, text });
 }
 
 function openDecodesWindow() {
@@ -278,7 +328,7 @@ function setupDecoders() {
   if ("BroadcastChannel" in window) {
     dc.channel = new BroadcastChannel("bw-decodes");
     dc.channel.onmessage = (e) => {
-      if (e.data && e.data.type === "hello") dc.channel.postMessage({ type: "all", rows: dc.rows, status: dc.status, mode: dc.mode });
+      if (e.data && e.data.type === "hello") dcBroadcastAll();
       if (e.data && e.data.type === "clear") { dc.rows = []; renderDcRows(); }
     };
   }
@@ -287,6 +337,7 @@ function setupDecoders() {
     saveDc();
     if (dc.running) { dcStop(); dcStart(); }
     renderDc();
+    dcBroadcastAll();
   });
   $("dcSrc").addEventListener("change", () => {
     dc.src = $("dcSrc").value === "mic" ? "mic" : "rtl";
@@ -310,7 +361,24 @@ function setupDecoders() {
     if (dc.mode === "SSTV" && typeof rigDataOn === "function") setTimeout(rigDataOn, 400);
   });
   $("dcCqOnly").addEventListener("change", () => { dc.cqOnly = $("dcCqOnly").checked; saveDc(); renderDcRows(); });
-  $("dcClear").addEventListener("click", () => { dc.rows = []; dc.cwText = ""; renderCw(); renderDcRows(); if (dc.channel) dc.channel.postMessage({ type: "all", rows: [], status: dc.status, mode: dc.mode }); });
+  $("dcClear").addEventListener("click", () => { dc.rows = []; dc.cwText = ""; dc.rttyText = ""; renderCw(); renderRtty(); renderDcRows(); dcBroadcastAll(); });
+  const rttyChanged = () => {
+    const r = dc.rtty;
+    r.baud = Number($("rttyBaud").value) || 45.45;
+    r.shift = Number($("rttyShift").value) || 170;
+    const low = Number($("rttyLow").value);
+    if (Number.isFinite(low) && low >= 300 && low <= 3000) r.low = low;
+    r.reverse = $("rttyReverse").checked;
+    r.usos = $("rttyUsos").checked;
+    saveDc(); rttyPost(); renderRtty();
+  };
+  for (const id of ["rttyBaud", "rttyShift", "rttyLow", "rttyReverse", "rttyUsos"]) $(id).addEventListener("change", rttyChanged);
+  $("rttyLow").addEventListener("input", rttyChanged);
+  $("rttyFind").addEventListener("click", () => {
+    if (!dc.worker || dc.mode !== "RTTY") { dcSetStatus("Press Start decoding first, with the signal coming in."); return; }
+    dc.worker.postMessage({ type: "rtty-find" });
+  });
+  $("rttyClear").addEventListener("click", () => { dc.rttyText = ""; renderRtty(); dcBroadcastAll(); });
   $("dcWindow").addEventListener("click", openDecodesWindow);
   if (typeof DcCols !== "undefined" && $("dcColsBox")) {
     DcCols.menu($("dcColsBox"), DC_COLS, renderDcRows);

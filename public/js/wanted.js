@@ -89,7 +89,7 @@ function checkWanted() {
   wanted.hits = [...fresh, ...wanted.hits].slice(0, 30);
   const f = fresh[0];
   const more = fresh.length > 1 ? ` (and ${fresh.length - 1} more)` : "";
-  const msg = `${f.call}${f.band ? ` on ${f.band} m` : ""} ${f.mode || ""}, ${f.where}: ${f.why}${more}`;
+  const msg = `${f.call}${f.band ? ` on ${bandName(f.band)}` : ""} ${f.mode || ""}, ${f.where}: ${f.why}${more}`;
   showToast("Wanted station heard", msg);
   if (wanted.sound) wantedBeep();
   if (typeof monitor !== "undefined" && monitor.notify && "Notification" in window && Notification.permission === "granted") {

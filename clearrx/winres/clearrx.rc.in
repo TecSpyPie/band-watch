@@ -9,14 +9,14 @@ BEGIN
   BEGIN
     BLOCK "080904B0"
     BEGIN
-      VALUE "CompanyName", "M3vrv"
-      VALUE "FileDescription", "ClearRX by M3VRV - radio audio processor"
+      VALUE "CompanyName", "M3VRV & King Coder"
+      VALUE "FileDescription", "ClearRX by M3VRV & King Coder - radio audio processor"
       VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "ClearRX"
       VALUE "OriginalFilename", "ClearRX.exe"
-      VALUE "ProductName", "ClearRX by M3VRV"
+      VALUE "ProductName", "ClearRX by M3VRV & King Coder"
       VALUE "ProductVersion", "@VERSION@"
-      VALUE "LegalCopyright", "M3vrv"
+      VALUE "LegalCopyright", "Copyright (c) 2026 M3VRV"
       VALUE "Comments", "Built @BUILD@"
     END
   END

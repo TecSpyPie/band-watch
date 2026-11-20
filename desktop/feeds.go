@@ -250,6 +250,115 @@ func (s *Server) getSpots(grid string) (map[string]any, error) {
 	})
 }
 
+/* ---------- Reports of your own signal (Antenna A/B) ---------- */
+
+// PSK Reporter's developer page (pskreporter.info/pskdev.html) says: retrieve no more often than once every
+// five minutes; flowStartSeconds is a negative lookback of at most 24 hours; give appcontact so the author can
+// reach the app's maker (we send the project's public GitHub address, never a person's email); rptlimit caps the
+// rows; rronly and noactive leave out monitor lists; and they may block anyone who loads their system. So:
+// one upstream call per callsign per 5 minutes (shared by concurrent requests, stale if a refresh fails),
+// always for the full 24 hours, and the browser's mins only trims our answer.
+const (
+	myReportsTTL     = spotsTTL
+	myReportsMaxMins = 1440
+	myReportsLimit   = 3000
+	pskContact       = "https://github.com/TecSpyPie/band-watch"
+)
+
+// MyReport is one FT8 or FT4 reception report of the user's own callsign.
+type MyReport struct {
+	C   string  `json:"c"`
+	G   string  `json:"g"`
+	Lat float64 `json:"lat"`
+	Lon float64 `json:"lon"`
+	Fq  float64 `json:"fq"`
+	M   string  `json:"m"`
+	SNR float64 `json:"snr"`
+	Ts  int64   `json:"ts"`
+}
+
+// parseMyReportsXML gives the FT8 and FT4 reports a station made of call, oldest first. Rows without a
+// receiver, locator, frequency, time or SNR are skipped.
+func parseMyReportsXML(data []byte, call string) []MyReport {
+	dec := xml.NewDecoder(strings.NewReader(string(data)))
+	dec.Strict = false
+	dec.AutoClose = xml.HTMLAutoClose
+	dec.Entity = xml.HTMLEntity
+	out := []MyReport{}
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			break
+		}
+		el, ok := tok.(xml.StartElement)
+		if !ok || el.Name.Local != "receptionReport" {
+			continue
+		}
+		a := map[string]string{}
+		for _, at := range el.Attr {
+			a[at.Name.Local] = at.Value
+		}
+		mode := strings.ToUpper(a["mode"])
+		if (mode != "FT8" && mode != "FT4") || strings.ToUpper(a["senderCallsign"]) != call {
+			continue
+		}
+		rx, loc := a["receiverCallsign"], a["receiverLocator"]
+		lat, lon, okPos := locatorToLatLon(loc)
+		hz, errF := strconv.ParseFloat(a["frequency"], 64)
+		secs, errT := strconv.ParseFloat(a["flowStartSeconds"], 64)
+		snr, errS := strconv.ParseFloat(strings.TrimSpace(a["sNR"]), 64)
+		if rx == "" || !okPos || errF != nil || !(hz > 0) || errT != nil || !(secs > 0) || errS != nil || math.IsNaN(snr) || math.IsInf(snr, 0) {
+			continue
+		}
+		g := loc
+		if len(g) > 6 {
+			g = g[:6]
+		}
+		out = append(out, MyReport{C: rx, G: g, Lat: lat, Lon: lon, Fq: round(hz/1e6, 6), M: mode, SNR: snr, Ts: int64(secs * 1000)})
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Ts < out[j].Ts })
+	if len(out) > myReportsLimit {
+		out = out[len(out)-myReportsLimit:]
+	}
+	return out
+}
+
+func (s *Server) getMyReports(call string) (map[string]any, error) {
+	return s.cache.Get("myreports:"+call, myReportsTTL, func() (map[string]any, error) {
+		q := url.Values{}
+		q.Set("senderCallsign", call)
+		q.Set("flowStartSeconds", strconv.Itoa(-myReportsMaxMins*60))
+		q.Set("rronly", "1")
+		q.Set("noactive", "1")
+		q.Set("rptlimit", strconv.Itoa(myReportsLimit))
+		q.Set("appcontact", pskContact)
+		b, err := s.fetch(s.cfg.PskURL+"?"+q.Encode(), 30*time.Second)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"call": call, "reports": parseMyReportsXML(b, call), "at": s.clock.Millis()}, nil
+	})
+}
+
+// myReportsAnswer trims the cached 24 hours to the last mins minutes.
+func (s *Server) myReportsAnswer(data map[string]any, mins int) map[string]any {
+	cutoff := s.clock.Millis() - int64(mins)*60000
+	all, _ := data["reports"].([]MyReport)
+	kept := make([]MyReport, 0, len(all))
+	for _, r := range all {
+		if r.Ts >= cutoff {
+			kept = append(kept, r)
+		}
+	}
+	out := make(map[string]any, len(data)+1)
+	for k, v := range data {
+		out[k] = v
+	}
+	out["mins"] = mins
+	out["reports"] = kept
+	return out
+}
+
 /* ---------- Sunspots and space weather ---------- */
 
 func (s *Server) getSun() (map[string]any, error) {

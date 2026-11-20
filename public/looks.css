@@ -54,35 +54,139 @@
   border:1px solid #000;border-bottom-color:#4b545c;border-radius:6px;box-shadow:inset 0 3px 10px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.08)}
 :root[data-look="rig"]:not(#_) thead th{background:linear-gradient(180deg,#3a4249,#2a3036);color:#c3ccd3;border-bottom:1px solid #000}
 
-/* ======================= Glass and depth ======================= */
-:root[data-look="glass"]:not(#_){--glass:rgba(255,255,255,.55);--glass-rim:rgba(255,255,255,.7);--glass-blur:18px}
-@media (prefers-color-scheme:dark){:root[data-look="glass"]:not([data-theme="light"]):not(#_){--glass:rgba(22,37,52,.5);--glass-rim:rgba(255,255,255,.14)}}
-:root[data-look="glass"][data-theme="dark"]:not(#_){--glass:rgba(22,37,52,.5);--glass-rim:rgba(255,255,255,.14)}
+/* ======================= Glass and depth =======================
+   Three layers. BACK: the page, a deep soft gradient (a chosen background picture stays, blurred and dimmed behind
+   the glass). MIDDLE: the panels, frosted glass with a bevelled top-left edge and soft stacked shadows. TOP: the
+   header, section menu, buttons, chips, dialogs, toast and map tip, sharper and closer, so they sit above the glass.
+   Colours come from the theme variables; only white and black at low strength are used for light and shadow.
+   (High contrast and Night never get a look, see options.js; the rules at the end keep them plain anyway.) */
+:root[data-look="glass"]:not(#_){
+  --glass-blur:14px;
+  --g-panel:color-mix(in srgb,var(--surface) 56%,transparent);
+  --g-top:color-mix(in srgb,var(--surface) 76%,transparent);
+  --g-dlg:color-mix(in srgb,var(--surface) 86%,transparent);
+  --g-bf-mid:blur(var(--glass-blur)) saturate(1.4);
+  --g-bf-top:blur(10px) saturate(1.5);
+  --g-bf-dlg:blur(20px) saturate(1.5);
+  --g-hi:rgb(255 255 255/.9);--g-sheen:rgb(255 255 255/.32);--g-rim:rgb(255 255 255/.6);
+  --g-edge:rgb(0 0 0/.1);--g-vig:rgb(0 0 0/.1);--g-on:#fff;
+  --g-bevel:inset 1px 1px 0 var(--g-hi),inset -1px -1px 0 rgb(0 0 0/.06);
+  --g-sh-mid:0 1px 2px rgb(0 0 0/.08),0 8px 18px -6px rgb(0 0 0/.16),0 28px 48px -22px rgb(0 0 0/.24);
+  --g-sh-hover:0 2px 4px rgb(0 0 0/.1),0 14px 26px -8px rgb(0 0 0/.2),0 38px 60px -24px rgb(0 0 0/.3);
+  --g-sh-top:0 1px 1px rgb(0 0 0/.12),0 3px 7px rgb(0 0 0/.14),0 12px 22px -8px rgb(0 0 0/.22);
+  --g-sh-dlg:0 2px 4px rgb(0 0 0/.14),0 14px 30px rgb(0 0 0/.22),0 44px 90px -12px rgb(0 0 0/.4)}
+@media (prefers-color-scheme:dark){:root[data-look="glass"]:not([data-theme="light"]):not(#_){
+  --g-hi:rgb(255 255 255/.22);--g-sheen:rgb(255 255 255/.07);--g-rim:rgb(255 255 255/.14);--g-edge:rgb(0 0 0/.45);--g-vig:rgb(0 0 0/.4);--g-on:var(--bg);
+  --g-bevel:inset 1px 1px 0 var(--g-hi),inset -1px -1px 0 rgb(0 0 0/.3);
+  --g-sh-mid:0 1px 2px rgb(0 0 0/.3),0 10px 22px -6px rgb(0 0 0/.42),0 30px 54px -20px rgb(0 0 0/.55);
+  --g-sh-hover:0 2px 4px rgb(0 0 0/.34),0 16px 30px -8px rgb(0 0 0/.5),0 42px 66px -22px rgb(0 0 0/.62);
+  --g-sh-top:0 1px 1px rgb(0 0 0/.4),0 4px 9px rgb(0 0 0/.4),0 14px 26px -8px rgb(0 0 0/.55);
+  --g-sh-dlg:0 2px 5px rgb(0 0 0/.45),0 16px 34px rgb(0 0 0/.5),0 48px 96px -12px rgb(0 0 0/.7)}}
+:root[data-look="glass"][data-theme="dark"]:not(#_){
+  --g-hi:rgb(255 255 255/.22);--g-sheen:rgb(255 255 255/.07);--g-rim:rgb(255 255 255/.14);--g-edge:rgb(0 0 0/.45);--g-vig:rgb(0 0 0/.4);--g-on:var(--bg);
+  --g-bevel:inset 1px 1px 0 var(--g-hi),inset -1px -1px 0 rgb(0 0 0/.3);
+  --g-sh-mid:0 1px 2px rgb(0 0 0/.3),0 10px 22px -6px rgb(0 0 0/.42),0 30px 54px -20px rgb(0 0 0/.55);
+  --g-sh-hover:0 2px 4px rgb(0 0 0/.34),0 16px 30px -8px rgb(0 0 0/.5),0 42px 66px -22px rgb(0 0 0/.62);
+  --g-sh-top:0 1px 1px rgb(0 0 0/.4),0 4px 9px rgb(0 0 0/.4),0 14px 26px -8px rgb(0 0 0/.55);
+  --g-sh-dlg:0 2px 5px rgb(0 0 0/.45),0 16px 34px rgb(0 0 0/.5),0 48px 96px -12px rgb(0 0 0/.7)}
+
+/* BACK layer: the page. Coloured light pools on a deep gradient, with a soft vignette at the edges */
 :root[data-look="glass"]:not(#_) body{
   background:
-    radial-gradient(700px 520px at 8% 12%,color-mix(in srgb,var(--cool) 38%,transparent),transparent 70%),
-    radial-gradient(640px 520px at 92% 18%,color-mix(in srgb,#a46bff 34%,transparent),transparent 70%),
-    radial-gradient(800px 600px at 50% 100%,color-mix(in srgb,var(--warm) 30%,transparent),transparent 70%),
-    var(--bg);background-attachment:fixed}
-:root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero,header){
-  background:var(--glass);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.5);backdrop-filter:blur(var(--glass-blur)) saturate(1.5);
-  border:1px solid var(--glass-rim);border-radius:20px;
-  box-shadow:inset 0 1px 0 var(--glass-rim),0 2px 6px rgba(0,0,0,.12),0 24px 48px -12px rgba(0,0,0,.35)}
-:root[data-look="glass"]:not(#_) .wrap > #secPanel{background:none;border:0;box-shadow:none;backdrop-filter:none}
-:root[data-look="glass"]:not(#_) .wrap > .panel > .phead{background:linear-gradient(180deg,rgba(255,255,255,.18),transparent);border-radius:20px 20px 0 0;border-bottom:1px solid var(--glass-rim);box-shadow:none}
+    radial-gradient(ellipse 120% 90% at 50% 0%,transparent 55%,var(--g-vig)),
+    radial-gradient(640px 480px at 6% 10%,color-mix(in srgb,var(--cool) 30%,transparent),transparent 70%),
+    radial-gradient(600px 480px at 94% 16%,color-mix(in srgb,#a46bff 24%,transparent),transparent 70%),
+    radial-gradient(760px 560px at 50% 100%,color-mix(in srgb,var(--warm) 22%,transparent),transparent 70%),
+    linear-gradient(170deg,color-mix(in srgb,var(--cool) 10%,var(--bg)),var(--bg) 45%,color-mix(in srgb,var(--warm) 8%,var(--bg)));
+  background-attachment:fixed}
+/* A chosen background picture stays: a little blurred (once, it never animates) and dimmed behind the glass */
+:root.has-bg[data-look="glass"]:not(#_) body{background:transparent}
+:root.has-bg[data-look="glass"]:not(#_) body::before{filter:blur(5px) saturate(1.1);transform:scale(1.04)}
+
+/* MIDDLE layer: the panels, frosted glass */
+:root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero){
+  background:linear-gradient(135deg,var(--g-sheen),transparent 42%),var(--g-panel);
+  -webkit-backdrop-filter:var(--g-bf-mid);backdrop-filter:var(--g-bf-mid);
+  border:1px solid var(--g-rim);border-bottom-color:var(--g-edge);border-right-color:var(--g-edge);border-radius:20px;
+  box-shadow:var(--g-bevel),var(--g-sh-mid)}
+:root[data-look="glass"]:not(#_) .wrap > #secPanel{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+:root[data-look="glass"]:not(#_) .wrap > .panel > .phead{background:linear-gradient(180deg,var(--g-sheen),transparent);border-radius:19px 19px 0 0;border-bottom:1px solid var(--g-rim);box-shadow:none}
 :root[data-look="glass"]:not(#_) .wrap > #secPanel > .phead{background:none;border:0}
-@media (hover:hover){
-  :root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section):hover{transform:translateY(-4px);box-shadow:inset 0 1px 0 var(--glass-rim),0 4px 10px rgba(0,0,0,.14),0 34px 60px -14px rgba(0,0,0,.42)}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+  :root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section):hover{transform:translateY(-3px);box-shadow:var(--g-bevel),var(--g-sh-hover)}
   :root[data-look="glass"]:not(#_) .wrap > #secPanel:hover{transform:none;box-shadow:none}
 }
-:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button){
-  background:color-mix(in srgb,var(--glass) 70%,rgba(255,255,255,.2));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  border:1px solid var(--glass-rim);border-radius:999px;box-shadow:inset 0 1px 0 var(--glass-rim),0 3px 10px rgba(0,0,0,.18);transition:transform .12s,box-shadow .12s}
-:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button):hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 var(--glass-rim),0 8px 18px rgba(0,0,0,.24)}
-:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button):active{transform:translateY(1px) scale(.98);box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
-:root[data-look="glass"]:not(#_) :is(.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on,.lk button){background:color-mix(in srgb,var(--cool) 75%,transparent);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 18px color-mix(in srgb,var(--cool) 45%,transparent)}
-:root[data-look="glass"]:not(#_) :is(#scope,.map,#lsFrame,.stmap,.planchart,.dcwrap,.sstvpic){border-radius:14px;border:1px solid var(--glass-rim);box-shadow:inset 0 2px 12px rgba(0,0,0,.25)}
-:root[data-look="glass"]:not(#_) thead th{background:color-mix(in srgb,var(--glass) 80%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+@media (prefers-reduced-motion:reduce){
+  :root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section):hover{transform:none}
+}
+/* Screens set into the glass (canvases stay opaque and crisp: never blurred, never tinted) */
+:root[data-look="glass"]:not(#_) :is(#scope,.map,#lsFrame,.stmap,.planchart,.dcwrap,.sstvpic,.scopebox,.spotmap){
+  -webkit-backdrop-filter:none;backdrop-filter:none;border-radius:14px;border:1px solid var(--g-edge);
+  box-shadow:0 1px 0 var(--g-hi),0 0 0 1px var(--g-rim),inset 0 2px 10px rgb(0 0 0/.22)}
+:root[data-look="glass"]:not(#_) :is(input[type=text],input[type=search],input[type=number],input[type=url],input:not([type]),select,textarea):not(.pnentry){
+  border-color:var(--g-edge);box-shadow:inset 0 1px 3px rgb(0 0 0/.16),0 1px 0 var(--g-hi)}
+:root[data-look="glass"]:not(#_) thead th{background:color-mix(in srgb,var(--surface) 88%,transparent);-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* TOP layer: the header and the section menu float above the panels */
+:root[data-look="glass"]:not(#_) header{
+  background:linear-gradient(135deg,var(--g-sheen),transparent 45%),var(--g-top);
+  -webkit-backdrop-filter:var(--g-bf-top);backdrop-filter:var(--g-bf-top);
+  border:1px solid var(--g-rim);border-bottom-color:var(--g-edge);border-right-color:var(--g-edge);border-radius:20px;
+  box-shadow:var(--g-bevel),var(--g-sh-top)}
+:root[data-look="glass"]:not(#_) .secnav{
+  top:8px;margin:0 0 14px;padding:6px 10px;border:1px solid var(--g-rim);border-bottom-color:var(--g-edge);border-radius:18px;
+  background:linear-gradient(180deg,var(--g-sheen),transparent),var(--g-top);
+  -webkit-backdrop-filter:var(--g-bf-top);backdrop-filter:var(--g-bf-top);box-shadow:var(--g-bevel),var(--g-sh-top)}
+:root[data-look="glass"]:not(#_) .secnav button[aria-current="true"]{box-shadow:var(--g-bevel),inset 0 -3px 0 var(--cool),var(--g-sh-top)}
+@media (max-width:820px){:root[data-look="glass"]:not(#_) .secnav{margin:0 0 10px;padding:4px 8px}}
+
+/* TOP layer: buttons and chips are raised at rest, lift under the pointer, press in when clicked.
+   No blur of their own (they already sit on glass), so many buttons stay cheap. */
+:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button){
+  background:linear-gradient(180deg,var(--g-sheen),transparent 60%),color-mix(in srgb,var(--surface) 82%,transparent);
+  border:1px solid var(--g-rim);border-bottom-color:var(--g-edge);border-radius:999px;
+  box-shadow:var(--g-bevel),var(--g-sh-top);transition:transform .12s,box-shadow .12s}
+:root[data-look="glass"]:not(#_) :is(.navfold,.spotzoom button){border-radius:8px}
+@media (hover:hover){
+  :root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button):hover{
+    transform:translateY(-1px);box-shadow:var(--g-bevel),0 2px 3px rgb(0 0 0/.14),0 10px 18px -6px rgb(0 0 0/.3)}
+}
+:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button):active{
+  transform:translateY(1px);box-shadow:inset 0 2px 5px rgb(0 0 0/.3),0 1px 0 var(--g-hi)}
+:root[data-look="glass"]:not(#_) :is(.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on,.lk button){
+  background:linear-gradient(180deg,var(--g-sheen),transparent 60%),color-mix(in srgb,var(--cool) 92%,transparent);color:var(--g-on);
+  box-shadow:var(--g-bevel),0 1px 2px rgb(0 0 0/.2),0 6px 16px color-mix(in srgb,var(--cool) 40%,transparent)}
+@media (prefers-reduced-motion:reduce){
+  :root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button){transition:none}
+  :root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button):hover{transform:none}
+}
+
+/* TOP layer: dialogs get the deepest shadow and a dimmed, blurred page behind them; the toast and map tip float too */
+:root[data-look="glass"]:not(#_) dialog{
+  background:linear-gradient(135deg,var(--g-sheen),transparent 40%),var(--g-dlg);
+  -webkit-backdrop-filter:var(--g-bf-dlg);backdrop-filter:var(--g-bf-dlg);
+  border:1px solid var(--g-rim);border-bottom-color:var(--g-edge);border-right-color:var(--g-edge);border-radius:22px;
+  box-shadow:var(--g-bevel),var(--g-sh-dlg)}
+:root[data-look="glass"]:not(#_) dialog::backdrop{background:rgb(0 0 0/.38);-webkit-backdrop-filter:blur(5px) saturate(1.2);backdrop-filter:blur(5px) saturate(1.2)}
+:root[data-look="glass"]:not(#_) :is(.toast,.spottip){
+  background:linear-gradient(135deg,var(--g-sheen),transparent 45%),var(--g-dlg);
+  -webkit-backdrop-filter:var(--g-bf-top);backdrop-filter:var(--g-bf-top);
+  border-color:var(--g-rim);border-left-color:var(--cool);border-radius:12px;box-shadow:var(--g-bevel),var(--g-sh-top)}
+
+/* No backdrop blur in this browser: solid panels instead, so text never sits on a busy picture */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  :root[data-look="glass"]:not(#_){--g-panel:color-mix(in srgb,var(--surface) 94%,var(--bg));--g-top:var(--surface);--g-dlg:var(--surface)}
+}
+/* Asked for less transparency or more contrast: opaque surfaces, no blur, shadows and edges kept for depth */
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more){
+  :root[data-look="glass"]:not(#_){--g-panel:var(--surface);--g-top:var(--surface);--g-dlg:var(--surface);--g-sheen:transparent;
+    --g-bf-mid:none;--g-bf-top:none;--g-bf-dlg:none}
+  :root[data-look="glass"]:not(#_) dialog::backdrop{background:rgb(0 0 0/.55);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* High contrast and Night are never given a look; if one ever slips through, stay plain and opaque */
+:root[data-look="glass"][data-theme="contrast"]:not(#_),:root[data-look="glass"][data-theme="night"]:not(#_){
+  --g-panel:var(--surface);--g-top:var(--surface);--g-dlg:var(--surface);--g-sheen:transparent;--g-hi:transparent;--g-rim:var(--line);
+  --g-bf-mid:none;--g-bf-top:none;--g-bf-dlg:none}
 
 /* ======================= Space station ======================= */
 :root[data-look="space"]:not(#_){

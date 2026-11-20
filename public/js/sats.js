@@ -6,7 +6,7 @@
 "use strict";
 
 const SAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=json";
-const SAT_LIB = "/js/vendor/satellite.esm.js?v=1.38.0";
+const SAT_LIB = "/js/vendor/satellite.esm.js?v=1.40.0";
 
 /* Frequencies for well-known birds (MHz). down/up: a number, or [low, high] for a linear transponder (passband);
    inverting transponders go down as the uplink goes up. AMSAT's status page says which are working this week. */
@@ -274,6 +274,21 @@ function satMapSvg(X, Y) {
       `<title>${esc(`${satName(id)}: ${l.el > 0 ? `up now, ${Math.round(l.el)}°` : "below your horizon"}, ${Math.round(l.height)} km high. Click for details.`)}</title></g>`;
   }
   return svg;
+}
+
+/** The same satellites as plain points, for the spots map (Map view): [{ id, name, lat, lon, up, tip }]. */
+function satMapPoints() {
+  if (!sats.onMap || !sats.lib || !sats.gp.length) return [];
+  const now = new Date();
+  const out = [];
+  for (const id of sats.picked) {
+    const rec = satRec(id);
+    const l = rec && SatMath.look(sats.lib, rec, now, satObs());
+    if (!l) continue;
+    out.push({ id, name: satName(id), lat: l.lat, lon: l.lon, up: l.el > 0,
+      tip: `${l.el > 0 ? `up now, ${Math.round(l.el)}° above your horizon` : "below your horizon"}, ${Math.round(l.height)} km high` });
+  }
+  return out;
 }
 
 /* ---------- The card you get by clicking a satellite (in the list, the passes table or on the map) ---------- */

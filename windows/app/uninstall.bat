@@ -1,11 +1,11 @@
 @echo off
 setlocal EnableExtensions
-title Band Watch by M3vrv - Uninstall
+title Band Watch by M3VRV ^& King Coder - Uninstall
 set "DEST=%~dp0"
 if "%DEST:~-1%"=="\" set "DEST=%DEST:~0,-1%"
 
 echo.
-choice /C YN /M "  Remove Band Watch by M3vrv (and ClearRX) from this PC"
+choice /C YN /M "  Remove Band Watch by M3VRV & King Coder (and ClearRX) from this PC"
 if errorlevel 2 exit /b 0
 
 call "%~dp0stop-bandwatch.bat" quiet

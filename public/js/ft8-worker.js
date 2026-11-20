@@ -3,7 +3,7 @@
  * cycle or two, and decodes each 15 s (FT8) or 7.5 s (FT4) cycle as soon as it is complete,
  * lined up with UTC as WSJT-X does (so the PC clock needs to be right to within a second). */
 "use strict";
-importScripts("/js/ft8.js?v=1.38.0", "/js/wspr.js?v=1.38.0", "/js/cw.js?v=1.38.0", "/js/sstv.js?v=1.38.0", "/js/aprs.js?v=1.38.0");
+importScripts("/js/ft8.js?v=1.40.0", "/js/wspr.js?v=1.40.0", "/js/cw.js?v=1.40.0", "/js/sstv.js?v=1.40.0", "/js/aprs.js?v=1.40.0", "/js/rtty.js?v=1.40.0");
 
 // WSPR: two-minute cycles on the even minute, decoded at 12000 samples a second.
 const WSPR_PROTO = { name: "WSPR", period: 120, fs: 12000 };
@@ -14,7 +14,12 @@ const EARLY_SEC = { FT8: 13.6, FT4: 6.0 };
 
 let st = null;
 
-function start(mode, rate) {
+function start(mode, rate, cfg) {
+  if (mode === "RTTY") {
+    st = { rtty: new Rtty.Decoder(cfg || {}), resampler: new Ftx.Resampler(rate, Rtty.FS), sent: 0 };
+    postMessage({ type: "status", text: "Listening for RTTY. Set the tones to match the signal (Find the tones does it for you)." });
+    return;
+  }
   if (mode === "APRS") {
     const demod = new Aprs.Demod((bytes) => { const p = Aprs.parse(bytes); if (p) postMessage({ type: "aprs", p, at: Date.now() }); });
     st = { aprs: demod, resampler: new Ftx.Resampler(rate, Aprs.FS) };
@@ -61,8 +66,20 @@ function pushCw(samples) {
   }
 }
 
+/** RTTY: text as it is decoded, and about once a second whether a signal is there. */
+function pushRtty(samples) {
+  const s = st;
+  const text = s.rtty.process(s.resampler.process(samples));
+  const now = Date.now();
+  if (text || now - s.sent > 1000) {
+    s.sent = now;
+    postMessage({ type: "rtty", text, locked: s.rtty.locked });
+  }
+}
+
 function push(samples, at) {
   const s = st;
+  if (s.rtty) return pushRtty(samples);
   if (s.cw) return pushCw(samples);
   if (s.sstv) { s.sstv.push(s.resampler.process(samples)); return; }
   if (s.aprs) { s.aprs.push(s.resampler.process(samples)); return; }
@@ -128,7 +145,9 @@ function decodeCycle(cycle, earlySec = 0) {
 
 onmessage = (e) => {
   const m = e.data;
-  if (m.type === "start") start(m.mode, m.rate);
+  if (m.type === "start") start(m.mode, m.rate, m.cfg);
+  else if (m.type === "rtty-config" && st && st.rtty) st.rtty.configure(m.cfg);
+  else if (m.type === "rtty-find" && st && st.rtty) postMessage({ type: "rtty-tone", low: st.rtty.find() });
   else if (m.type === "stop") st = null;
   else if (m.type === "audio" && st) push(m.samples, m.at);
   else if (m.type === "sstv-now" && st && st.sstv) st.sstv.start(m.mode); // the VIS was missed: start by hand

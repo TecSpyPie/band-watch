@@ -71,6 +71,9 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dctab td.dcact{width:6.5em;white-space:nowrap}
 /* Add-ons: hidden until ticked in Settings */
 :root:not([data-addons~="rotator"]) #secRot{display:none}
+:root:not([data-addons~="dv"]) #secDv{display:none}
+#secDv h3{margin:12px 0 4px}
+#dvChans .muted{font-weight:normal}
 /* CB channels in Listen */
 .lscb{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:6px 0}
 .lscb label{display:flex;align-items:center;gap:6px}
@@ -159,5 +162,16 @@ a.optlink{display:inline-block;text-decoration:none;font-size:.9375rem;padding:6
 .dcrow button.ghost{background:none;color:var(--text);border:1px solid var(--line)}
 .dcrow #dcCount{align-self:center}
 .dccw [hidden],.dccw[hidden]{display:none!important}
+.dcrtty[hidden]{display:none}
+.dcrtty input[type=number]{width:7em}
 .dccwtext{font:500 1rem/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:5em;max-height:14em;overflow:auto;margin:6px 0 0}
 .dcwrap[hidden]{display:none!important}
+/* My repeaters */
+#rpForm input,#rpForm select{max-width:100%}
+#secRpt table.rpt td{vertical-align:top}
+#secRpt .num{text-align:right;white-space:nowrap}
+#secRpt .rpact{white-space:nowrap}
+#secRpt .rpact button{padding:3px 9px;margin-right:4px}
+#secRpt td.wrapcell{white-space:normal;min-width:140px}
+#rpPreview{border:1px solid var(--line);border-radius:6px;padding:4px 10px;margin:4px 0}
+@media (max-width:600px){#secRpt .dcrow label{flex:1 1 140px}#secRpt .dcrow .grow{flex:1 1 100%}}

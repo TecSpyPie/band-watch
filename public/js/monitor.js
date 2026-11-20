@@ -79,7 +79,7 @@ function sparkline(b) {
 }
 
 function drawMonitor() {
-  $("chips").innerHTML = BANDS.map((b) => `<button type="button" data-b="${b}" aria-pressed="${monitor.watched.includes(b)}">${b} m</button>`).join("");
+  $("chips").innerHTML = BANDS.map((b) => `<button type="button" data-b="${b}" aria-pressed="${monitor.watched.includes(b)}">${bandName(b)}</button>`).join("");
   $("chips").querySelectorAll("button").forEach((btn) => {
     btn.onclick = () => {
       const b = btn.dataset.b;
@@ -95,7 +95,7 @@ function drawMonitor() {
       const s = status(x);
       const held = s === "none" ? "" : heldFor(x.b, s);
       const detail = s === "none" ? "Waiting for live spots" : `${x.sp.length} spots${x.far ? `, farthest ${kmText(x.far)}` : ""}`;
-      return `<li tabindex="0" data-b="${x.b}"><span class="bn">${x.b} m</span>` +
+      return `<li tabindex="0" data-b="${x.b}"><span class="bn">${bandName(x.b)}</span>` +
         `<span><span class="st ${s}">${STATUS_LABEL[s]}</span>${held ? ` for ${held}` : ""}<small>${detail}</small></span>${sparkline(x.b)}</li>`;
     }).join("")
     : `<li style="cursor:default;display:block"><small>No bands picked. Tap a band above to start watching it.</small></li>`;
@@ -104,7 +104,7 @@ function drawMonitor() {
   $("mlog").innerHTML = monitor.log
     .filter((l) => monitor.watched.includes(l.b))
     .slice(0, 6)
-    .map((l) => `<li>${new Date(l.t).toISOString().slice(11, 16)} UTC · ${l.b} m went from ${STATUS_LABEL[l.from]} to ${STATUS_LABEL[l.to]}</li>`)
+    .map((l) => `<li>${new Date(l.t).toISOString().slice(11, 16)} UTC · ${bandName(l.b)} went from ${STATUS_LABEL[l.from]} to ${STATUS_LABEL[l.to]}</li>`)
     .join("");
 
   $("mSnd").checked = monitor.sound;
@@ -121,7 +121,7 @@ function showToast(title, msg) {
 
 function announceOpen(band) {
   const msg = `${band.sp.length} stations spotted, the farthest ${kmText(band.far)} away.`;
-  showToast(`${band.b} m just opened`, msg);
+  showToast(`${bandName(band.b)} just opened`, msg);
 
   if (monitor.sound && audio) {
     try {
@@ -136,7 +136,7 @@ function announceOpen(band) {
     } catch { /* audio blocked */ }
   }
   if (monitor.notify && "Notification" in window && Notification.permission === "granted") {
-    try { new Notification(`Band Watch: ${band.b} m is open`, { body: msg, tag: `bw-${band.b}` }); } catch { /* not allowed */ }
+    try { new Notification(`Band Watch: ${bandName(band.b)} is open`, { body: msg, tag: `bw-${band.b}` }); } catch { /* not allowed */ }
   }
 }
 

@@ -2,7 +2,9 @@
 // Serves the static page from ./public and these JSON endpoints:
 //   GET  /api/solar            -> { sfi, kp, at }          (NOAA SWPC, cached 15 min)
 //   GET  /api/spots?grid=IO93  -> { grid, spots[], at }    (PSK Reporter, cached 5 min per grid)
-//   GET  /api/xota             -> { spots[], at, failed[] } POTA activators (cached 2 min)
+//   GET  /api/myreports?call=M3VRV&mins=120 -> { call, mins, reports[], at }  FT8/FT4 reports of that sender
+//                                 (PSK Reporter, cached 5 min per callsign; mins 1..1440, default 1440)
+//   GET  /api/xota            -> { spots[], at, failed[] } POTA activators (cached 2 min)
 //   GET  /api/eibi             -> { season, at, csv, readme } EiBi shortwave schedule, as published (cached 12 hours)
 //   GET  /api/update           -> { current, latest, newer, page, canInstall } (GitHub releases, cached 1 hour)
 //   GET  /api/sun              -> sunspot regions, sunspot number, X-rays, solar wind, NOAA scales (cached 30 min)
@@ -303,6 +305,56 @@ function getSpots(grid) {
     });
     const res = await fetchOk(`${PSK_QUERY}?${q}`, 30e3);
     return { grid, spots: parsePskXml(await res.text(), grid), at: clock.now() };
+  });
+}
+
+/* ---------- Reports of your own signal (Antenna A/B) ----------
+ * PSK Reporter's developer page (pskreporter.info/pskdev.html) says: retrieve no more often than once every
+ * five minutes; flowStartSeconds is a negative lookback of at most 24 hours; give `appcontact` so the author can
+ * reach the app's maker (we send the project's public GitHub address, never a person's email); rptlimit caps the
+ * rows; rronly and noactive leave out monitor lists; and they may block anyone who loads their system. So:
+ * one upstream call per callsign per 5 minutes (shared by concurrent requests, stale if a refresh fails),
+ * always for the full 24 hours, and the browser's `mins` only trims our answer. */
+const MYREPORTS_TTL = SPOTS_TTL;
+const MYREPORTS_MAX_MINS = 1440;
+const MYREPORTS_LIMIT = 3000;
+const PSK_CONTACT = "https://github.com/TecSpyPie/band-watch";
+const CALL_RE = /^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(\/[A-Z0-9]{1,6})?$/; // the same as public/js/antenna.js
+
+/** PSK Reporter XML -> the FT8 and FT4 reports a station made of `call`, oldest first: { c receiver, g locator,
+ * lat, lon, fq MHz, m mode, snr, ts ms }. Rows without a receiver, locator, frequency or time are skipped. */
+function parseMyReportsXml(xml, call) {
+  const out = [];
+  for (const m of xml.matchAll(/<receptionReport\s([^>]*?)\/?>/g)) {
+    const a = parseAttrs(m[1]);
+    const mode = String(a.mode || "").toUpperCase();
+    if (mode !== "FT8" && mode !== "FT4") continue;
+    if (String(a.senderCallsign || "").toUpperCase() !== call) continue;
+    const rx = String(a.receiverCallsign || "");
+    const loc = String(a.receiverLocator || "");
+    const pos = locatorToLatLon(loc);
+    const fq = Number(a.frequency) / 1e6;
+    const ts = Number(a.flowStartSeconds) * 1000;
+    if (!rx || !pos || !(fq > 0) || !(ts > 0)) continue;
+    const snr = a.sNR === undefined || a.sNR === "" ? null : Number(a.sNR);
+    if (snr === null || !Number.isFinite(snr)) continue; // the comparison is about SNR
+    out.push({ c: rx, g: loc.slice(0, 6), lat: pos.lat, lon: pos.lon, fq: +fq.toFixed(6), m: mode, snr, ts });
+  }
+  return out.sort((x, y) => x.ts - y.ts).slice(-MYREPORTS_LIMIT);
+}
+
+function getMyReports(call) {
+  return cached(`myreports:${call}`, MYREPORTS_TTL, async () => {
+    const q = new URLSearchParams({
+      senderCallsign: call,
+      flowStartSeconds: String(-MYREPORTS_MAX_MINS * 60),
+      rronly: "1",
+      noactive: "1",
+      rptlimit: String(MYREPORTS_LIMIT),
+      appcontact: PSK_CONTACT,
+    });
+    const res = await fetchOk(`${PSK_QUERY}?${q}`, 30e3);
+    return { call, reports: parseMyReportsXml(await res.text(), call), at: clock.now() };
   });
 }
 
@@ -658,6 +710,20 @@ async function handle(req, res) {
       if (!/^[A-R]{2}\d{2}$/.test(grid)) return sendJson(res, 400, { error: "grid must look like IO93" });
       return sendJson(res, 200, await getSpots(grid));
     }
+    if (url.pathname === "/api/myreports") {
+      const call = String(url.searchParams.get("call") || "").trim().toUpperCase();
+      if (!CALL_RE.test(call)) return sendJson(res, 400, { error: "call must be a callsign like M3VRV" });
+      const raw = url.searchParams.get("mins");
+      let mins = MYREPORTS_MAX_MINS;
+      if (raw !== null && raw !== "") {
+        mins = Number(raw);
+        if (!/^\d+$/.test(raw) || mins < 1) return sendJson(res, 400, { error: "mins must be a whole number of minutes" });
+        mins = Math.min(mins, MYREPORTS_MAX_MINS);
+      }
+      const data = await getMyReports(call);
+      const cutoff = clock.now() - mins * 60e3;
+      return sendJson(res, 200, { ...data, mins, reports: data.reports.filter((r) => r.ts >= cutoff) });
+    }
     if (url.pathname.startsWith("/api/")) return sendJson(res, 404, { error: "not found" });
     if (url.pathname.startsWith("/download/")) return sendDownload(req, res, url.pathname.slice(10));
     return sendStatic(res, url.pathname, req.method);
@@ -676,7 +742,7 @@ function createServer() {
 if (require.main === module) {
   const port = Number(process.env.PORT) || 8080;
   const host = process.env.HOST || undefined; // e.g. 127.0.0.1 on a PC, so no firewall prompt
-  createServer().listen(port, host, () => console.log(`Band Watch by M3vrv listening on ${host || "all interfaces"}:${port}`));
+  createServer().listen(port, host, () => console.log(`Band Watch by M3VRV & King Coder listening on ${host || "all interfaces"}:${port}`));
 }
 
 function resetAll() {
@@ -685,4 +751,4 @@ function resetAll() {
   clock.resetClock();
 }
 
-module.exports = { VERSION, createServer, parsePskXml, locatorToLatLon, latestByTime, summariseSun, clearCache, resetAll };
+module.exports = { VERSION, createServer, parsePskXml, parseMyReportsXml, locatorToLatLon, latestByTime, summariseSun, clearCache, resetAll };

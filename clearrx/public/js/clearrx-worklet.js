@@ -10,6 +10,8 @@ class ClearRxProcessor extends AudioWorkletProcessor {
     this.gain = 1;
     this.inPeak = 0;
     this.outPeak = 0;
+    this.outSum = 0; // for the output level
+    this.gr = 0; // the most the compressor / limiter turned the sound down since the last report
     this.sent = 0;
     this.buf = new Float32Array(128);
     this.port.onmessage = (e) => {
@@ -33,17 +35,23 @@ class ClearRxProcessor extends AudioWorkletProcessor {
     for (let i = 0; i < n; i++) { x[i] *= this.gain; const a = Math.abs(x[i]); if (a > this.inPeak) this.inPeak = a; }
     if (!this.bypass) this.chain.process(x);
     else for (let i = 0; i < n; i++) x[i] = Math.max(-1, Math.min(1, x[i]));
-    for (let i = 0; i < n; i++) { const a = Math.abs(x[i]); if (a > this.outPeak) this.outPeak = a; }
+    for (let i = 0; i < n; i++) { const a = Math.abs(x[i]); if (a > this.outPeak) this.outPeak = a; this.outSum += x[i] * x[i]; }
+    if (!this.bypass && this.chain.meter.gr > this.gr) this.gr = this.chain.meter.gr;
     for (let c = 0; c < out.length; c++) out[c].set(x);
     // The meters, ten times a second
     this.sent += n;
     if (this.sent >= sampleRate / 10) {
+      const count = this.sent;
       this.sent = 0;
       const db = (v) => (v > 1e-6 ? 20 * Math.log10(v) : -120);
       // "clip": the sound coming in is too loud (it would be clipped before ClearRX can help)
-      this.port.postMessage({ meter: { inPeak: db(this.inPeak), outPeak: db(this.outPeak), clip: this.inPeak >= 0.999 || (this.bypass && this.outPeak >= 0.999) } });
+      // "outClip": the sound going out is at its limit (it may sound crunchy); "gr": compressor / limiter gain reduction in dB
+      this.port.postMessage({ meter: { inPeak: db(this.inPeak), outPeak: db(this.outPeak), outRms: db(Math.sqrt(this.outSum / count)), gr: this.gr,
+        clip: this.inPeak >= 0.999 || (this.bypass && this.outPeak >= 0.999), outClip: this.outPeak >= 0.95 } });
       this.inPeak = 0;
       this.outPeak = 0;
+      this.outSum = 0;
+      this.gr = 0;
     }
     return true;
   }

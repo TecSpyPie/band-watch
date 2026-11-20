@@ -24,6 +24,8 @@ function start() {
   setupSstv();
   setupCwKey();
   setupRotator();
+  setupDv();
+  setupRepeaters();
   setupAprs();
   const savedGrid = load("bw-grid");
   if (savedGrid && gridToLatLon(savedGrid)) $("grid").value = savedGrid;
@@ -41,6 +43,7 @@ function start() {
   setupLocator();
   setupQrz();
   setupHover();
+  setupSpotMap();
   setupModes();
   setupSun();
   // The Windows app says so in /healthz; it shows a Quit button in Settings.

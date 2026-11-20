@@ -4,6 +4,13 @@
 /* ===================== Map and spot list ===================== */
 
 function drawMap() {
+  // The "Map" view (spotmap.js) draws the real world map; this file keeps the title and the simple "Bowl" chart.
+  if (typeof spotMapActive === "function" && spotMapActive()) {
+    const c = app.bands.find((x) => x.b === app.sel);
+    $("mapTitle").textContent = c ? `${bandName(c.b)} spots` : "Map";
+    spotMapDraw(false);
+    return;
+  }
   const X = (lon) => lon + 180;
   const Y = (lat) => 90 - lat;
   const sun = subsolarPoint(Date.now());
@@ -34,7 +41,7 @@ function drawMap() {
   if (typeof aprsMapSvg === "function") svg += aprsMapSvg(X, Y);
   svg += `<circle cx="${X(app.home.lon)}" cy="${Y(app.home.lat)}" r="3" fill="var(--warm)" stroke="var(--surface)" stroke-width="1"/>`;
   $("map").innerHTML = svg;
-  $("mapTitle").textContent = cur ? `${cur.b} m spots` : "Map";
+  $("mapTitle").textContent = cur ? `${bandName(cur.b)} spots` : "Map";
 }
 
 function renderSpotList() {

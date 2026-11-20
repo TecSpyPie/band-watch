@@ -47,12 +47,19 @@ function txPttCmd(on) {
   return "";
 }
 
+// Bands Band Watch may transmit on: HF and 6 m only. 2 m and 70 cm are in the band plan for listening and
+// repeaters, but transmitting there is not enabled (a safety decision for the owner, not a side effect).
+const TX_BANDS = ["160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6"];
+
 // Band plan segments Band Watch never transmits data or pictures in.
 const TX_NOT_IN = { none: "has no UK amateur allocation", beacon: "is for beacons only", cw: "is for CW only in the band plan" };
 
 /** Is a signal from lo to hi kHz, bwHz wide, somewhere Band Watch may transmit it? "" if so, or why not. */
 function txBandProblem(lo, hi, bwHz, what, allowCw = false) {
-  if (typeof PLAN_BANDS === "undefined" || !PLAN_BANDS.some((b) => lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi)) {
+  if (typeof BANDPLAN === "undefined" || !TX_BANDS.some((b) => BANDPLAN[b] && lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi)) {
+    if (typeof BANDPLAN !== "undefined" && Object.keys(BANDPLAN).some((b) => lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi)) {
+      return `Band Watch only transmits on HF and 6 m, not on ${lo >= 400000 ? "70 cm" : "2 m"}.`;
+    }
     return `${lo.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
   }
   // Every part of the signal must be in a segment that allows it (60 m has gaps with no UK allocation, say).

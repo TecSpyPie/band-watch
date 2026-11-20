@@ -8,7 +8,7 @@
 // Where each band button goes the first time (after that, the last frequency used on that band).
 const PANEL_HOME = {
   160: [1900, "lsb"], 80: [3700, "lsb"], 60: [5362, "usb"], 40: [7100, "lsb"], 30: [10120, "cw"], 20: [14200, "usb"],
-  17: [18130, "usb"], 15: [21200, "usb"], 12: [24940, "usb"], 10: [28500, "usb"], 6: [50150, "usb"],
+  17: [18130, "usb"], 15: [21200, "usb"], 12: [24940, "usb"], 10: [28500, "usb"], 6: [50150, "usb"], 2: [145500, "fm"], 70: [433500, "fm"],
 };
 const PANEL_MODES = [["lsb", "LSB"], ["usb", "USB"], ["cw", "CW"], ["am", "AM"], ["fm", "FM"]];
 const PANEL_STEPS = [[0.01, "10 Hz"], [0.1, "100 Hz"], [0.5, "500 Hz"], [1, "1 kHz"], [5, "5 kHz"], [10, "10 kHz"]];
@@ -85,7 +85,7 @@ function renderPanelDisplay(kHz = listen.kHz, mode = listen.mode) {
   const radioMode = typeof rig !== "undefined" && rig.connected && rig.modeName && !panel.pending ? rig.modeName : "";
   $("pnMode").textContent = radioMode || (mode || "").toUpperCase();
   const band = bandForKHz(kHz);
-  $("pnBand").textContent = band ? `${band} m` : "";
+  $("pnBand").textContent = band ? bandName(band) : "";
   const knob = $("pnKnob");
   knob.setAttribute("aria-valuenow", String(kHz));
   knob.setAttribute("aria-valuetext", `${kHz.toLocaleString()} kHz ${(mode || "").toUpperCase()}`);
@@ -380,7 +380,7 @@ function setupPanelKnob() {
 function setupPanel() {
   if (!$("secPanel")) return;
   loadPanel();
-  $("pnBands").innerHTML = BANDS.map((b) => `<button type="button" class="pnkey" data-band="${b}" aria-pressed="false">${b}</button>`).join("");
+  $("pnBands").innerHTML = BANDS.map((b) => `<button type="button" class="pnkey" data-band="${b}" aria-pressed="false">${b === "70" ? "70cm" : b}</button>`).join("");
   $("pnModes").innerHTML = PANEL_MODES.map(([m, l]) => `<button type="button" class="pnkey" data-mode="${m}" aria-pressed="false">${l}</button>`).join("");
   $("pnStep").innerHTML = PANEL_STEPS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
   $("pnSpan").innerHTML = PANEL_SPANS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");

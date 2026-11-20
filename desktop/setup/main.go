@@ -45,7 +45,7 @@ func versionText() string {
 	return version + " (built " + builtText() + ")"
 }
 
-const title = "Band Watch by M3vrv - Setup"
+const title = "Band Watch by M3VRV & King Coder - Setup"
 
 // Files earlier versions left in the install folder that are no longer used.
 var oldFiles = []string{"server.js", "qrz.js", "clock.js", "package.json", "bandwatch-status.ps1"}
@@ -68,7 +68,7 @@ func main() {
 	if update && !*silent {
 		// An update: one question, then it goes over the old copy in the same folder.
 		old := installedVersion(*dest)
-		q := fmt.Sprintf("Update Band Watch by M3vrv in %s\n\nfrom %s to %s?\n\nYes: update it (your settings and log are kept)\nNo: install somewhere else\nCancel: don't install", *dest, old, versionText())
+		q := fmt.Sprintf("Update Band Watch by M3VRV & King Coder in %s\n\nfrom %s to %s?\n\nYes: update it (your settings and log are kept)\nNo: install somewhere else\nCancel: don't install", *dest, old, versionText())
 		switch askInstallWhere(q) {
 		case answerYes:
 			chosen = true
@@ -138,7 +138,7 @@ func install(dest string, silent, chosen bool) error {
 	removeOldCopy(dest, silent)
 	checkSmartAppControl(silent)
 
-	if silent || askYesNo(title, "Band Watch by M3vrv is installed.\n\nUse the \"Band Watch by M3vrv\" shortcut on your desktop or in the Start menu. It opens in your web browser.\n\nOpen Band Watch now?", true) {
+	if silent || askYesNo(title, "Band Watch by M3VRV & King Coder is installed.\n\nUse the \"Band Watch by M3vrv\" shortcut on your desktop or in the Start menu. It opens in your web browser.\n\nOpen Band Watch now?", true) {
 		openBandWatch(dest)
 	}
 	return nil
@@ -148,7 +148,7 @@ func install(dest string, silent, chosen bool) error {
 func chooseDest(suggested string) (string, error) {
 	dest := suggested
 	for {
-		switch askInstallWhere(fmt.Sprintf("Install Band Watch by M3vrv %s in this folder?\n\n%s\n\nYes: install there\nNo: choose another drive or folder\nCancel: don't install", versionText(), dest)) {
+		switch askInstallWhere(fmt.Sprintf("Install Band Watch by M3VRV & King Coder %s in this folder?\n\n%s\n\nYes: install there\nNo: choose another drive or folder\nCancel: don't install", versionText(), dest)) {
 		case answerYes:
 			return dest, nil
 		case answerCancel:

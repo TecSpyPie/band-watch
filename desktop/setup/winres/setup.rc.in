@@ -10,14 +10,14 @@ BEGIN
   BEGIN
     BLOCK "080904B0"
     BEGIN
-      VALUE "CompanyName", "M3vrv"
-      VALUE "FileDescription", "Band Watch by M3vrv Setup"
+      VALUE "CompanyName", "M3VRV & King Coder"
+      VALUE "FileDescription", "Band Watch by M3VRV & King Coder Setup"
       VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "BandWatch-Setup"
       VALUE "OriginalFilename", "BandWatch-Setup.exe"
-      VALUE "ProductName", "Band Watch by M3vrv"
+      VALUE "ProductName", "Band Watch by M3VRV & King Coder"
       VALUE "ProductVersion", "@VERSION@"
-      VALUE "LegalCopyright", "M3vrv"
+      VALUE "LegalCopyright", "Copyright (c) 2026 M3VRV"
       VALUE "Comments", "Built @BUILD@"
     END
   END

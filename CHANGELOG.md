@@ -1,5 +1,74 @@
 # What's new
 
+## 1.40.0 (20 Nov 2026)
+- **Antenna A/B: FT8 and FT4 reports too.** A new **Reports from** choice (WSPR, FT8 and FT4, or Both; WSPR stays the default) lets you compare antennas with the FT8 or FT4 reports of your own callsign from PSK Reporter. New server route `GET /api/myreports?call=M3VRV&mins=120` (in both the Node and the Windows server): FT8 and FT4 reports of that sending callsign, last 24 hours at most, cached 5 minutes per callsign (concurrent requests share one PSK Reporter call, an old copy is served if a refresh fails, and a failure answers 502 without details), and it identifies Band Watch to PSK Reporter by its public project address, never anyone's email. Matching is as before (same receiver, same band, same source; per-receiver averages), with a slot of 15 s for FT8 and 7.5 s for FT4 that must sit inside one period; WSPR and FT8/FT4 are never mixed and the table has a Source column. PSK Reporter only returns the latest report per receiver, so while you are logging a period with FT8/FT4 chosen and the page is showing, Band Watch collects the reports itself: once when logging starts and then every 5 minutes (never more often), keeps them in your browser per callsign (7 days, 20,000 reports at most; the status line shows the receivers so far) and Compare uses all of them, so matches build up as stations hear you on each antenna. **Clear FT8 history** empties it. WSPR keeps its 20 s wait and 10-minute memory. Analysis only: nothing transmits.
+- **RTL-SDR: recovers from a stuck rtl_tcp.** If rtl_tcp connects and sends its header but then no samples for about 9 seconds (or every reconnect gets the header and nothing else), Band Watch now notices instead of looping on "Connection lost". If Band Watch started that rtl_tcp it restarts it by itself (at most twice in 10 minutes, then it stops and says so). If you started it yourself, Band Watch doesn't touch it: it says "rtl_tcp is connected but not sending any signal. It may be stuck: close and restart it." and offers a **Restart receiver** button that starts Band Watch's own copy (and tells you plainly if another rtl_tcp is holding the port). Receive only. No server API change.
+- **2 m and 70 cm, a UK band plan for them, and My repeaters.** The band lists, activity table, spots map, band scope and Listen now include **2 m** and **70 cm** (PSK Reporter spots, FT8 on 144.174 and 432.174 MHz; no extra PSK Reporter requests, same 5-minute cache). The UK band plan gains both bands from the RSGB plan in plain words: CW and beacons, narrow band and FT8, satellites, FM simplex (calling 145.500 and 433.500), repeater inputs and outputs, APRS (144.800 and 433.800) and digital voice and hotspot areas. The new **My repeaters** panel is your own list of repeaters (callsign, output, shift, CTCSS or DCS/colour code, mode, locator or town, notes), kept in your browser, with distance and heading from your locator and nearest first; **Tune** sets your radio or RTL-SDR to the output to listen (receive only: it never sets shift or tone and never transmits). You can import a CSV you downloaded (read in your browser, never uploaded; only import lists you're allowed to use for your own station), and there are links to ukrepeater.net, Hearham and RepeaterBook. Band Watch bundles and fetches no repeater data.
+- **Optional "Support" link (hidden until set).** Band Watch stays 100% free: nothing is locked, and there are no popups, timers or reminders. The owner can set one support link in `public/js/support.js` (Ko-fi, GitHub Sponsors, Buy Me a Coffee or Liberapay, https only). Until then nothing shows. Once set, a small "Support" button appears in the header next to Help, and Help gets a "Support the project" section with an optional Supporters list. The README has a matching placeholder and `docs/FUNDING.yml.example` explains GitHub's Sponsor button.
+- **ClearRX: a 3D spectrum scope in the graphic EQ.** Above the EQ's sliders, a 3D terrain of the sound: pitch left to right (50 Hz to 6 kHz), time front to back (now at the front, older rows fading away behind), loudness as height and colour. The EQ's curve glows along the front edge with a marker for each of the ten bands and moves as you drag the sliders. **Before / After** shows the sound going in or coming out of ClearRX, and **3D scope** switches it off (both are remembered). It pauses when the page is hidden or the scope is scrolled out of view, and updates slower if your computer asks for reduced motion.
+- **Credits: "by M3VRV & King Coder".** Band Watch and ClearRX now credit both the owner (M3VRV) and the AI partner, King Coder, in their titles, headers, installer and Windows file details.
+- **ClearRX: an effects rack.** ClearRX now works like a rack of effect modules. Each stage is a card with its own
+  **on/off switch**, its controls, a **Reset** button and **up/down arrows** to put it in a different place: the sound goes
+  through the modules from top to bottom, so the order matters (a compressor after the EQ works on the EQ's louder sound).
+  Changing the order fades the sound out and back in over a few milliseconds, so there is no click. The noise blanker,
+  band-pass filter (voice filter, with low and high cut sliders), CW peak, manual notch, auto notch, noise reduction,
+  squelch, steady volume (AGC) and bass/treble are modules now, and the presets (SSB voice, Weak DX, CW, AM broadcast,
+  Off) set them. New: a **10-band graphic EQ** (100 Hz to 5 kHz, plus or minus 12 dB, with Flat, SSB punch, Weak DX, CW
+  and AM warm curves; each preset picks its own), a **compressor / limiter** (threshold, ratio, make-up gain, a limiter
+  that holds the sound under -1 dB, and a gain-reduction meter), and an **Output meter** at the bottom with a CLIP warning.
+  The order, EQ and compressor are kept in `clearrx-settings.json` (older files get the usual order, a flat EQ and the
+  compressor off). Band Watch's Listen uses them too when it sends your RTL-SDR sound through ClearRX; with the usual
+  order and no EQ or compressor it sounds exactly as before. Download the new `ClearRX-Windows.zip` and unzip it over the
+  old one.
+- **Glass look, deeper.** Settings > Look > Glass and depth now has three clear layers: a deep soft gradient behind (a background picture you chose stays, slightly blurred and dimmed), panels as frosted glass with a bevelled light edge and soft stacked shadows, and the header, section menu, buttons, chips, dialogs, toast and map tip raised above them (buttons press in when clicked; dialogs get the deepest shadow and blur the page behind). The map, waterfall and scope stay sharp. Buttons no longer blur on their own, which keeps it light on the computer. Follows "reduce transparency", "more contrast" and "reduce motion" settings; High contrast and Night still stay plain.
+- **A real world map for the spots panel.** The "40 m spots" panel (any band: it follows the band you pick) now has a
+  **Map / Bowl** switch, **Map** by default (your choice is remembered; **Bowl** is the old simple chart). The map
+  has real coastlines (Natural Earth 110m land, public domain, built in, so no map tiles and no internet map service),
+  you as a ringed dot, a dot for every spot on the band with a curved great-circle path from you, coloured and sized by
+  signal (none, weak, fair, good, strong) and fading as spots get older, the night side shaded with the Sun marked, and
+  satellites, POTA and APRS when switched on. Rest the pointer on a dot (or tap) for callsign, distance, beam heading,
+  signal and mode; click for the station window. Mouse wheel or +/- buttons or pinch to zoom, drag to move, double-click
+  or the home button to reset. Works in all themes, on a phone and in the map's own window. It only uses the spots
+  already fetched: no extra PSK Reporter requests.
+- **Decoders fixes (receive only).** The results window now shows RTTY text the same way it shows CW; the text box replaces the table for CW and RTTY, goes away for other modes, learns the mode even if opened late, and follows Clear. Starting a decoder from the sound input no longer says "Waiting for the next cycle" for CW and RTTY (which have no cycles); SSTV and APRS get their own wording.
+- **Antenna A/B (analysis only).** A new panel to compare two antennas, or before and after a change, using real WSPR
+  reports of your own callsign. Press **Now on antenna A / B** whenever you switch (or type the times), name the antennas,
+  then **Compare**: reports come from wspr.live straight to your browser (one lookup per click, up to 7 days). Only
+  receivers that heard you on both antennas on the same band are compared, with the average SNR difference per band, by
+  direction and by distance, and a warning when there are fewer than 10. Band Watch never transmits or controls the radio
+  for this (FT8 and FT4 reports from PSK Reporter are in the first entry of this list).
+- **RTTY decoder (receive only).** The Decoders panel has a new mode, **RTTY (radioteletype)**: 45.45 baud and 170 Hz
+  shift as standard (50 and 75 baud, 425 and 850 Hz shift too), Baudot letters and figures, in a scrolling text box with
+  Clear. Set the lower tone (2125 Hz mark / 2295 Hz space by default) or click **Find the tones**; **Reverse** swaps mark and
+  space (for USB), and **Unshift on space** is on by default. The RTTY settings only show when RTTY is the mode. Band Watch
+  never transmits RTTY. `node tools/rtty-wav.js` writes a test recording.
+- **Section menu and folding.** A slim bar under the title (it stays on screen as you scroll) has a button for each
+  panel that is showing: Clock, Radio panel, Listen, Decoders, POTA, Satellites, Logbook and so on. Click one to glide
+  to that panel; the panel you're looking at is highlighted, and on a narrow screen the bar slides sideways. Add-on
+  panels (Rotator, Digital voice) and the ATS Mini appear in it only while they're switched on.
+  - **Fold a panel** with the small arrow by its name: only its name stays, the rest is hidden. Nothing stops
+    running (decoders, radio, Listen). Folded panels are remembered and shown with a dashed outline in the menu;
+    clicking one unfolds it.
+  - **Settings > Show the section menu** turns the bar off. Works in every theme and look; own windows and the
+    results window are unchanged.
+
+## 1.39.0 (19 Nov 2026)
+- **Digital voice add-on** (Settings > Add-ons: DMR, BrandMeister and Fusion). Band Watch can't make or send DMR or
+  Fusion (C4FM) voice itself: both use the AMBE voice codec, which is patented and only built into radios and hotspots.
+  What the add-on does:
+  - **One-click C4FM on a Yaesu radio** (FT-991A and others): the UK digital voice calling frequencies (145.375 MHz on
+    2 m, 438.6125 MHz on 70 cm) or a frequency you type, on 2 m or 70 cm only. It sets the frequency and C4FM mode
+    (`MD0E;`) and nothing else: Band Watch never transmits here, you talk on your own microphone.
+  - **BrandMeister (DMR):** links to Hoseline (listen to talkgroups in your browser), the talkgroup list and Last
+    heard, with talkgroups to try (235 UK, 91 worldwide, 92 Europe, 9990 Parrot).
+  - **DMR over the internet:** a short guide. To listen, Hoseline in your browser (no radio). To talk, something with
+    the AMBE codec: a DMR radio and a hotspot (Pi-Star or WPSD), or an app such as DroidStar with an AMBE USB stick;
+    either way your licence and a DMR ID from RadioID.net. Links to each project's own page.
+  - **UK repeaters:** links to the Fusion, DMR and full repeater lists at ukrepeater.net (RSGB ETCC).
+  - **Your hotspot:** save your Pi-Star or WPSD dashboard address (e.g. http://pi-star.local/) and open it from here.
+  - BrandMeister and ukrepeater.net data isn't copied into Band Watch: neither says it may be reused, so Band Watch
+    links to their own pages.
+
 ## 1.38.0 (19 Nov 2026)
 - **CB channels to listen to** (Listen panel): pick a UK 27/81 FM channel (1–40; channel 19 is 27.78125 MHz) or a
   European CEPT channel (1–40; channel 19 is 27.185 MHz) and Listen tunes there in FM. Listen only: Band Watch never

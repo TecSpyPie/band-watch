@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Band Watch by M3vrv</title>
-<meta name="description" content="Band Watch by M3vrv: live HF band conditions for radio amateurs, from PSK Reporter spots and NOAA solar data. Controls Yaesu, Icom, Kenwood and ATS Mini radios.">
+<title>Band Watch by M3VRV &amp; King Coder</title>
+<meta name="description" content="Band Watch by M3VRV &amp; King Coder: live HF band conditions for radio amateurs, from PSK Reporter spots and NOAA solar data. Controls Yaesu, Icom, Kenwood and ATS Mini radios.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0b7285">
@@ -15,14 +15,15 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.38.0">
-<link rel="stylesheet" href="/listen.css?v=1.38.0">
-<link rel="stylesheet" href="/looks.css?v=1.38.0">
+<link rel="stylesheet" href="/style.css?v=1.40.0">
+<link rel="stylesheet" href="/listen.css?v=1.40.0">
+<link rel="stylesheet" href="/looks.css?v=1.40.0">
+<link rel="stylesheet" href="/nav.css?v=1.40.0">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Band Watch <span class="by">by M3vrv</span></h1>
+    <h1>Band Watch <span class="by">by M3VRV &amp; King Coder</span></h1>
     <div class="ctl">
       <label for="grid">Your locator</label>
       <input id="grid" maxlength="6" value="IO93" aria-describedby="gerr" autocomplete="off" spellcheck="false">
@@ -39,6 +40,7 @@
     <button type="button" class="lbtn rigbtn" id="rigBtn" aria-pressed="false">Connect radio</button>
     <button type="button" class="lbtn" id="optBtn" aria-haspopup="dialog">Settings</button>
     <a class="lbtn helpbtn" id="helpBtn" href="/help" target="bandwatch-help" rel="noopener">Help</a>
+    <a class="lbtn supportbtn" id="supportBtn" data-support href="#" hidden title="Band Watch is free. If you'd like to say thanks, you can support the project.">&#10084; Support</a>
     <div class="clock" id="clock" aria-label="UTC time"></div>
   </header>
 
@@ -100,7 +102,22 @@
     <section>
       <div id="secMap">
       <h2 id="mapTitle">Map</h2>
-      <svg class="map" id="map" viewBox="0 0 360 180" role="img" aria-label="World map with day and night shading and recent spots"></svg>
+      <div class="chips mapview" id="mapView" role="group" aria-label="How the spots are drawn">
+        <button type="button" data-v="map" aria-pressed="true" title="A real world map: coastlines, day and night, curved paths to each station">Map</button>
+        <button type="button" data-v="bowl" aria-pressed="false" title="The simple chart without coastlines">Bowl</button>
+      </div>
+      <div class="spotmapbox" id="spotmapbox">
+        <canvas class="map spotmap" id="spotmap" tabindex="0" role="img" aria-label="World map of spots"></canvas>
+        <span id="spotprobe" class="spotprobe" aria-hidden="true"></span>
+        <div class="spotzoom" role="group" aria-label="Zoom the map">
+          <button type="button" id="mapZoomIn" aria-label="Zoom in" title="Zoom in (or turn the mouse wheel)">+</button>
+          <button type="button" id="mapZoomOut" aria-label="Zoom out" title="Zoom out">&minus;</button>
+          <button type="button" id="mapZoomReset" aria-label="Show the whole world" title="Show the whole world (or double-click the map)">&#8962;</button>
+        </div>
+        <div class="spottip" id="spotTip" role="status" hidden></div>
+      </div>
+      <p class="small muted spotlegend" id="spotLegend" aria-label="Signal strength key"></p>
+      <svg class="map" id="map" viewBox="0 0 360 180" role="img" aria-label="World map with day and night shading and recent spots" hidden></svg>
       </div>
 
       <div id="secScope">
@@ -223,6 +240,7 @@
         <span class="small" id="rtlMeter" aria-live="off"></span>
       </div>
       <p class="small" id="rtlStatus" role="status"></p>
+      <p class="small"><button type="button" class="ghost" id="rtlRestart" hidden title="Starts Band Watch's own rtl_tcp. It never closes a program Band Watch didn't start.">Restart receiver</button></p>
     </div>
     <iframe id="lsFrame" class="rxframe" title="Web receiver" allow="autoplay" referrerpolicy="origin" hidden></iframe>
     <p class="small muted lsmore">Find more receivers: <a href="http://rx.linkfanel.net/" target="_blank" rel="noopener noreferrer">KiwiSDR map</a> ·
@@ -301,7 +319,7 @@
       <button type="button" class="lbtn" id="dcWindow" title="Open the decodes in their own window">Results window</button>
     </div>
     <div class="dcrow">
-      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option><option value="WSPR">WSPR (2 min)</option><option value="CW">CW (Morse)</option><option value="SSTV">SSTV (pictures)</option><option value="APRS">APRS (2 m packets)</option></select></label>
+      <label>Mode <select id="dcMode"><option value="FT8">FT8 (15 s)</option><option value="FT4">FT4 (7.5 s)</option><option value="WSPR">WSPR (2 min)</option><option value="CW">CW (Morse)</option><option value="RTTY">RTTY (radioteletype)</option><option value="SSTV">SSTV (pictures)</option><option value="APRS">APRS (2 m packets)</option></select></label>
       <label class="grow">Audio from <select id="dcSrc"><option value="rtl">My RTL-SDR (Listen panel)</option><option value="mic">This computer's sound input (a radio, or a virtual cable)</option></select></label>
       <label class="grow" id="dcDevRow" hidden>Sound input <select id="dcDev"><option value="">Default input</option></select></label>
     </div>
@@ -410,6 +428,21 @@
         </div>
       </details>
     </div>
+    <div class="dcrtty" id="dcRtty" hidden>
+      <div class="dcrow">
+        <label>Speed <select id="rttyBaud"><option value="45.45">45.45 baud (standard)</option><option value="50">50 baud</option><option value="75">75 baud</option></select></label>
+        <label>Shift <select id="rttyShift"><option value="170">170 Hz (standard)</option><option value="425">425 Hz</option><option value="450">450 Hz (DWD weather)</option><option value="850">850 Hz</option></select></label>
+        <label>Lower tone (Hz) <input type="number" id="rttyLow" min="300" max="3000" step="5" value="2125" inputmode="numeric"></label>
+        <button type="button" class="ghost" id="rttyFind" title="Listens for two seconds and picks the tone pair it hears">Find the tones</button>
+      </div>
+      <div class="dcrow">
+        <label class="small dcchk"><input type="checkbox" id="rttyReverse"> Reverse (swap mark and space)</label>
+        <label class="small dcchk"><input type="checkbox" id="rttyUsos" checked> Unshift on space (USOS)</label>
+        <button type="button" class="ghost" id="rttyClear">Clear</button>
+      </div>
+      <div class="small muted" id="rttyInfo"></div>
+      <pre class="dccwtext" id="dcRttyText" aria-live="polite"></pre>
+    </div>
     <div class="dccw" id="dcCw" hidden>
       <div class="small muted" id="dcCwInfo"></div>
       <pre class="dccwtext" id="dcCwText" aria-live="polite"></pre>
@@ -511,6 +544,114 @@
           The rotator only moves when you ask it to; <b>Stop</b> or <b>Esc</b> stops it.</p>
       </div>
     </div>
+  </section>
+
+  <section class="panel" id="secDv" aria-labelledby="dvTitle">
+    <div class="phead">
+      <h2 id="dvTitle">Digital voice</h2>
+      <span class="small muted">DMR, BrandMeister and Yaesu System Fusion (add-on)</span>
+    </div>
+    <p class="small">Band Watch can't make or send DMR or Fusion (C4FM) voice itself: they use a patented voice codec
+      (AMBE) that only radios and hotspots have. Band Watch can put your Yaesu radio on C4FM, and take you to the right pages.</p>
+    <h3 class="small">Fusion (C4FM) on your radio</h3>
+    <div class="dcrow" id="dvChans"></div>
+    <div class="dcrow">
+      <label class="small txlvl">Frequency <input type="number" id="dvFreq" min="144" max="440" step="0.0125" placeholder="145.375" style="width:7em"> MHz</label>
+      <button type="button" class="ghost" id="dvGo">Set C4FM</button>
+    </div>
+    <p class="small" id="dvNote" role="status" aria-live="polite"></p>
+    <p class="small muted">This only sets the frequency and C4FM mode (2 m and 70 cm). Band Watch never transmits here:
+      you talk on your own microphone. For a repeater or WIRES-X node, use a memory channel on the radio with its shift and tone.</p>
+    <h3 class="small">BrandMeister (DMR)</h3>
+    <div class="dcrow">
+      <a class="lbtn optlink" href="https://hose.brandmeister.network/" target="_blank" rel="noopener noreferrer">Hoseline: listen in your browser</a>
+      <a class="lbtn optlink" href="https://brandmeister.network/?page=talkgroups" target="_blank" rel="noopener noreferrer">Talkgroups</a>
+      <a class="lbtn optlink" href="https://brandmeister.network/?page=lh" target="_blank" rel="noopener noreferrer">Last heard</a>
+    </div>
+    <p class="small muted">Talkgroups to try: <b>235</b> UK wide, <b>91</b> worldwide, <b>92</b> Europe, <b>9990</b> Parrot
+      (plays you back, to test your audio). On Hoseline, pick the talkgroup to listen.</p>
+    <h3 class="small">DMR over the internet</h3>
+    <p class="small" id="dvNet">BrandMeister links DMR repeaters and hotspots all over the world through the internet.
+      <b>To listen</b>, you need no radio: Hoseline plays the talkgroups in your browser.
+      <b>To talk</b>, you need something with the AMBE voice codec. The usual way is a DMR radio and a hotspot
+      (Pi-Star or WPSD) on your home internet. Apps such as DroidStar can connect too, with an AMBE USB stick
+      (e.g. ThumbDV or DVstick 30). Either way you need your licence and a DMR ID from RadioID.net.
+      Band Watch can't carry the voice itself.</p>
+    <div class="dcrow">
+      <a class="lbtn optlink" href="https://radioid.net/" target="_blank" rel="noopener noreferrer">RadioID.net: get a DMR ID</a>
+      <a class="lbtn optlink" href="https://www.pistar.uk/" target="_blank" rel="noopener noreferrer">Pi-Star</a>
+      <a class="lbtn optlink" href="https://w0chp.radio/wpsd-project/" target="_blank" rel="noopener noreferrer">WPSD</a>
+      <a class="lbtn optlink" href="https://github.com/nostar/DroidStar" target="_blank" rel="noopener noreferrer">DroidStar</a>
+    </div>
+    <h3 class="small">UK repeaters</h3>
+    <div class="dcrow">
+      <a class="lbtn optlink" href="https://ukrepeater.net/multimode.html?dmode=FUSION" target="_blank" rel="noopener noreferrer">Fusion repeaters</a>
+      <a class="lbtn optlink" href="https://ukrepeater.net/multimode.html?dmode=DMR" target="_blank" rel="noopener noreferrer">DMR repeaters</a>
+      <a class="lbtn optlink" href="https://ukrepeater.net/repeaterlist.html" target="_blank" rel="noopener noreferrer">All repeaters</a>
+    </div>
+    <p class="small muted">From ukrepeater.net, run by the RSGB's repeater committee (ETCC).</p>
+    <h3 class="small">Your hotspot</h3>
+    <div class="dcrow">
+      <label class="grow">Dashboard address <input type="text" id="dvHotspot" placeholder="http://pi-star.local/" spellcheck="false" autocomplete="off"></label>
+      <a class="lbtn optlink" id="dvHotspotOpen" target="_blank" rel="noopener noreferrer" hidden>Open dashboard</a>
+    </div>
+    <p class="small" id="dvHotNote" role="status"></p>
+    <p class="small muted">A Pi-Star or WPSD hotspot shows its dashboard on your home network, e.g. http://pi-star.local/ or its number (192.168.x.x).</p>
+  </section>
+
+  <section class="panel" id="secRpt" aria-labelledby="rpTitle">
+    <div class="phead">
+      <h2 id="rpTitle">My repeaters</h2>
+      <span class="small muted">2 m and 70 cm, listed by you. <span id="rpCount"></span></span>
+    </div>
+    <p class="small">Add the repeaters you use, nearest first. <b>Tune</b> puts your radio or RTL-SDR on the repeater's <b>output</b> so you can listen.
+      It is listening only: Band Watch doesn't set the shift or tone on your radio and never transmits. Band Watch comes with no repeater list,
+      so everything here is yours.</p>
+    <form id="rpForm" autocomplete="off">
+      <div class="dcrow">
+        <label>Callsign <input type="text" id="rpCall" maxlength="14" placeholder="GB3XX" spellcheck="false" required></label>
+        <label>Output (MHz) <input type="number" id="rpOut" min="144" max="440" step="0.0125" placeholder="145.6" required></label>
+        <label>Shift (MHz) <input type="number" id="rpOff" min="-10" max="10" step="0.0125" placeholder="-0.6"></label>
+        <label>CTCSS (Hz) <input type="text" id="rpCtcss" inputmode="decimal" list="rpTones" placeholder="82.5" style="width:6em"></label>
+        <datalist id="rpTones"></datalist>
+        <label>DCS / colour code <input type="text" id="rpCode" maxlength="14" placeholder="CC1" style="width:7em"></label>
+        <label>Mode <select id="rpMode"></select></label>
+      </div>
+      <div class="dcrow">
+        <label>Locator <input type="text" id="rpLoc" maxlength="12" placeholder="IO93fa" style="width:7em" spellcheck="false"></label>
+        <label>Town <input type="text" id="rpTown" maxlength="40" placeholder="Sheffield"></label>
+        <label class="grow">Notes <input type="text" id="rpNotes" maxlength="200" placeholder="Open 24 hours, needs 1750 Hz?"></label>
+        <button type="submit" id="rpSave" class="lbtn">Add repeater</button>
+        <button type="button" id="rpCancel" class="ghost" hidden>Cancel</button>
+      </div>
+      <p class="small err" id="rpErr" role="alert"></p>
+    </form>
+    <p class="small muted">Only 2 m (144–146 MHz) and 70 cm (430–440 MHz) are accepted. The shift is where the repeater listens, compared with its output:
+      −0.6 on 2 m, +1.6 on most 70 cm ones. The UK band plan above shows the repeater channels.</p>
+    <p class="small" id="rpNote" role="status" aria-live="polite"></p>
+    <p class="small muted" id="rpHome"></p>
+    <p class="small" id="rpEmpty">Nothing here yet. Add a repeater above, or import a file you downloaded.</p>
+    <div class="scroll">
+      <table class="act rpt" id="rpTable">
+        <thead><tr><th>Repeater</th><th class="num">Output MHz</th><th class="num">Shift</th><th>Tone</th><th>Mode</th><th>Where</th><th class="num">From you</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="rpRows"></tbody>
+      </table>
+    </div>
+    <h3 class="small">Import a CSV you downloaded</h3>
+    <div class="dcrow">
+      <label class="grow">CSV file <input type="file" id="rpFile" accept=".csv,.txt,text/csv,text/plain"></label>
+      <button type="button" class="lbtn" id="rpImpGo" hidden>Add to My repeaters</button>
+    </div>
+    <div id="rpPreview" role="status" aria-live="polite" hidden></div>
+    <p class="small muted"><b>Only import lists you're allowed to use for your own station.</b> The file is read in your browser and never uploaded.
+      Column names such as Callsign, Output (or TX), Input (or RX), Offset, CTCSS, Mode, Locator and Town are picked up automatically.</p>
+    <h3 class="small">Find repeaters near you</h3>
+    <div class="dcrow">
+      <a class="lbtn optlink" href="https://ukrepeater.net/repeaterlist.html" target="_blank" rel="noopener noreferrer">ukrepeater.net</a>
+      <a class="lbtn optlink" href="https://hearham.com/" target="_blank" rel="noopener noreferrer">Hearham</a>
+      <a class="lbtn optlink" href="https://www.repeaterbook.com/" target="_blank" rel="noopener noreferrer">RepeaterBook</a>
+    </div>
+    <p class="small muted">These open each site's own search in a new tab. Band Watch doesn't send them your locator or copy anything from them.</p>
   </section>
 
   <section class="panel" id="secSats" aria-labelledby="satTitle">
@@ -650,6 +791,46 @@
     <p class="small muted" id="sunNote"></p>
   </section>
 
+  <section class="panel" id="secAnt" aria-labelledby="antTitle">
+    <div class="phead">
+      <h2 id="antTitle">Antenna A/B</h2>
+      <a class="small" href="/help#antab" target="_blank" rel="noopener noreferrer">How to run a fair test</a>
+    </div>
+    <p class="small muted">Compare two antennas (or before and after a change) using real reports of your own WSPR, FT8 or FT4 signal. This only
+      reads reports: it never controls your radio and never transmits. You send with your own software and switch antennas yourself.</p>
+    <div class="antnames">
+      <label>Antenna A <input id="antNameA" maxlength="30" autocomplete="off" placeholder="e.g. Dipole"></label>
+      <label>Antenna B <input id="antNameB" maxlength="30" autocomplete="off" placeholder="e.g. Vertical"></label>
+    </div>
+    <div class="antbtns">
+      <button type="button" class="antbig" id="antOnA" aria-pressed="false">Now on antenna A</button>
+      <button type="button" class="antbig" id="antOnB" aria-pressed="false">Now on antenna B</button>
+      <button type="button" class="ghost" id="antStop">Stop logging</button>
+    </div>
+    <p class="small" id="antStatus" role="status"></p>
+    <ul class="antlist" id="antList"></ul>
+    <details class="antman">
+      <summary>Add a period by typing the times</summary>
+      <div class="antnames">
+        <label>Antenna <select id="antManAnt"><option value="A">A</option><option value="B">B</option></select></label>
+        <label>From (UTC) <input type="datetime-local" id="antManFrom"></label>
+        <label>To (UTC) <input type="datetime-local" id="antManTo"></label>
+        <button type="button" class="ghost" id="antManAdd">Add period</button>
+      </div>
+      <p class="err" id="antManErr" role="alert"></p>
+    </details>
+    <div class="antbtns">
+      <label>Reports from <select id="antSrc"><option value="wspr">WSPR</option><option value="psk">FT8 and FT4</option><option value="both">Both</option></select></label>
+      <button type="button" id="antGo">Compare</button>
+      <span class="small muted">Looks up reports of your callsign: WSPR on wspr.live (up to 7 days), FT8 and FT4 on PSK Reporter (last 24 hours).</span>
+    </div>
+    <p class="small muted" id="antCollect" role="status"></p>
+    <div class="antbtns"><button type="button" class="ghost" id="antClearFt8" disabled>Clear FT8 history</button>
+      <span class="small muted">FT8 and FT4: keep Band Watch open while you swap antennas. It collects the reports every 5 minutes, and matches build up as stations hear you on each antenna.</span></div>
+    <p class="small antmsg" id="antMsg" role="status"></p>
+    <div id="antOut"></div>
+  </section>
+
   <section class="panel" id="secActivity" aria-labelledby="actTitle">
     <div class="phead">
       <h2 id="actTitle">Band activity</h2>
@@ -783,7 +964,11 @@
       <span class="small muted">Show these sections</span>
       <div class="secs" id="optSecs"></div>
       <span class="small muted">Add-ons (extra panels, off until you tick them)</span>
-      <div class="secs" id="optAddons"><label><input type="checkbox" data-addon="rotator"> Rotator: turn your antenna</label></div>
+      <div class="secs" id="optAddons"><label><input type="checkbox" data-addon="rotator"> Rotator: turn your antenna</label><label><input type="checkbox" data-addon="dv"> Digital voice: DMR, BrandMeister and Fusion</label></div>
+
+      <div class="optrow small">
+        <label><input type="checkbox" id="optSecNav"> Show the section menu (a bar under the title with a button for each panel)</label>
+      </div>
 
       <h3 class="opth">Background</h3>
       <div class="swatches bgsw" id="optBgPresets" role="group" aria-label="Background presets"></div>
@@ -1040,59 +1225,69 @@
     </div>
   </dialog>
 
-  <p class="foot"><b>Band Watch by M3vrv.</b> Spots come from <a href="https://pskreporter.info" target="_blank" rel="noopener noreferrer">PSK Reporter</a>:
+  <p class="foot"><b>Band Watch by M3VRV &amp; King Coder.</b> Spots come from <a href="https://pskreporter.info" target="_blank" rel="noopener noreferrer">PSK Reporter</a>:
   stations in your grid square heard by others, and stations heard in your grid square, over the last 30 minutes.
   Solar numbers come from <a href="https://www.swpc.noaa.gov" target="_blank" rel="noopener noreferrer">NOAA SWPC</a>.
   Sunspot regions, X-rays, solar wind and NOAA scales also come from NOAA SWPC.
   Status is judged from spot counts: Open means 15 or more stations, Marginal means 5 to 14, Closed means fewer.
-  The scope is drawn from those spot reports, not from a receiver. Lines on the main map are straight; the station window shows the true great-circle path.
+  The scope is drawn from those spot reports, not from a receiver. On the map, the Map view draws curved great-circle paths and the Bowl view draws simple straight lines.
   Listening uses public web receivers run by volunteers; Band Watch doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.38.0"></script>
-<script src="/js/bandplan.js?v=1.38.0"></script>
-<script src="/js/core.js?v=1.38.0"></script>
-<script src="/js/modes.js?v=1.38.0"></script>
-<script src="/js/map.js?v=1.38.0"></script>
-<script src="/js/scope.js?v=1.38.0"></script>
-<script src="/js/monitor.js?v=1.38.0"></script>
-<script src="/js/lookup.js?v=1.38.0"></script>
-<script src="/js/worldclock.js?v=1.38.0"></script>
-<script src="/js/locator.js?v=1.38.0"></script>
-<script src="/js/activity.js?v=1.38.0"></script>
-<script src="/js/qrz.js?v=1.38.0"></script>
-<script src="/js/hovercard.js?v=1.38.0"></script>
-<script src="/js/station.js?v=1.38.0"></script>
-<script src="/js/sdr-dsp.js?v=1.38.0"></script>
-<script src="/js/sdr.js?v=1.38.0"></script>
-<script src="/js/rxfx.js?v=1.38.0"></script>
-<script src="/js/clearrx-link.js?v=1.38.0"></script>
-<script src="/js/listen.js?v=1.38.0"></script>
-<script src="/js/rig.js?v=1.38.0"></script>
-<script src="/js/rigrx.js?v=1.38.0"></script>
-<script src="/js/xota.js?v=1.38.0"></script>
-<script src="/js/satmath.js?v=1.38.0"></script>
-<script src="/js/sats.js?v=1.38.0"></script>
-<script src="/js/eibi-data.js?v=1.38.0"></script>
-<script src="/js/eibi.js?v=1.38.0"></script>
-<script src="/js/panel.js?v=1.38.0"></script>
-<script src="/js/logbook.js?v=1.38.0"></script>
-<script src="/js/wanted.js?v=1.38.0"></script>
-<script src="/js/dccols.js?v=1.38.0"></script>
-<script src="/js/decoders.js?v=1.38.0"></script>
-<script src="/js/ft8.js?v=1.38.0"></script>
-<script src="/js/ftxtx.js?v=1.38.0"></script>
-<script src="/js/tx.js?v=1.38.0"></script>
-<script src="/js/cwtx.js?v=1.38.0"></script>
-<script src="/js/cwkey.js?v=1.38.0"></script>
-<script src="/js/sstv.js?v=1.38.0"></script>
-<script src="/js/sstvui.js?v=1.38.0"></script>
-<script src="/js/aprsui.js?v=1.38.0"></script>
-<script src="/js/sun.js?v=1.38.0"></script>
-<script src="/js/options.js?v=1.38.0"></script>
-<script src="/js/windows.js?v=1.38.0"></script>
-<script src="/js/rotmath.js?v=1.38.0"></script>
-<script src="/js/rotator.js?v=1.38.0"></script>
-<script src="/js/looks.js?v=1.38.0"></script>
-<script src="/js/app.js?v=1.38.0"></script>
+<script src="/js/install.js?v=1.40.0"></script>
+<script src="/js/bandplan.js?v=1.40.0"></script>
+<script src="/js/core.js?v=1.40.0"></script>
+<script src="/js/modes.js?v=1.40.0"></script>
+<script src="/js/vendor/land110.js?v=1.40.0"></script>
+<script src="/js/mapmath.js?v=1.40.0"></script>
+<script src="/js/map.js?v=1.40.0"></script>
+<script src="/js/spotmap.js?v=1.40.0"></script>
+<script src="/js/scope.js?v=1.40.0"></script>
+<script src="/js/monitor.js?v=1.40.0"></script>
+<script src="/js/lookup.js?v=1.40.0"></script>
+<script src="/js/worldclock.js?v=1.40.0"></script>
+<script src="/js/locator.js?v=1.40.0"></script>
+<script src="/js/activity.js?v=1.40.0"></script>
+<script src="/js/qrz.js?v=1.40.0"></script>
+<script src="/js/hovercard.js?v=1.40.0"></script>
+<script src="/js/station.js?v=1.40.0"></script>
+<script src="/js/sdr-dsp.js?v=1.40.0"></script>
+<script src="/js/sdr-stall.js?v=1.40.0"></script>
+<script src="/js/sdr.js?v=1.40.0"></script>
+<script src="/js/rxfx.js?v=1.40.0"></script>
+<script src="/js/clearrx-link.js?v=1.40.0"></script>
+<script src="/js/listen.js?v=1.40.0"></script>
+<script src="/js/rig.js?v=1.40.0"></script>
+<script src="/js/rigrx.js?v=1.40.0"></script>
+<script src="/js/xota.js?v=1.40.0"></script>
+<script src="/js/satmath.js?v=1.40.0"></script>
+<script src="/js/sats.js?v=1.40.0"></script>
+<script src="/js/eibi-data.js?v=1.40.0"></script>
+<script src="/js/eibi.js?v=1.40.0"></script>
+<script src="/js/panel.js?v=1.40.0"></script>
+<script src="/js/logbook.js?v=1.40.0"></script>
+<script src="/js/wanted.js?v=1.40.0"></script>
+<script src="/js/dccols.js?v=1.40.0"></script>
+<script src="/js/dcwording.js?v=1.40.0"></script>
+<script src="/js/decoders.js?v=1.40.0"></script>
+<script src="/js/ft8.js?v=1.40.0"></script>
+<script src="/js/ftxtx.js?v=1.40.0"></script>
+<script src="/js/tx.js?v=1.40.0"></script>
+<script src="/js/cwtx.js?v=1.40.0"></script>
+<script src="/js/cwkey.js?v=1.40.0"></script>
+<script src="/js/sstv.js?v=1.40.0"></script>
+<script src="/js/sstvui.js?v=1.40.0"></script>
+<script src="/js/aprsui.js?v=1.40.0"></script>
+<script src="/js/sun.js?v=1.40.0"></script>
+<script src="/js/options.js?v=1.40.0"></script>
+<script src="/js/windows.js?v=1.40.0"></script>
+<script src="/js/rotmath.js?v=1.40.0"></script>
+<script src="/js/rotator.js?v=1.40.0"></script>
+<script src="/js/antenna.js?v=1.40.0"></script>
+<script src="/js/dv.js?v=1.40.0"></script>
+<script src="/js/repeaters.js?v=1.40.0"></script>
+<script src="/js/looks.js?v=1.40.0"></script>
+<script src="/js/app.js?v=1.40.0"></script>
+<script src="/js/nav.js?v=1.40.0"></script>
+<script src="/js/support.js?v=1.40.0"></script>
 </body>
 </html>

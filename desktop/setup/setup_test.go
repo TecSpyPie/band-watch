@@ -118,7 +118,7 @@ func TestInstalledVersion(t *testing.T) {
 	if got := installedVersion(dir); got != "the version you have" {
 		t.Error(got)
 	}
-	os.WriteFile(filepath.Join(dir, "BUILD-INFO.txt"), []byte("Band Watch by M3vrv\r\nVersion 1.12.1\r\nBuilt 2026-11-17T03:38:45Z\r\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "BUILD-INFO.txt"), []byte("Band Watch by M3VRV & King Coder\r\nVersion 1.12.1\r\nBuilt 2026-11-17T03:38:45Z\r\n"), 0o644)
 	if got := installedVersion(dir); got != "1.12.1" {
 		t.Error(got)
 	}

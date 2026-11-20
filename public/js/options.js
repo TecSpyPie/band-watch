@@ -18,7 +18,7 @@ const SECTIONS = [
 ];
 const DEFAULT_SETTINGS = {
   theme: "system", look: "classic", accent: "", text: 100, zoom: 100, width: "1100px", cols: "auto", density: "comfortable",
-  scopeRes: "normal", scopeH: "280px", hide: [], modesOff: [], bgDim: 55, addons: [],
+  scopeRes: "normal", scopeH: "280px", hide: [], modesOff: [], bgDim: 55, addons: [], secNav: true,
 };
 let settings = { ...DEFAULT_SETTINGS };
 
@@ -43,6 +43,7 @@ function applySettings() {
   root.dataset.cols = settings.cols;
   root.dataset.hide = settings.hide.join(" ");
   root.dataset.addons = (settings.addons || []).join(" ");
+  if (settings.secNav === false) root.dataset.secnav = "off"; else delete root.dataset.secnav;
   root.style.setProperty("--fs", String(settings.text / 100));
   root.style.setProperty("--zoom", String(settings.zoom / 100));
   root.style.setProperty("--maxw", settings.width);
@@ -86,6 +87,7 @@ function renderOptions() {
     ? `<button type="button" data-c="${c}" style="background:${c}" aria-label="${name}" title="${name}" aria-pressed="${settings.accent === c}"></button>`
     : `<button type="button" class="auto" data-c="" aria-pressed="${!settings.accent}">${name}</button>`).join("");
   $("optAccent").querySelectorAll("button").forEach((b) => { b.onclick = () => { settings.accent = b.dataset.c; saveSettings(); renderOptions(); }; });
+  $("optSecNav").checked = settings.secNav !== false;
   $("optAddons").querySelectorAll("input[data-addon]").forEach((i) => { i.checked = (settings.addons || []).includes(i.dataset.addon); });
   $("optSecs").innerHTML = SECTIONS.map(([k, name]) =>
     `<label><input type="checkbox" data-sec="${k}"${settings.hide.includes(k) ? "" : " checked"}> ${name}</label>`).join("");
@@ -112,6 +114,7 @@ function setupOptions() {
   for (const id of ["optTheme", "optLook"]) $(id).addEventListener("input", renderOptions); bind("optZoom", "zoom", true); bind("optWidth", "width");
   bind("optCols", "cols"); bind("optDensity", "density"); bind("optScopeRes", "scopeRes"); bind("optScopeH", "scopeH");
   $("optDim").addEventListener("input", (e) => { settings.bgDim = Number(e.target.value); $("optDimVal").textContent = `${settings.bgDim}%`; store("bw-display", settings); applySettings(); });
+  $("optSecNav").addEventListener("change", (e) => { settings.secNav = e.target.checked; saveSettings(); });
   $("optReset").addEventListener("click", () => {
     settings = { ...DEFAULT_SETTINGS, hide: [], modesOff: settings.modesOff };
     saveSettings();
@@ -124,7 +127,7 @@ function setupOptions() {
     const k = i.dataset.addon;
     settings.addons = i.checked ? [...new Set([...(settings.addons || []), k])] : (settings.addons || []).filter((x) => x !== k);
     saveSettings();
-    const sec = { rotator: "secRot" }[k];
+    const sec = { rotator: "secRot", dv: "secDv" }[k];
     if (i.checked && sec && $(sec)) setTimeout(() => $(sec).scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   });
   setupBackground();
@@ -221,7 +224,7 @@ function setupBackground() {
 
 /* ===================== Profiles ===================== */
 
-const PROFILE_KEYS = ["bw-display", "bw-grid", "bw-call", "bw-mon", "bw-clocks", "bw-clocks-auto", "bw-locauto", "bw-listen", "bw-sdr", "bw-decode", "bw-bg", "bw-rig", "bw-xota", "bw-sats", "bw-log", "bw-wanted"];
+const PROFILE_KEYS = ["bw-display", "bw-grid", "bw-call", "bw-mon", "bw-clocks", "bw-clocks-auto", "bw-locauto", "bw-listen", "bw-sdr", "bw-decode", "bw-bg", "bw-rig", "bw-xota", "bw-sats", "bw-log", "bw-wanted", "bw-repeaters"];
 
 function loadProfiles() {
   try { const p = JSON.parse(load("bw-profiles")); return p && typeof p === "object" && !Array.isArray(p) ? p : {}; } catch { return {}; }
@@ -317,6 +320,8 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.40.0", "Section menu and folding panels, RTTY receiver, Antenna A/B (WSPR, FT8, FT4), live world map, layered Glass look, 2 m and 70 cm with My repeaters, stuck-receiver recovery; ClearRX effects rack and 3D scope"],
+  ["1.39.0", "Digital voice add-on: one-click C4FM on a Yaesu radio, BrandMeister (Hoseline, talkgroups, last heard), UK repeater lists, your hotspot's dashboard"],
   ["1.38.0", "CB channels to listen to (UK 27/81 and CEPT), and Help pages on UK licences and exams and good operating"],
   ["1.37.0", "APRS on 2 m: decode packets with your RTL-SDR (144.800 MHz FM or the ISS), stations and weather on the map"],
   ["1.36.0", "Add-ons in Settings; the Rotator add-on: compass dial, point at a locator or callsign (short/long path), follow a satellite"],

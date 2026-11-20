@@ -65,6 +65,13 @@ function aprsMapSvg(X, Y) {
   return s;
 }
 
+/** The same stations as plain points, for the spots map (Map view). */
+function aprsMapPoints() {
+  if (!aprsui.onMap || dc.mode !== "APRS") return [];
+  return [...aprsui.stations.values()].filter((st) => st.lat != null)
+    .map((st) => ({ lat: st.lat, lon: st.lon, tip: `${st.from}: ${aprsDetail(st) || APRS_TYPE[st.type]}` }));
+}
+
 function setupAprs() {
   if (!$("dcAprs")) return;
   $("aprsMap").checked = aprsui.onMap;

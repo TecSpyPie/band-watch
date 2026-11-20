@@ -162,7 +162,7 @@ jobs:
           - **Windows:** `BandWatch-Setup.exe`: run it and answer Yes. It installs to `C:\BandWatch`
             for you only, no administrator rights needed.
           - **Windows with Smart App Control on:** `BandWatch-Windows.zip`, then `install.bat`.
-          - **ClearRX by M3VRV** (radio audio processor, Windows): `ClearRX-Windows.zip`: unzip it (for example into
+          - **ClearRX by M3VRV & King Coder** (radio audio processor, Windows): `ClearRX-Windows.zip`: unzip it (for example into
             `C:\BandWatch\ClearRX`) and run `ClearRX.exe`.
           - **Phone, tablet or any browser:** https://band-watch.ample.run
 

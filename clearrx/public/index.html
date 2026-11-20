@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ClearRX by M3VRV</title>
+<title>ClearRX by M3VRV &amp; King Coder</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/clearrx.css?v=1.2.0">
+<link rel="stylesheet" href="/clearrx.css?v=1.3.0">
 </head>
 <body>
 <main class="rack" aria-labelledby="title">
@@ -13,7 +13,7 @@
   <span class="screw bl" aria-hidden="true"></span><span class="screw br" aria-hidden="true"></span>
 
   <header class="top">
-    <h1 id="title"><span class="logo">ClearRX</span> <span class="by">by M3VRV</span></h1>
+    <h1 id="title"><span class="logo">ClearRX</span> <span class="by">by M3VRV &amp; King Coder</span></h1>
     <span class="tag">radio audio processor</span>
     <span class="link" id="bwLink" hidden>Band Watch is using these settings</span>
     <button type="button" class="key power" id="power" aria-pressed="false">Start</button>
@@ -38,52 +38,37 @@
     </div>
     <div class="meters">
       <div class="meter"><span>In</span><div class="bar"><i id="inBar"></i></div><b id="inDb"></b></div>
-      <div class="meter"><span>Out</span><div class="bar"><i id="outBar"></i></div><b id="outDb"></b></div>
       <p class="warn" id="clip" role="status"></p>
     </div>
   </section>
 
-  <section class="controls" aria-label="Effects">
+  <section class="controls" aria-label="Effects rack">
     <div class="presets" id="presets" role="group" aria-label="Preset"></div>
-    <div class="fx">
-      <label class="sw"><input type="checkbox" id="fxVoice"> Voice filter</label>
-      <label class="sub">from <select id="fxLo"></select></label>
-      <label class="sub">to <select id="fxHi"></select></label>
+    <div class="rackbar">
+      <label class="sw bypass"><input type="checkbox" id="bypass"> Hear it without ClearRX (to compare)</label>
+      <button type="button" class="key mini" id="resetOrder">Default order</button>
     </div>
-    <div class="fx">
-      <label class="sw"><input type="checkbox" id="fxCw"> CW peak</label>
-      <label class="sub">note <select id="fxTone"></select></label>
-      <label class="sub">width <select id="fxWidth"></select></label>
-    </div>
-    <div class="fx"><label class="sw"><input type="checkbox" id="fxNotch"> Auto notch (removes whistles)</label></div>
-    <div class="fx">
-      <label class="sw"><input type="checkbox" id="fxNr"> Noise reduction</label>
-      <label class="sub">strength <select id="fxNrLevel"><option value="1">Light</option><option value="2">Medium</option><option value="3">Strong</option></select></label>
-    </div>
-    <div class="fx">
-      <label class="sw"><input type="checkbox" id="fxComp"> Steady volume (compressor)</label>
-      <label class="sub">speed <select id="fxAgc"><option value="fast">Fast</option><option value="medium">Medium</option><option value="slow">Slow</option></select></label>
-    </div>
-    <div class="fx">
-      <label class="sw"><input type="checkbox" id="fxNb"> Noise blanker (clicks and crackles)</label>
-      <label class="sub">strength <select id="fxNbLevel"><option value="1">Light</option><option value="2">Medium</option><option value="3">Strong</option></select></label>
-    </div>
-    <div class="fx">
-      <label class="sub">Notch at <select id="fxMnotch"></select></label>
-      <label class="sub">Squelch <select id="fxSq"></select></label>
-    </div>
-    <div class="fx">
-      <label class="sub">Bass <select id="fxBass"></select></label>
-      <label class="sub">Treble <select id="fxTreble"></select></label>
-    </div>
-    <div class="fx"><label class="sw"><input type="checkbox" id="bypass"> Hear it without ClearRX (to compare)</label></div>
+    <p class="rackhelp">The sound goes through the modules from the top to the bottom. Switch a module on or off, and use its arrows to move it:
+      the order changes how the sound comes out (for example, a compressor after the EQ works on the EQ's louder sound).</p>
+    <p class="rackhelp" id="rackNote" role="status"></p>
+    <ol class="mods" id="mods"></ol>
+  </section>
+
+  <section class="outmeter" aria-label="Output level">
+    <span class="olabel">Output</span>
+    <div class="bar"><i id="outBar"></i></div>
+    <b id="outDb"></b>
+    <span class="lamp" id="outLamp">CLIP</span>
+    <span class="orms" id="outRms"></span>
+    <p class="warn" id="outWarn" role="status"></p>
   </section>
 
   <p class="status" id="status" role="status">Pick where the sound comes from (your radio's USB sound card, or the PC's line-in), then press Start.</p>
   <footer class="small">Settings are kept on this PC. While ClearRX is open, Band Watch can send its RTL-SDR sound through it
     (Listen &gt; "Send my RTL-SDR sound through ClearRX"). <a href="#" id="quit">Close ClearRX</a></footer>
 </main>
-<script src="/js/rxfx.js?v=1.2.0"></script>
-<script src="/js/app.js?v=1.2.0"></script>
+<script src="/js/rxfx.js?v=1.3.0"></script>
+<script src="/js/scope3d.js?v=1.3.0"></script>
+<script src="/js/app.js?v=1.3.0"></script>
 </body>
 </html>

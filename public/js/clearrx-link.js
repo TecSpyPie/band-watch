@@ -53,6 +53,10 @@ function crxApply(s) {
   for (const k of ["voice", "lo", "hi", "cw", "tone", "width", "notch", "nr", "nrLevel", "comp", "nb", "nbLevel", "agc", ...zeroWhenOff]) {
     fx[k] = s.on === false ? (typeof s[k] === "boolean" ? false : zeroWhenOff.includes(k) ? 0 : s[k]) : s[k];
   }
+  // The rack (ClearRX 1.3 and later): the EQ, the compressor / limiter and the order of the modules. Older ClearRX sends none of these.
+  for (const k of ["eq", "eqGains", "cmp", "cmpThr", "cmpRatio", "cmpMakeup", "cmpLimit", "order"]) {
+    if (s[k] !== undefined) fx[k] = s.on === false && typeof s[k] === "boolean" ? false : s[k];
+  }
   if (typeof RxFx === "undefined") return;
   if (!crx.chain) crx.chain = new RxFx.Chain(fx);
   else crx.chain.configure(fx);

@@ -1,4 +1,4 @@
-# Band Watch by M3vrv
+# Band Watch by M3VRV & King Coder
 
 Live HF band conditions for radio amateurs: which bands are open from where you are, from
 PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence).
@@ -16,7 +16,7 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 
 - Best band now, a bands table and a map of who hears whom, from live PSK Reporter spots
 - Band scope: live spectrum and waterfall from your RTL-SDR, or drawn from spots
-- **ClearRX by M3VRV** (Windows): a radio audio processor of its own (a separate download, ClearRX-Windows.zip): voice and CW filters,
+- **ClearRX by M3VRV & King Coder** (Windows): a radio audio processor of its own (a separate download, ClearRX-Windows.zip): voice and CW filters,
   auto notch, noise reduction and steady volume for the sound from your radio, a mixer or any sound card. While it's
   open, Band Watch can send its RTL-SDR sound through it
 - Listen: public WebSDR/KiwiSDR receivers, or your own RTL-SDR (Blog V4, V3 or others) through rtl_tcp,
@@ -131,11 +131,16 @@ Band Watch doesn't show SOTA spots. SOTA's API terms say software written with A
 API without their approval, and Band Watch is written with Claude. You can still log summit contacts and
 export them with their SOTA reference in ADIF.
 
+## Support
+
+Band Watch and ClearRX are free and open source, and always will be.
+<!-- SUPPORT_URL: the owner can add a line here, e.g. "If you'd like to say thanks: https://ko-fi.com/yourname" (also set SUPPORT_URL in public/js/support.js) -->
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE). Data: spots from [PSK Reporter](https://pskreporter.info), park activators from [POTA](https://pota.app), shortwave schedules from [EiBi](http://www.eibispace.de/) (Eike Bierwirth), solar and
 space weather from [NOAA SWPC](https://www.swpc.noaa.gov), satellite orbits from [CelesTrak](https://celestrak.org)
-(worked out with [satellite.js](https://github.com/shashwatak/satellite-js), MIT).
+(worked out with [satellite.js](https://github.com/shashwatak/satellite-js), MIT), world map outline from [Natural Earth](https://www.naturalearthdata.com/) (110m land, public domain).
 
 Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md): ideas as Issues, code as pull requests. Please keep refresh rates modest:
 PSK Reporter is run by a volunteer.

@@ -32,7 +32,7 @@ function renderActivity() {
   $("actMine").disabled = !app.myCall;
   if (!app.myCall) $("actMine").checked = activity.mine = false;
 
-  $("actBands").innerHTML = [["all", `All (${all.length})`], ...BANDS.map((b) => [b, `${b} m (${counts[b] || 0})`])]
+  $("actBands").innerHTML = [["all", `All (${all.length})`], ...BANDS.map((b) => [b, `${bandName(b)} (${counts[b] || 0})`])]
     .map(([k, l]) => `<button type="button" data-b="${k}" aria-pressed="${k === activity.band}">${l}</button>`).join("");
   $("actBands").querySelectorAll("button").forEach((btn) => {
     btn.onclick = () => { activity.band = btn.dataset.b; activity.limit = 100; renderActivity(); };
@@ -52,7 +52,7 @@ function renderActivity() {
   const shown = rows.slice(0, activity.limit);
   $("actRows").innerHTML = shown.length
     ? shown.map((p) => `<tr class="${[activity.fresh.has(spotKey(p)) && "new", isMine(p) && "mine"].filter(Boolean).join(" ")}">` +
-      `<td>${new Date(p.ts).toISOString().slice(11, 16)}</td><td>${callLink(p.c)}</td><td>${p.band} m</td>` +
+      `<td>${new Date(p.ts).toISOString().slice(11, 16)}</td><td>${callLink(p.c)}</td><td>${bandName(p.band)}</td>` +
       `<td class="num"><button type="button" class="khz" data-k="${tuning(p).kHz}" data-m="${tuning(p).mode}" title="Listen here">${(p.fq * 1000).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</button></td>` +
       `<td>${esc(p.m)}</td><td class="num">${p.snr != null ? `${p.snr} dB` : "–"}</td><td class="num">${kmText(p.d)}</td><td>${esc(p.dir)}</td>` +
       `<td>${p.l ? callLink(p.l) : "–"}${p.l && baseCall(p.l) === app.myCall ? '<span class="you">you</span>' : ""}</td></tr>`).join("")
@@ -92,7 +92,7 @@ function renderMySummary() {
     return;
   }
   const far = hearMe.reduce((m, p) => (p.d > (m ? m.d : -1) ? p : m), null);
-  const bands = [...new Set(hearMe.map((p) => p.band))].sort((a, b) => Number(b) - Number(a)).map((b) => `${b} m`);
+  const bands = [...new Set(hearMe.map((p) => p.band))].sort((a, b) => BANDS.indexOf(a) - BANDS.indexOf(b)).map(bandName);
   el.innerHTML = `<b>${esc(app.myCall)}</b> in the last 30 minutes: ` +
     (hearMe.length
       ? `heard by <b>${stations(hearMe)}</b> station${stations(hearMe) === 1 ? "" : "s"} on ${bands.join(", ")}, the farthest ${callLink(far.c)} at ${kmText(far.d)}`

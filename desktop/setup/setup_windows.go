@@ -164,9 +164,9 @@ func registerUninstall(dest, version string, sizeKB int64) {
 	set := func(name, typ, value string) {
 		_ = hidden(exec.Command("reg", "add", uninstallKey, "/v", name, "/t", typ, "/d", value, "/f")).Run()
 	}
-	set("DisplayName", "REG_SZ", "Band Watch by M3vrv")
+	set("DisplayName", "REG_SZ", "Band Watch by M3VRV & King Coder")
 	set("DisplayVersion", "REG_SZ", version)
-	set("Publisher", "REG_SZ", "M3vrv")
+	set("Publisher", "REG_SZ", "M3VRV & King Coder")
 	set("DisplayIcon", "REG_SZ", filepath.Join(dest, "bandwatch.ico"))
 	set("InstallLocation", "REG_SZ", dest)
 	set("UninstallString", "REG_SZ", `"`+filepath.Join(dest, "uninstall.bat")+`"`)
