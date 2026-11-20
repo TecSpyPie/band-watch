@@ -636,7 +636,8 @@ table.sattab tr.satup td{background:color-mix(in srgb,var(--warm) 14%,transparen
   background:linear-gradient(180deg,color-mix(in srgb,var(--cool) 88%,#fff) 0%,var(--cool) 55%,color-mix(in srgb,var(--cool) 78%,#000) 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 var(--lip)) drop-shadow(0 6px 10px color-mix(in srgb,var(--cool) 30%,transparent))}
 :root:not([data-theme="contrast"]):not([data-theme="night"]) .hero .big{text-shadow:0 2px 0 var(--edge-hi),0 3px 6px var(--shade)}
-a.lbtn.helpbtn{text-decoration:none;display:inline-block}
+a.lbtn.helpbtn,a.lbtn.supportbtn{text-decoration:none;display:inline-block}
+a.lbtn.supportbtn[hidden]{display:none}
 
 /* 1.24.0: the ClearRX link in Listen */
 .crxrow[hidden] { display: none; }

@@ -1,0 +1,11 @@
+# Example only. To show GitHub's "Sponsor" button, the owner copies this file to
+# .github/FUNDING.yml and replaces the placeholders with real accounts. Do not
+# commit made-up usernames. Delete the lines you don't use.
+#
+# github: [your-github-username]
+# ko_fi: your-kofi-name
+# buy_me_a_coffee: your-bmc-name
+# liberapay: your-liberapay-name
+#
+# Also set SUPPORT_URL in public/js/support.js to show the in-app Support button
+# and the Help section (until then, nothing about support shows in the app).

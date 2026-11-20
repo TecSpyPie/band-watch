@@ -1,6 +1,7 @@
 # What's new
 
 ## Unreleased
+- **Optional "Support" link (hidden until set).** Band Watch stays 100% free: nothing is locked, and there are no popups, timers or reminders. The owner can set one support link in `public/js/support.js` (Ko-fi, GitHub Sponsors, Buy Me a Coffee or Liberapay, https only). Until then nothing shows. Once set, a small "Support" button appears in the header next to Help, and Help gets a "Support the project" section with an optional Supporters list. The README has a matching placeholder and `docs/FUNDING.yml.example` explains GitHub's Sponsor button.
 - **ClearRX: a 3D spectrum scope in the graphic EQ.** Above the EQ's sliders, a 3D terrain of the sound: pitch left to right (50 Hz to 6 kHz), time front to back (now at the front, older rows fading away behind), loudness as height and colour. The EQ's curve glows along the front edge with a marker for each of the ten bands and moves as you drag the sliders. **Before / After** shows the sound going in or coming out of ClearRX, and **3D scope** switches it off (both are remembered). It pauses when the page is hidden or the scope is scrolled out of view, and updates slower if your computer asks for reduced motion.
 - **Credits: "by M3VRV & King Coder".** Band Watch and ClearRX now credit both the owner (M3VRV) and his AI partner, King Coder, in their titles, headers, installer and Windows file details.
 - **ClearRX: an effects rack.** ClearRX now works like a rack of effect modules. Each stage is a card with its own

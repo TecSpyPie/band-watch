@@ -131,6 +131,11 @@ Band Watch doesn't show SOTA spots. SOTA's API terms say software written with A
 API without their approval, and Band Watch is written with Claude. You can still log summit contacts and
 export them with their SOTA reference in ADIF.
 
+## Support
+
+Band Watch and ClearRX are free and open source, and always will be.
+<!-- SUPPORT_URL: the owner can add a line here, e.g. "If you'd like to say thanks: https://ko-fi.com/yourname" (also set SUPPORT_URL in public/js/support.js) -->
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE). Data: spots from [PSK Reporter](https://pskreporter.info), park activators from [POTA](https://pota.app), shortwave schedules from [EiBi](http://www.eibispace.de/) (Eike Bierwirth), solar and
