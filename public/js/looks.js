@@ -81,3 +81,51 @@
   new MutationObserver(check).observe(root, { attributes: true, attributeFilter: ["data-look"] });
   if (document.body) check(); else addEventListener("DOMContentLoaded", check);
 })();
+
+/* Lighting for all three looks: a soft light follows the mouse across the panel under it (looks.css draws it from
+   --lx / --ly on the panel with class "lit"). Only with a mouse, and never for people who ask for reduced motion. */
+(function () {
+  const root = document.documentElement;
+  const PANELS = ".wrap > .panel, .wrap > .cols > section, body.popwin > .panel, .hero";
+  const mouse = window.matchMedia("(hover: hover) and (pointer: fine)");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let on = false, lit = null, last = null, raf = 0;
+
+  function clear() {
+    if (!lit) return;
+    lit.classList.remove("lit"); lit.style.removeProperty("--lx"); lit.style.removeProperty("--ly");
+    lit = null;
+  }
+  function paint() {
+    raf = 0;
+    const e = last, t = e && e.target;
+    let el = t instanceof Element ? t.closest(PANELS) : null;
+    if (el && el.id === "secPanel") el = null;
+    if (el !== lit) { clear(); if (el) { lit = el; el.classList.add("lit"); } }
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--lx", Math.round(e.clientX - r.left) + "px");
+    el.style.setProperty("--ly", Math.round(e.clientY - r.top) + "px");
+  }
+  function onMove(e) { last = e; if (!raf) raf = requestAnimationFrame(paint); }
+  function onLeave() { if (raf) { cancelAnimationFrame(raf); raf = 0; } clear(); }
+
+  function check() {
+    const want = ["rig", "glass", "space"].includes(root.dataset.look) && mouse.matches && !calm.matches;
+    if (want === on) return;
+    on = want;
+    if (on) {
+      document.addEventListener("pointermove", onMove, { passive: true });
+      root.addEventListener("pointerleave", onLeave);
+      addEventListener("blur", onLeave);
+    } else {
+      document.removeEventListener("pointermove", onMove);
+      root.removeEventListener("pointerleave", onLeave);
+      removeEventListener("blur", onLeave);
+      onLeave();
+    }
+  }
+  new MutationObserver(check).observe(root, { attributes: true, attributeFilter: ["data-look"] });
+  for (const q of [mouse, calm]) if (q.addEventListener) q.addEventListener("change", check);
+  if (document.body) check(); else addEventListener("DOMContentLoaded", check);
+})();

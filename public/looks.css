@@ -15,7 +15,7 @@
     linear-gradient(180deg,#1b1f22,#0f1113);background-attachment:fixed}
 /* Panels: brushed metal with a screw in each corner */
 :root[data-look="rig"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero,header){
-  background:
+  background:var(--lit),
     radial-gradient(circle at 11px 11px,#c9d0d6 0 1.6px,#59626a 2.4px,rgba(0,0,0,.6) 3.4px,transparent 4.2px),
     radial-gradient(circle at calc(100% - 11px) 11px,#c9d0d6 0 1.6px,#59626a 2.4px,rgba(0,0,0,.6) 3.4px,transparent 4.2px),
     radial-gradient(circle at 11px calc(100% - 11px),#c9d0d6 0 1.6px,#59626a 2.4px,rgba(0,0,0,.6) 3.4px,transparent 4.2px),
@@ -105,7 +105,7 @@
 
 /* MIDDLE layer: the panels, frosted glass */
 :root[data-look="glass"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero){
-  background:linear-gradient(135deg,var(--g-sheen),transparent 42%),var(--g-panel);
+  background:var(--lit),linear-gradient(135deg,var(--g-sheen),transparent 42%),var(--g-panel);
   -webkit-backdrop-filter:var(--g-bf-mid);backdrop-filter:var(--g-bf-mid);
   border:1px solid var(--g-rim);border-bottom-color:var(--g-edge);border-right-color:var(--g-edge);border-radius:20px;
   box-shadow:var(--g-bevel),var(--g-sh-mid)}
@@ -201,7 +201,7 @@
   background:radial-gradient(closest-side,#0b2a5a 0 86%,#1e6fd0 93%,rgba(87,199,255,.55) 96%,transparent 100%);
   box-shadow:0 -10px 80px rgba(87,199,255,.35);transform:translate3d(calc(var(--px) * -10px),calc(var(--py) * -6px),0)}
 :root[data-look="space"]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero,header){
-  background:linear-gradient(180deg,var(--card-top),var(--card-bot));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  background:var(--lit),linear-gradient(180deg,var(--card-top),var(--card-bot));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   border:1px solid rgba(120,180,255,.2);border-radius:16px;
   box-shadow:inset 0 1px 0 rgba(170,210,255,.18),0 0 0 1px rgba(0,0,0,.5),0 20px 44px rgba(0,0,0,.65),0 0 30px -8px rgba(87,199,255,.25)}
 /* Floating at different depths: they drift a little against the stars as the mouse moves */
@@ -226,3 +226,14 @@
 :root[data-look="space"]:not(#_) :is(input[type=text],input[type=search],input[type=number],input[type=url],input:not([type]),select,textarea):not(.pnentry){background:rgba(3,8,20,.85);color:#e6f0ff;border:1px solid rgba(120,180,255,.25)}
 :root[data-look="space"]:not(#_) :is(#scope,.map,#lsFrame,.stmap,.planchart,.dcwrap,.sstvpic){border:1px solid rgba(120,180,255,.22);border-radius:10px;box-shadow:inset 0 0 18px rgba(0,0,0,.8),0 0 20px -6px rgba(87,199,255,.3)}
 :root[data-look="space"]:not(#_) thead th{background:rgba(10,22,44,.95);color:#a9c6ea}
+
+/* ======================= Lighting (all three looks) =======================
+   A soft light follows the mouse across the panel under it (looks.js gives that panel class "lit" and --lx / --ly).
+   It's a layer at the top of each panel's background, so text and screens stay sharp. Off with a touch screen or
+   reduced motion (looks.js never lights a panel then); High contrast and Night never get a look at all. */
+:root[data-look]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero,header){--lit:linear-gradient(transparent,transparent)}
+:root[data-look]:not(#_) :is(.wrap > .panel,.wrap > .cols > section,body.popwin > .panel,.hero).lit{
+  --lit:radial-gradient(520px circle at var(--lx,50%) var(--ly,0px),var(--lit-c),transparent 70%)}
+:root[data-look="rig"]:not(#_){--lit-c:rgba(255,255,255,.075)}
+:root[data-look="glass"]:not(#_){--lit-c:var(--g-sheen)}
+:root[data-look="space"]:not(#_){--lit-c:rgba(87,199,255,.13)}
