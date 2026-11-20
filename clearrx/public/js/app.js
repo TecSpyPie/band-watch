@@ -103,8 +103,8 @@ async function start() {
       deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 },
     } });
     app.ctx = new AudioContext({ sampleRate: RxFx.RATE, latencyHint: "interactive" });
-    await app.ctx.audioWorklet.addModule("/js/rxfx.js?v=1.2.0");
-    await app.ctx.audioWorklet.addModule("/js/clearrx-worklet.js?v=1.2.0");
+    await app.ctx.audioWorklet.addModule("/js/rxfx.js?v=1.3.0");
+    await app.ctx.audioWorklet.addModule("/js/clearrx-worklet.js?v=1.3.0");
     const src = app.ctx.createMediaStreamSource(app.stream);
     app.node = new AudioWorkletNode(app.ctx, "clearrx", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
     app.node.port.onmessage = (e) => { if (e.data && e.data.meter) app.meter = e.data.meter; };
