@@ -118,7 +118,9 @@ async function start() {
     if (out && app.ctx.setSinkId) await app.ctx.setSinkId(out).catch(() => setStatus("Couldn't use that output: playing to the default speakers."));
     if (app.ctx.state === "suspended") await app.ctx.resume();
     app.running = true;
+    if (scope.view) scope.view.ring.clear();
     applySettings();
+    scopeKick();
     await listDevices(); // now the names show (the browser only gives them after you allow the sound)
     setStatus(`Running: ${selectedName($("inDev"))} → ${selectedName($("outDev"))}.`);
     if (app.findAfterStart) { app.findAfterStart = false; setTimeout(() => pickRadio(app.s.radio, false), 0); }
@@ -195,6 +197,93 @@ const LEVELS = [[1, "Light"], [2, "Medium"], [3, "Strong"]];
 const BANDS = [["SSB", 300, 2700], ["Wide", 100, 3000], ["CW", 400, 800], ["AM", 100, 4500]];
 const hzName = (f) => (f >= 1000 ? `${f / 1000}k` : String(f));
 
+/* ---------- The 3D spectrum scope (in the graphic EQ's card; the drawing is in scope3d.js) ----------
+   It reads the "before" or "after" analyser (already there for the 2D spectrum), 20 times a second: nothing extra runs in the
+   sound thread. Its on/off and Before/After are kept in this browser only (like the volume). It stops drawing when it is
+   switched off, scrolled out of view, or the page is hidden. */
+const SCOPE_HTML = `<div class="scope3d" id="scope3d">
+  <div class="scopebar">
+    <button type="button" class="key mini" id="scopeOn" aria-pressed="true">3D scope</button>
+    <span class="scopechips" role="group" aria-label="What the scope shows">
+      <button type="button" class="key mini" data-scopesrc="before" aria-pressed="false">Before</button>
+      <button type="button" class="key mini" data-scopesrc="after" aria-pressed="true">After</button>
+    </span>
+    <span class="small" id="scopeNote"></span>
+  </div>
+  <div class="scopewrap" id="scopeWrap">
+    <canvas id="scope3dCv" role="img" aria-label="3D spectrum scope: frequency from 50 Hz to 6 kHz across, time from now at the front to a few seconds ago at the back, level as height. The glowing line on the front edge is the graphic EQ's curve." aria-describedby="scopeDesc"></canvas>
+  </div>
+  <p class="sr" id="scopeDesc"></p>
+</div>`;
+const scope = { on: true, src: "after", view: null, visible: true, raf: 0, last: 0, descAt: 0, bins: null, reduced: false, dirty: true };
+const scopeActive = () => scope.on && scope.visible && !document.hidden && Boolean(scope.view);
+function scopeKick() { if (!scope.raf && scopeActive()) scope.raf = requestAnimationFrame(scopeLoop); }
+function scopeLoop(now) {
+  scope.raf = 0;
+  if (!scopeActive()) return; // switched off, scrolled out of view or the page is hidden: nothing is drawn
+  const interval = scope.reduced ? 250 : 50; // 20 rows a second (4 with "reduce motion")
+  const an = app.running ? app[scope.src] : null;
+  if (an && now - scope.last >= interval) {
+    scope.last = now;
+    if (!scope.bins || scope.bins.length !== an.frequencyBinCount) scope.bins = new Float32Array(an.frequencyBinCount);
+    an.getFloatFrequencyData(scope.bins);
+    scope.view.pushBins(scope.bins, app.ctx.sampleRate, an.fftSize, interval / 1000);
+    scope.dirty = true;
+  }
+  if (scope.dirty) { scope.dirty = false; scope.view.draw(); }
+  if (now - scope.descAt > 1000) { scope.descAt = now; scopeDescribe(); }
+  scopeKick();
+}
+function scopeDescribe() {
+  const v = scope.view, s = app.s, name = scope.src === "before" ? "before ClearRX" : "after ClearRX";
+  const bands = RxFx.EQ_FREQS.map((f, i) => [f, s.eq ? s.eqGains[i] : 0]).filter(([, g]) => g !== 0);
+  const eq = bands.length ? `The EQ changes ${bands.map(([f, g]) => `${hzName(f)} Hz by ${g > 0 ? "plus " : "minus "}${Math.abs(g)} dB`).join(", ")}.` : "The EQ is flat.";
+  const pk = app.running && v.peak.db > -90 ? `Loudest at about ${Math.round(v.peak.f)} Hz, ${Math.round(v.peak.db)} dB.` : "No sound yet.";
+  const txt = `Showing the sound ${name}. ${pk} ${eq}`;
+  const el = $("scopeDesc");
+  if (el && el.textContent !== txt) el.textContent = txt;
+}
+function scopeApplyEq() {
+  if (!scope.view) return;
+  if (scope.view.setEq(app.s.eqGains, app.s.eq)) { scope.dirty = true; scopeKick(); }
+}
+function scopeRender() {
+  $("scopeOn").setAttribute("aria-pressed", String(scope.on));
+  for (const b of document.querySelectorAll("[data-scopesrc]")) b.setAttribute("aria-pressed", String(b.dataset.scopesrc === scope.src));
+  $("scopeWrap").hidden = !scope.on;
+  $("scopeNote").textContent = scope.on ? "Front = now, back = a few seconds ago. The glowing line is the EQ." : "The 3D scope is off (it uses some of the computer's power).";
+}
+function scopeSave() { try { localStorage.setItem("clearrx-scope3d", scope.on ? "1" : "0"); localStorage.setItem("clearrx-scope3dsrc", scope.src); } catch { /* fine */ } }
+function setupScope() {
+  try {
+    scope.on = localStorage.getItem("clearrx-scope3d") !== "0";
+    scope.src = localStorage.getItem("clearrx-scope3dsrc") === "before" ? "before" : "after";
+  } catch { /* defaults */ }
+  const cv = $("scope3dCv");
+  if (typeof Scope3D === "undefined" || !cv.getContext) { $("scope3d").hidden = true; return; }
+  scope.view = new Scope3D.Scope3DView(cv, { respFn: RxFx.eqResponseDb, bandFreqs: RxFx.EQ_FREQS });
+  scope.view.setSource(scope.src);
+  const mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  if (mq) { scope.reduced = mq.matches; mq.addEventListener("change", (e) => { scope.reduced = e.matches; }); }
+  const again = () => { scope.view.geo = null; scope.dirty = true; scopeKick(); }; // size changed (or the screen's pixel ratio): lay it out again
+  if (window.ResizeObserver) new ResizeObserver(again).observe($("scopeWrap")); else window.addEventListener("resize", again);
+  if (window.IntersectionObserver) new IntersectionObserver((es) => { scope.visible = es[es.length - 1].isIntersecting; scope.dirty = true; scopeKick(); }).observe(cv);
+  document.addEventListener("visibilitychange", () => { scope.dirty = true; scopeKick(); });
+  $("scope3d").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.id === "scopeOn") scope.on = !scope.on;
+    else if (b.dataset.scopesrc) { scope.src = b.dataset.scopesrc; scope.view.setSource(scope.src); }
+    else return;
+    scopeSave(); scopeRender();
+    scope.view.geo = null; scope.dirty = true; scopeKick();
+  });
+  scopeRender();
+  scopeApplyEq();
+  scopeKick();
+  window.ClearRXScope = { scope, stats: scope.view.stats }; // so its speed can be checked
+}
+
 const MOD_UI = {
   nb: { kind: "extra", power: "fxNb", hint: "Silences clicks and crackles (ignition, electric fences, static).", body: sel("nbLevel", "Strength", LEVELS), reset: { nbLevel: 2 } },
   voice: { kind: "preset", power: "fxVoice", hint: "Keeps only the part of the sound you want: a voice sits between about 300 and 2700 Hz, Morse in a narrow slice.",
@@ -206,7 +295,7 @@ const MOD_UI = {
   nr: { kind: "preset", power: "fxNr", hint: "Takes the hiss down and keeps voices and tones.", body: sel("nrLevel", "Strength", LEVELS), reset: { nrLevel: 1 } },
   sq: { kind: "extra", power: "fxSq", hint: "Quiet between signals. It listens at this place in the rack, so put it before the compressors.", body: rng("sq", "Opens above", -80, -20, 1), reset: { sq: -50 } },
   comp: { kind: "preset", power: "fxComp", hint: "Brings quiet and loud stations to a steady level.", body: sel("agc", "Speed", [["fast", "Fast"], ["medium", "Medium"], ["slow", "Slow"]], true), reset: { agc: "medium" } },
-  eq: { kind: "preset", power: "fxEq", hint: "Ten bands, 100 Hz to 5 kHz, up or down 12 dB. Drag a slider, or use the arrow keys.",
+  eq: { kind: "preset", power: "fxEq", pre: "scope", hint: "Ten bands, 100 Hz to 5 kHz, up or down 12 dB. Drag a slider, or use the arrow keys.",
     body: `<div class="chips" role="group" aria-label="EQ presets">${Object.entries(RxFx.EQ_NAMES).map(([k, n]) => `<button type="button" class="key mini" data-eqp="${k}" aria-pressed="false">${esc(n)}</button>`).join("")}</div>`
       + `<div class="eqbank">${RxFx.EQ_FREQS.map((f, i) => `<div class="band"><output class="dbv" data-ev="${i}"></output><span class="track"><input type="range" data-eq="${i}" min="-12" max="12" step="1" aria-label="${hzName(f)} Hz gain, dB"></span><span class="hz">${hzName(f)}</span></div>`).join("")}</div>`,
     reset: { eqPreset: "flat" } },
@@ -241,6 +330,7 @@ function buildRack() {
         </span>
       </div>
       <p class="mhint">${esc(m.hint)}</p>
+      ${m.pre === "scope" ? SCOPE_HTML : ""}
       ${m.body ? `<div class="mbody">${m.body}</div>` : ""}
     </li>`;
   }).join("");
@@ -352,6 +442,7 @@ function renderRack() {
     const o = mods.querySelector(`[data-o="${k}"]`);
     if (o) o.textContent = FMT[k](v);
   }
+  scopeApplyEq();
   s.eqGains.forEach((g, i) => {
     mods.querySelector(`[data-eq="${i}"]`).value = String(g);
     const o = mods.querySelector(`[data-ev="${i}"]`);
@@ -480,6 +571,7 @@ async function setup() {
     applySettings(); saveSettings();
   });
   setupRack();
+  setupScope();
   $("bypass").addEventListener("change", (e) => { app.bypass = e.target.checked; applySettings(); });
   $("vol").addEventListener("input", (e) => {
     app.gain = Number(e.target.value) / 100;

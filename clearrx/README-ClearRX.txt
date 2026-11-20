@@ -28,7 +28,11 @@ Use
       Compressor / limiter.
   - Graphic EQ: ten sliders, 100 Hz to 5 kHz, up or down 12 dB. Pick Flat, SSB
     punch, Weak DX, CW or AM warm, or drag the sliders (arrow keys work too).
-    Reset puts it flat.
+    Reset puts it flat. Above the sliders is a 3D spectrum scope: pitch from left to
+    right, time from the front (now) to the back (a few seconds ago), loudness as
+    height, with the EQ's curve glowing along the front edge. Before / After shows the
+    sound going in or coming out. "3D scope" switches it off (it uses some of the
+    computer's power); it pauses by itself when hidden or scrolled out of view.
   - Compressor / limiter: threshold, ratio and make-up gain, with a gain-reduction
     meter. The limiter keeps the sound under -1 dB so it never clips.
   - Output meter (bottom): how loud the sound going out is. CLIP lights, with a

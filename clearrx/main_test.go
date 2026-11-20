@@ -132,7 +132,7 @@ func TestQuitNeedsHeader(t *testing.T) {
 
 func TestPageServed(t *testing.T) {
 	a := NewApp("", nil)
-	for _, p := range []string{"/", "/js/app.js", "/js/clearrx-worklet.js", "/js/rxfx.js", "/clearrx.css", "/favicon.svg"} {
+	for _, p := range []string{"/", "/js/app.js", "/js/clearrx-worklet.js", "/js/rxfx.js", "/js/scope3d.js", "/clearrx.css", "/favicon.svg"} {
 		w := do(t, a, "GET", p, "", nil)
 		if w.Code != http.StatusOK {
 			t.Fatalf("%s = %d", p, w.Code)

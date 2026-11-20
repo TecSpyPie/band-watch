@@ -1,6 +1,7 @@
 # What's new
 
 ## Unreleased
+- **ClearRX: a 3D spectrum scope in the graphic EQ.** Above the EQ's sliders, a 3D terrain of the sound: pitch left to right (50 Hz to 6 kHz), time front to back (now at the front, older rows fading away behind), loudness as height and colour. The EQ's curve glows along the front edge with a marker for each of the ten bands and moves as you drag the sliders. **Before / After** shows the sound going in or coming out of ClearRX, and **3D scope** switches it off (both are remembered). It pauses when the page is hidden or the scope is scrolled out of view, and updates slower if your computer asks for reduced motion.
 - **Credits: "by M3VRV & King Coder".** Band Watch and ClearRX now credit both the owner (M3VRV) and his AI partner, King Coder, in their titles, headers, installer and Windows file details.
 - **ClearRX: an effects rack.** ClearRX now works like a rack of effect modules. Each stage is a card with its own
   **on/off switch**, its controls, a **Reset** button and **up/down arrows** to put it in a different place: the sound goes

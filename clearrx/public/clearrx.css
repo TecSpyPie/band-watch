@@ -1,7 +1,7 @@
 /* ClearRX by M3VRV: a rack-mounted audio processor look. Brushed metal, glass screens, LED switches. */
 :root {
   --bg: #0d1418; --metal1: #3a444b; --metal2: #222a30; --text: #e6eef2; --dim: #9fb2bc;
-  --led: #45e0f5; --ledglow: rgba(69, 224, 245, .55); --hot: #ff5a4e; --amber: #ffb547;
+  --scopebg: #0b1a21; --led: #45e0f5; --ledglow: rgba(69, 224, 245, .55); --hot: #ff5a4e; --amber: #ffb547;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -184,3 +184,14 @@ a { color: #8fe9f7; }
   .lamp { grid-column: 1; grid-row: 2; justify-self: start; }
   .orms { grid-column: 2 / 4; grid-row: 2; }
 }
+
+/* 3D spectrum scope, above the graphic EQ's sliders */
+.scope3d { margin: 8px 0 0 36px; }
+.scopebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 6px; }
+.scopechips { display: inline-flex; gap: 6px; }
+.scopewrap { position: relative; border-radius: 10px; padding: 4px; border: 1px solid #0a0f12; background: linear-gradient(180deg, #071015, var(--scopebg));
+  box-shadow: inset 0 3px 10px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.12); }
+.scopewrap[hidden] { display: none; }
+#scope3dCv { display: block; width: 100%; height: 240px; }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 520px) { .scope3d { margin-left: 0; } #scope3dCv { height: 200px; } }
