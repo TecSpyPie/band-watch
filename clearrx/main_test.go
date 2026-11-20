@@ -141,7 +141,7 @@ func TestPageServed(t *testing.T) {
 			t.Fatalf("%s missing security headers", p)
 		}
 	}
-	if !strings.Contains(do(t, a, "GET", "/", "", nil).Body.String(), "ClearRX by M3VRV") {
+	if !strings.Contains(do(t, a, "GET", "/", "", nil).Body.String(), "ClearRX by M3VRV &amp; King Coder") {
 		t.Fatal("page title missing")
 	}
 }

@@ -1,6 +1,7 @@
 # What's new
 
 ## Unreleased
+- **Credits: "by M3VRV & King Coder".** Band Watch and ClearRX now credit both the owner (M3VRV) and his AI partner, King Coder, in their titles, headers, installer and Windows file details.
 - **ClearRX: an effects rack.** ClearRX now works like a rack of effect modules. Each stage is a card with its own
   **on/off switch**, its controls, a **Reset** button and **up/down arrows** to put it in a different place: the sound goes
   through the modules from top to bottom, so the order matters (a compressor after the EQ works on the EQ's louder sound).

@@ -676,7 +676,7 @@ function createServer() {
 if (require.main === module) {
   const port = Number(process.env.PORT) || 8080;
   const host = process.env.HOST || undefined; // e.g. 127.0.0.1 on a PC, so no firewall prompt
-  createServer().listen(port, host, () => console.log(`Band Watch by M3vrv listening on ${host || "all interfaces"}:${port}`));
+  createServer().listen(port, host, () => console.log(`Band Watch by M3VRV & King Coder listening on ${host || "all interfaces"}:${port}`));
 }
 
 function resetAll() {

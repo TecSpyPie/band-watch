@@ -208,7 +208,7 @@ function toAdif(qsos) {
 }
 
 function adifHeader() {
-  return `Band Watch by M3vrv logbook export\n${adifField("ADIF_VER", "3.1.4")}${adifField("PROGRAMID", "Band Watch")}${adifField("PROGRAMVERSION", (document.querySelector('script[src*="app.js?v="]')?.src.match(/v=([\d.]+)/) || [])[1] || "")}${adifField("CREATED_TIMESTAMP", `${utcDate()} ${utcTime()}00`)}<EOH>\n`;
+  return `Band Watch by M3VRV & King Coder logbook export\n${adifField("ADIF_VER", "3.1.4")}${adifField("PROGRAMID", "Band Watch")}${adifField("PROGRAMVERSION", (document.querySelector('script[src*="app.js?v="]')?.src.match(/v=([\d.]+)/) || [])[1] || "")}${adifField("CREATED_TIMESTAMP", `${utcDate()} ${utcTime()}00`)}<EOH>\n`;
 }
 
 /** One contact as an ADIF record, ending <EOR>. */

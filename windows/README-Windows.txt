@@ -1,4 +1,4 @@
-Band Watch by M3vrv - Windows
+Band Watch by M3VRV & King Coder - Windows
 =============================
 
 Band Watch is one program, BandWatch.exe. It needs nothing else installed
@@ -92,7 +92,7 @@ Your radio (CAT control over its USB cable)
     Windows may need the Malahit USB CAT driver from malahiteam.com.
   If it doesn't connect, Settings > Radio control says what went wrong.
 
-ClearRX by M3VRV (radio audio processor)
+ClearRX by M3VRV & King Coder (radio audio processor)
   A program of its own: download ClearRX-Windows.zip from the release page,
   unzip it into C:\BandWatch\ClearRX and run ClearRX.exe. Pick "Sound from" (your radio's USB Audio CODEC, a line-in or a
   mixer) and "Play to" (your speakers), press Start and choose a preset:
@@ -181,7 +181,7 @@ Build date and version
   whether it's running as BandWatch.exe or with Node.js, when the server
   started, and what's new in each version. The same date is in
   BUILD-INFO.txt in the install folder, in BandWatch.exe's Properties >
-  Details > Comments, and in Settings > Apps > Band Watch by M3vrv (the
+  Details > Comments, and in Settings > Apps > Band Watch by M3VRV & King Coder (the
   install date is shown there too).
 
 Notes

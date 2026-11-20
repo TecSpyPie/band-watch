@@ -1,4 +1,4 @@
-ClearRX by M3VRV - radio audio processor (version 1.2.0)
+ClearRX by M3VRV & King Coder - radio audio processor (version 1.2.0)
 
 Install
   1. Unzip this folder somewhere to keep it, for example C:\BandWatch\ClearRX

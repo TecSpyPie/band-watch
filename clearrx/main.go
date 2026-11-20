@@ -351,7 +351,7 @@ func main() {
 	}
 	if *serve {
 		addr := net.JoinHostPort(env("HOST", "127.0.0.1"), env("PORT", "8080"))
-		log.Printf("ClearRX by M3VRV %s listening on %s", version, addr)
+		log.Printf("ClearRX by M3VRV & King Coder %s listening on %s", version, addr)
 		log.Fatal((&http.Server{Addr: addr, Handler: NewApp("", nil), ReadHeaderTimeout: 10 * time.Second}).ListenAndServe())
 	}
 
@@ -382,7 +382,7 @@ func main() {
 	}
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
-		messageBox("ClearRX by M3VRV", fmt.Sprintf("ClearRX couldn't start because another program is using port %d.", port))
+		messageBox("ClearRX by M3VRV & King Coder", fmt.Sprintf("ClearRX couldn't start because another program is using port %d.", port))
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -394,7 +394,7 @@ func main() {
 		defer c()
 		srv.Shutdown(done)
 	}()
-	log.Printf("ClearRX by M3VRV %s (built %s) running at %s", version, buildDate, pageURL)
+	log.Printf("ClearRX by M3VRV & King Coder %s (built %s) running at %s", version, buildDate, pageURL)
 	go func() { time.Sleep(300 * time.Millisecond); openWindow(pageURL) }()
 	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("serve: %v", err)

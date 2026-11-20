@@ -65,7 +65,7 @@ func main() {
 		port := env("PORT", "8080")
 		host := env("HOST", "127.0.0.1")
 		srv := &http.Server{Addr: net.JoinHostPort(host, port), Handler: NewServer(cfg), ReadHeaderTimeout: 10 * time.Second}
-		log.Printf("Band Watch by M3vrv %s listening on %s", version, srv.Addr)
+		log.Printf("Band Watch by M3VRV & King Coder %s listening on %s", version, srv.Addr)
 		log.Fatal(srv.ListenAndServe())
 	}
 
@@ -105,7 +105,7 @@ func main() {
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		if running, _ := probe(base); !running {
-			messageBox("Band Watch by M3vrv", fmt.Sprintf("Band Watch couldn't start because another program is using port %d.\n\nClose that program and try again.", port))
+			messageBox("Band Watch by M3VRV & King Coder", fmt.Sprintf("Band Watch couldn't start because another program is using port %d.\n\nClose that program and try again.", port))
 		} else {
 			openBrowser(pageURL)
 		}
@@ -125,7 +125,7 @@ func main() {
 		defer done()
 		srv.Shutdown(shutdown)
 	}()
-	log.Printf("Band Watch by M3vrv %s (built %s) running at %s", version, buildDate, pageURL)
+	log.Printf("Band Watch by M3VRV & King Coder %s (built %s) running at %s", version, buildDate, pageURL)
 	if !*background {
 		go func() {
 			time.Sleep(300 * time.Millisecond)

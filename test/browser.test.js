@@ -121,8 +121,8 @@ const tooWide = (page) => page.evaluate(() => [...document.querySelectorAll("bod
 
 test("loads live data with no errors", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
-  assert.equal(await page.title(), "Band Watch by M3vrv");
-  assert.equal((await page.textContent("h1")).replace(/\s+/g, " "), "Band Watch by M3vrv");
+  assert.equal(await page.title(), "Band Watch by M3VRV & King Coder");
+  assert.equal((await page.textContent("h1")).replace(/\s+/g, " "), "Band Watch by M3VRV & King Coder");
   assert.match(await page.textContent("#banner"), /^Live spots for grid IO93, updated just now\.$/);
   assert.match(await page.textContent("#hero"), /40 m is your best band/);
   assert.equal(await page.textContent("#mapTitle"), "40 m spots", "map follows the best band");
@@ -1281,7 +1281,7 @@ test("app: installable (manifest and service worker), works offline, and setting
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
   await page.context().setOffline(true);
   await page.reload();
-  assert.equal(await page.title(), "Band Watch by M3vrv");
+  assert.equal(await page.title(), "Band Watch by M3VRV & King Coder");
   await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
   assert.ok(await page.evaluate(() => document.getElementById("banner").classList.contains("err") || /couldn|offline|not|fail/i.test(document.getElementById("banner").textContent)));
   await page.context().setOffline(false);
@@ -2190,7 +2190,7 @@ test("Help: the button opens the guide; it follows the colours and fits a phone"
   const { page, errors } = await openPage(t);
   const [help] = await Promise.all([page.waitForEvent("popup"), page.click("#helpBtn")]);
   await help.waitForLoadState("load");
-  assert.equal(await help.title(), "Help · Band Watch by M3vrv");
+  assert.equal(await help.title(), "Help · Band Watch by M3VRV & King Coder");
   assert.ok((await help.$$("section.panel")).length >= 15);
   // The pictures load
   const broken = await help.evaluate(async () => {
