@@ -6,7 +6,7 @@
 "use strict";
 
 const SAT_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=json";
-const SAT_LIB = "/js/vendor/satellite.esm.js?v=1.40.0";
+const SAT_LIB = "/js/vendor/satellite.esm.js?v=1.41.0";
 
 /* Frequencies for well-known birds (MHz). down/up: a number, or [low, high] for a linear transponder (passband);
    inverting transponders go down as the uplink goes up. AMSAT's status page says which are working this week. */

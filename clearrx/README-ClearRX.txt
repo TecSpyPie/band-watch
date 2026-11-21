@@ -1,4 +1,4 @@
-ClearRX by M3VRV & King Coder - radio audio processor (version 1.3.0)
+ClearRX by M3VRV & King Coder - radio audio processor (version 1.4.0)
 
 Install
   1. Unzip this folder somewhere to keep it, for example C:\BandWatch\ClearRX
@@ -22,10 +22,17 @@ Use
     order" to put them all back. The modules, in the usual order:
       Noise blanker (clicks and crackles), Band-pass filter (low cut and high cut,
       for example 300-2700 Hz for SSB or 400-800 Hz for CW), CW peak filter,
-      Manual notch (a whistle you choose), Auto notch, Noise reduction, Squelch
+      Manual notch (a whistle you choose), Auto notch, Hiss remover (see below),
+      Noise reduction, Squelch
       (quiet between signals; it listens where it sits, so put it before the
       compressors), Steady volume (AGC speed), Graphic EQ, Bass and treble,
       Compressor / limiter.
+  - Hiss remover: takes out steady hiss and band noise, and leaves voices alone.
+    Strength (6 to 30 dB) is how far the noise goes down. By itself it follows the
+    noise as it changes. For the best result, tune to an empty bit of the band (just
+    the hiss, nobody talking), press "Learn noise" and wait 1.5 seconds: it learns that
+    hiss and takes it out from then on, even after ClearRX restarts. "Forget it" goes
+    back to following the noise by itself. It makes the sound about 11 ms late.
   - Graphic EQ: ten sliders, 100 Hz to 5 kHz, up or down 12 dB. Pick Flat, SSB
     punch, Weak DX, CW or AM warm, or drag the sliders (arrow keys work too).
     Reset puts it flat. Above the sliders is a 3D spectrum scope: pitch from left to

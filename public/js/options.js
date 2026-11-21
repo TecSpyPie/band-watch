@@ -108,7 +108,10 @@ function setupOptions() {
     settings[key] = num ? Number(e.target.value) : e.target.value;
     if (id === "optText") $("optTextVal").textContent = `${settings.text}%`;
     if (id === "optZoom") $("optZoomVal").textContent = `${settings.zoom}%`;
-    saveSettings();
+    // A new look or theme fades in softly (where the browser can, and not for people who ask for reduced motion)
+    const fade = (id === "optLook" || id === "optTheme") && document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (fade) document.startViewTransition(saveSettings).ready.catch(() => {}); // a quicker change skips the last fade: fine
+    else saveSettings();
   });
   bind("optTheme", "theme"); bind("optLook", "look"); bind("optText", "text", true);
   for (const id of ["optTheme", "optLook"]) $(id).addEventListener("input", renderOptions); bind("optZoom", "zoom", true); bind("optWidth", "width");
@@ -320,6 +323,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.41.0", "Looks: soft light that follows your mouse, sharper spectrum and screens, smooth motion, cross-fading look changes and a glowing keyboard focus; ClearRX Hiss remover that can learn your noise"],
   ["1.40.0", "Section menu and folding panels, RTTY receiver, Antenna A/B (WSPR, FT8, FT4), live world map, layered Glass look, 2 m and 70 cm with My repeaters, stuck-receiver recovery; ClearRX effects rack and 3D scope"],
   ["1.39.0", "Digital voice add-on: one-click C4FM on a Yaesu radio, BrandMeister (Hoseline, talkgroups, last heard), UK repeater lists, your hotspot's dashboard"],
   ["1.38.0", "CB channels to listen to (UK 27/81 and CEPT), and Help pages on UK licences and exams and good operating"],
