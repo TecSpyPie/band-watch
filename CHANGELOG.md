@@ -1,6 +1,6 @@
 # What's new
 
-## Unreleased
+## 1.41.0 (21 Nov 2026)
 - **Looks: a glowing keyboard focus.** In Radio front panel, Glass and depth and Space station, whatever you reach with the Tab key now has a soft glow in the look's own colour around its outline, so it stands out on metal, glass and space. Mouse clicks don't show it. High contrast and Night stay plain.
 - **Sharper screens and smooth motion.** The RTL-SDR spectrum in Listen is now drawn at your screen's full sharpness (crisp line, scale and numbers on high-DPI screens), and the waterfall no longer blanks when the scale is redrawn. The ATS Mini's drawn screen (without Live screen) is drawn at twice the size so its text stays sharp; the radio's own live picture still shows as crisp pixels. In Radio front panel, Glass and depth and Space station, panels now drift gently into place when the page opens or a section is shown, and buttons ease when hovered and pressed. Changing the look or theme in Settings now fades softly from one to the other (in browsers that can). None of the motion happens if your computer asks for reduced motion; High contrast and Night stay plain.
 - **Looks: light that follows your mouse.** In Radio front panel, Glass and depth and Space station, a soft light now moves across the panel under your mouse (white on the metal and glass, blue in space), so the panels feel lit and solid. It's drawn behind the text, so everything stays sharp. Only with a mouse, never with reduced motion (and glass under "reduce transparency" stays plain); High contrast and Night stay plain as always.
