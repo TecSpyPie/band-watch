@@ -255,3 +255,8 @@
 @media (prefers-reduced-motion:no-preference){
   ::view-transition-old(root),::view-transition-new(root){animation-duration:.4s;animation-timing-function:ease}
 }
+/* Keyboard focus glows in the look's own colour (all three looks), so it's easy to see on metal, glass and space.
+   Only for keyboard focus (:focus-visible); no motion, so it's the same with reduced motion. */
+:root[data-look]:not(#_) :is(button,a,select,input,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid var(--cool);outline-offset:2px;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--cool) 28%,transparent),0 0 14px color-mix(in srgb,var(--cool) 45%,transparent)}
