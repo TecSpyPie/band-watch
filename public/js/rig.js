@@ -189,8 +189,8 @@ function atsSend(s) {
 }
 
 /** Tune the ATS Mini: change band and mode a step at a time if needed, then set the frequency. */
-function atsTune(hz, mode) {
-  rig.ats.want = { hz: Math.round(hz), mode, t: Date.now() };
+function atsTune(hz, mode, band = -1) {
+  rig.ats.want = { hz: Math.round(hz), mode, band, t: Date.now() }; // band: one of ATS_BANDS to use, or -1 to pick one
   rig.ats.note = "";
   atsStep();
 }
@@ -203,7 +203,7 @@ function atsStep() {
   a.waitSeq = null;
   if (Date.now() - w.t > 8000) { a.want = null; a.note = "The ATS Mini didn't follow. Is Settings > USB Port set to Ad hoc?"; renderRig(); return; }
   const kHz = w.hz / 1000;
-  const target = atsPickBand(kHz);
+  const target = w.band >= 0 && atsInBand(w.band, kHz) ? w.band : atsPickBand(kHz);
   if (target < 0) {
     a.want = null;
     a.note = `The ATS Mini can't tune ${kHz.toLocaleString()} kHz (it covers 150 kHz to 30 MHz, and 64 to 108 MHz FM).`;
@@ -258,6 +258,7 @@ function atsLine(line) {
   const listenMode = ssb && typeof listen !== "undefined" && listen.mode === "cw" ? "cw" : ATS_LISTEN_MODE[mode] || "";
   rigSetState(hz, mode, listenMode);
   atsStep();
+  if (typeof atsScanLine === "function") atsScanLine(hz, a.rssi, a.snr); // a band scan reading
 }
 
 /** Every second: if the status lines stopped (or never started), switch them on with "t". */
@@ -409,6 +410,7 @@ function rigFeed(value) {
 /** The radio's dial moved: Band Watch follows it (the Listen panel, scope and band plan). */
 function rigFromRadio() {
   if (!rig.read || !rig.hz || Date.now() - rig.lastSet < 1500 || (rig.ats && rig.ats.want)) return;
+  if (typeof atsScanBusy === "function" && atsScanBusy()) return; // a band scan is stepping the radio
   const kHz = rig.hz / 1000;
   const mode = rig.listenMode || listen.mode;
   if (Math.abs(kHz - listen.kHz) < 0.01 && mode === listen.mode) return;
@@ -847,6 +849,7 @@ function atsScreenTick() {
   if (!atsShot.live) { atsDrawSim(); return; }
   if (a.shotWanted || a.want || document.visibilityState === "hidden" || $("secAts").hidden) return;
   if (typeof atsMemBusy === "function" && atsMemBusy()) return; // reading or saving memory slots
+  if (typeof atsScanBusy === "function" && atsScanBusy()) return; // a band scan needs every status line
   if (Date.now() < a.nextShot) return;
   a.nextShot = Date.now() + 1500;
   if (!a.shotCmd) a.shotCmd = Number(a.version) >= 2.41 ? "c" : "C"; // "c" (binary, quicker) came in firmware 2.41
@@ -903,6 +906,7 @@ function renderAts() {
   $("atsConnect").textContent = rig.connected ? "Disconnect" : "Connect";
   atsReadout();
   if (typeof renderAtsMem === "function") renderAtsMem();
+  if (typeof renderAtsScan === "function") renderAtsScan();
   for (const b of sec.querySelectorAll("[data-ats]")) b.disabled = !rig.connected;
   $("atsScreenMsg").textContent = !rig.connected
     ? (rig.error || "Connect the ATS Mini to see its screen here. On the radio, set Settings > USB Port to Ad hoc first.")
@@ -955,5 +959,6 @@ function setupAts() {
   });
   setInterval(atsScreenTick, 250);
   if (typeof setupAtsMem === "function") setupAtsMem();
+  if (typeof setupAtsScan === "function") setupAtsScan();
   renderAts();
 }

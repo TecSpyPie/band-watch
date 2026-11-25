@@ -6,6 +6,13 @@
   next free slot, with a name if you like; **Change** and **Clear** edit a slot. Everything is saved in the radio
   itself. **Save backup file** keeps a copy, and **Load backup file** puts it back (handy after a firmware update).
   Names need ATS Mini firmware 2.42 or later; older firmware keeps the slots without names.
+- **ATS Mini band scan:** under the ATS Mini panel's buttons, **Band scan** steps the radio across a range (pick a
+  ready-made one such as 31 m broadcast, medium wave, 40 m amateur or FM, or type your own from, to and step) and draws
+  a graph of how strong each frequency is, with the noise level and each signal marked. The signals are listed
+  strongest first: click **Tune**, or click the graph, to go there. **Go back when done** returns the radio to where it
+  was, **Stop** keeps what was read so far, and **Save as CSV file** keeps the readings for a spreadsheet. It uses only
+  the radio's tuning command and its own signal readings (about half a second a step, or a second with **Careful**);
+  memory slots and the live screen wait while it scans, and tuning the radio from elsewhere stops it. Receive only.
 
 ## 1.42.0 (26 Nov 2026)
 - **Chat.** A new Chat panel to talk to other Band Watch users: a General room plus one room per band (160 m to 70 cm). Enter your callsign at the top of the page first. Messages are plain text, up to 300 characters; one message every 3 seconds and 12 a minute per address, and the newest 200 per room are kept for 48 hours. Anyone using Band Watch can read them, so don't post anything private. **Hide** next to a callsign hides their messages on your screen only. Chat is on the website, where everyone meets: in the Windows app the panel links to it (a chat on one PC would only ever have you in it). New server route `GET/POST /api/chat` (web version).

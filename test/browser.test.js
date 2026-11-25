@@ -104,6 +104,9 @@ async function openPage(t, setup) {
   page.on("requestfailed", (r) => { if (!/fonts\.|unpkg\.com|tile\.openstreetmap|sdo\.gsfc|websdr|about:blank/.test(r.url())) errors.push(`request failed: ${r.url()}`); });
   t.after(() => page.context().close());
   await page.context().route("https://www.qrz.com/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<title>QRZ</title>" }));
+  // Tests never ask the real CelesTrak (it allows one fetch every 2 hours, and cloud test machines can't reach it):
+  // an empty answer, which the Satellites panel takes calmly. Satellite tests put their own orbits in first.
+  await page.context().route("https://celestrak.org/NORAD/**", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
   await page.goto(base + "/");
   await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
   return { page, errors };
@@ -2904,7 +2907,8 @@ const FAKE_ATS = `(() => {
     const m = radio.mode, fm = m === "FM", ssb = m === "LSB" || m === "USB";
     const freq = fm ? Math.round(radio.hz / 10000) : Math.floor(radio.hz / 1000), bfo = ssb ? radio.hz - freq * 1000 : 0;
     seq = (seq + 1) % 256;
-    say([radio.version || 245, freq, bfo, 0, BANDS[radio.band][0], m, "1k", "3.0k", 0, 35, 28, 9, 0, 4.05, seq].join(",") + "\\r\\n");
+    const rssi = radio.rssiAt ? radio.rssiAt(radio.hz) : 28, snr = radio.rssiAt ? Math.max(0, rssi - 12) : 9; // rssiAt: pretend stations
+    say([radio.version || 245, freq, bfo, 0, BANDS[radio.band][0], m, "1k", "3.0k", 0, 35, rssi, snr, 0, 4.05, seq].join(",") + "\\r\\n");
   }, 500);
   const port = {
     readable: null, writable: null,
@@ -3198,6 +3202,81 @@ test("ATS Mini memory slots: firmware before 2.42 gets no names, and the radio's
   // The radio says no (a band it doesn't have): Band Watch shows what it said
   await page.evaluate(() => atsMemSend("#04,6M,50313000,USB\r\n", "slot 4"));
   await page.waitForFunction(() => /said no to 1: slot 4: No such band/.test(document.getElementById("atsMemMsg").textContent), null, { timeout: 15000 });
+  assert.deepEqual(errors, []);
+});
+
+test("ATS Mini band scan: steps the radio across 31 m, finds the stations, tunes to one and goes back", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.addInitScript(FAKE_ATS);
+  await page.addInitScript(() => localStorage.setItem("bw-rig", JSON.stringify({ kind: "atsmini", baud: 115200, autoConnect: false })));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
+  await page.click("#atsScanBox summary");
+  assert.match(await page.textContent("#atsScanMsg"), /Connect the ATS Mini/);
+  assert.equal(await page.isDisabled("#atsScanStart"), true);
+  await page.click("#atsConnect");
+  await page.waitForFunction(() => rig.connected && rig.ats.lastLine && !document.getElementById("atsScanStart").disabled, null, { timeout: 10000 });
+  // Two pretend stations: 9610 kHz (weaker) and 9650 kHz (strong), over noise of 12 dBuV
+  await page.evaluate(() => {
+    window.__radio.rssiAt = (hz) => {
+      const k = hz / 1000;
+      return Math.round(Math.max(12, 40 - Math.abs(k - 9610) * 4, 58 - Math.abs(k - 9650) * 5));
+    };
+  });
+  // Plain words for a range it can't do, and nothing sent
+  const tunes = () => page.evaluate(() => window.__radio.sent.filter((c) => c[0] === "F").length);
+  const before = await tunes();
+  await page.fill("#atsScanFrom", "9700");
+  await page.fill("#atsScanTo", "9600");
+  await page.click("#atsScanStart");
+  assert.match(await page.textContent("#atsScanMsg"), /needs to be above/);
+  await page.fill("#atsScanFrom", "150");
+  await page.fill("#atsScanTo", "30000");
+  await page.fill("#atsScanStep", "1");
+  await page.click("#atsScanStart");
+  assert.match(await page.textContent("#atsScanMsg"), /400 at most/);
+  assert.equal(await tunes(), before, "nothing sent");
+  // A ready-made range fills the boxes
+  await page.selectOption("#atsScanPreset", { label: "31 m broadcast" });
+  assert.deepEqual([await page.inputValue("#atsScanFrom"), await page.inputValue("#atsScanTo"), await page.inputValue("#atsScanStep")], ["9400", "9900", "5"]);
+  // Scan 9600 to 9700 kHz in 5 kHz steps, from the VHF band: the radio goes to 31M in AM first
+  await page.fill("#atsScanFrom", "9600");
+  await page.fill("#atsScanTo", "9700");
+  await page.selectOption("#atsScanMode", "AM");
+  await page.click("#atsScanStart");
+  assert.match(await page.textContent("#atsScanMsg"), /Scanning 21 steps/);
+  assert.equal(await page.isDisabled("#atsScanStop"), false);
+  assert.equal(await page.isVisible("#atsScanGraph"), true);
+  await page.waitForFunction(() => !atsScanBusy() && /^Done: 21 steps/.test(document.getElementById("atsScanMsg").textContent), null, { timeout: 45000 });
+  const msg = await page.textContent("#atsScanMsg");
+  assert.match(msg, /Noise about 12 dBµV\. 2 signals above it\./);
+  const readings = await page.evaluate(() => atsScan.readings.map((r) => [r.hz / 1000, r.rssi]));
+  assert.equal(readings.length, 21);
+  assert.deepEqual(readings.find((r) => r[0] === 9650), [9650, 58], "each reading is from its own step");
+  const rows = await page.$$eval("#atsScanRows tr", (trs) => trs.map((tr) => tr.cells[0].textContent));
+  assert.deepEqual(rows, ["9,650 kHz", "9,610 kHz"]);
+  // Went back to where it was (FM on VHF), and the scan sent only tuning: F, band and mode changes, status on/off
+  await page.waitForFunction(() => window.__radio.hz === 103900000 && window.__radio.mode === "FM", null, { timeout: 15000 });
+  const sent = await page.evaluate(() => window.__radio.sent.filter((c) => c[0] !== "F" && c[0] !== "#"));
+  assert.deepEqual([...new Set(sent)].filter((c) => !["t", "B", "b", "M", "m", "c", "C"].includes(c)), [], "nothing but tuning");
+  if (process.env.ATS_SHOT) await (await page.$("#atsScanBox")).screenshot({ path: process.env.ATS_SHOT.replace(".png", "-scan.png") });
+  // Tune on the strongest: the radio and Band Watch go there
+  await new Promise((r) => setTimeout(r, 1600));
+  await page.click('#atsScanRows tr[data-hz="9650000"] [data-act="tune"]');
+  await page.waitForFunction(() => window.__radio.hz === 9650000 && listen.kHz === 9650, null, { timeout: 15000 });
+  // The CSV file
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#atsScanCsv")]);
+  assert.match(dl.suggestedFilename(), /^ats-mini-scan-9600-9700kHz-\d{4}-\d\d-\d\d\.csv$/);
+  const text = require("fs").readFileSync(await dl.path(), "utf8");
+  assert.match(text, /^Frequency \(kHz\),Mode,Signal \(dBuV\),SNR \(dB\)\r\n9600,AM,12,0\r\n/);
+  assert.match(text, /\r\n9650,AM,58,46\r\n/);
+  // Stop part-way: it stops, keeps what it read, and doesn't go back if not asked to
+  await page.uncheck("#atsScanBack");
+  await page.click("#atsScanStart");
+  await page.waitForFunction(() => atsScan.readings.length >= 3, null, { timeout: 15000 });
+  await page.click("#atsScanStop");
+  assert.match(await page.textContent("#atsScanMsg"), /^Stopped\. \d+ of 21 steps were read\./);
+  assert.equal(await page.evaluate(() => atsScanBusy()), false);
   assert.deepEqual(errors, []);
 });
 

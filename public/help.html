@@ -542,6 +542,24 @@
         slots back in the radio, for example after a firmware update.</li>
     </ol>
     <p class="tip">Names need ATS Mini firmware 2.42 or later. With older firmware the slots still work, without names.</p>
+    <h3>Band scan</h3>
+    <p>See at a glance where the stations are. Click <b>Band scan</b> under the ATS Mini's buttons. Band Watch steps the
+      radio across a range of frequencies, reads how strong each one is, and draws a graph.</p>
+    <ol>
+      <li>Pick a <b>Ready-made</b> range (medium wave, a shortwave broadcast band, an amateur band, CB or FM), or type
+        <b>From</b>, <b>to</b> and <b>step</b> in kHz and choose the mode.</li>
+      <li>Click <b class="btn">Start scan</b>. A line moves across the graph as the radio steps. A scan takes about half a
+        second a step (<b>Careful</b> takes about a second a step, for steadier readings). <b class="btn">Stop</b> stops it
+        and keeps what it has read.</li>
+      <li>When it's done, the dashed line is the noise and each signal above it is marked. The list underneath has the
+        strongest first. Click the graph, or <b class="btn">Tune</b> on a signal, to go there. Band Watch follows.</li>
+      <li><b>Go back when done</b> returns the radio to where it was. <b class="btn">Save as CSV file</b> keeps the
+        readings for a spreadsheet.</li>
+    </ol>
+    <p class="tip">The range has to fit in one of the radio's own bands (the ALL band covers 150 to 30,000 kHz), and
+      Band Watch scans 400 steps at most. The scan only tunes the radio: it never sends anything else. Signal readings
+      are the radio's own (dBµV) and are a guide, not a lab meter. Don't touch the radio's knob while it scans: if it's
+      tuned from somewhere else, the scan stops.</p>
   </section>
 
   <section class="panel" id="windows" aria-labelledby="hWin">

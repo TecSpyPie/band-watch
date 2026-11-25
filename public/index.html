@@ -320,6 +320,36 @@
         </table>
       </div>
     </details>
+    <details class="atsmem atsscan" id="atsScanBox">
+      <summary>Band scan</summary>
+      <p class="small muted">Band Watch steps the radio across a range and draws how strong each frequency is, so you can see
+        where the stations are. Click the graph, or <b>Tune</b> on a signal, to go there. Listening only: nothing is sent but tuning.</p>
+      <form class="atsmem-form small" id="atsScanForm">
+        <label>Ready-made <select id="atsScanPreset"><option value="">Pick a range…</option></select></label>
+        <label>From <input type="text" id="atsScanFrom" inputmode="decimal" placeholder="kHz" required autocomplete="off"></label>
+        <label>to <input type="text" id="atsScanTo" inputmode="decimal" placeholder="kHz" required autocomplete="off"></label>
+        <label>step <input type="text" id="atsScanStep" inputmode="decimal" value="5" required autocomplete="off"> kHz</label>
+        <label>Mode <select id="atsScanMode"><option>AM</option><option>LSB</option><option>USB</option><option>FM</option></select></label>
+        <label title="Careful waits a little longer on each step, for a steadier reading">Speed <select id="atsScanSpeed"><option value="quick">Quick</option><option value="careful">Careful</option></select></label>
+        <label><input type="checkbox" id="atsScanBack" checked> Go back when done</label>
+        <button type="submit" class="tune" id="atsScanStart">Start scan</button>
+        <button type="button" class="lbtn" id="atsScanStop" disabled>Stop</button>
+      </form>
+      <p class="small" id="atsScanMsg" role="status"></p>
+      <div class="atsscan-graph" id="atsScanGraphWrap" hidden>
+        <canvas id="atsScanGraph" height="180" role="img" aria-label="Band scan graph: signal strength across the range"></canvas>
+        <div class="atsscan-tip small" id="atsScanTip" hidden></div>
+      </div>
+      <div class="optrow small" id="atsScanAfter" hidden>
+        <button type="button" class="lbtn" id="atsScanCsv" title="Save the readings as a file for a spreadsheet">Save as CSV file</button>
+      </div>
+      <div class="lgwrap" id="atsScanTable" hidden>
+        <table class="lgtab atsmemtab">
+          <thead><tr><th>Frequency</th><th>Signal</th><th>Above noise</th><th>SNR</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="atsScanRows"></tbody>
+        </table>
+      </div>
+    </details>
   </section>
 
   <section class="panel" id="secSked" aria-labelledby="skTitle">
@@ -1287,6 +1317,8 @@
 <script src="/js/rigrx.js?v=1.42.0"></script>
 <script src="/js/atsmem-data.js?v=1.42.0"></script>
 <script src="/js/atsmem.js?v=1.42.0"></script>
+<script src="/js/atsscan-data.js?v=1.42.0"></script>
+<script src="/js/atsscan.js?v=1.42.0"></script>
 <script src="/js/xota.js?v=1.42.0"></script>
 <script src="/js/satmath.js?v=1.42.0"></script>
 <script src="/js/sats.js?v=1.42.0"></script>

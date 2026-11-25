@@ -78,6 +78,7 @@ function atsMemTick() {
   }
   if (!atsMem.queue.length || !a.lastLine) return;
   if (a.shotWanted || a.want || Date.now() - atsMem.sentAt < ATS_MEM_GAP) return; // a screen picture or tuning first
+  if (typeof atsScanBusy === "function" && atsScanBusy()) return; // a band scan first
   const next = atsMem.queue.shift();
   atsMem.sentAt = Date.now();
   atsMem.lastWhat = next.what === "read" ? "" : next.what;

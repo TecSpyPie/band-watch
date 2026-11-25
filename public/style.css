@@ -457,6 +457,13 @@ table.sattab tr.satup td{background:color-mix(in srgb,var(--warm) 14%,transparen
 .atsmem-form #atsMemName{width:8em}
 .atsmemtab tbody tr{cursor:default}
 .atsmem-acts{display:flex;gap:6px;align-items:center}
+.atsmem-form #atsScanFrom,.atsmem-form #atsScanTo{width:6.5em}
+.atsmem-form #atsScanStep{width:4em}
+.atsscan-graph{position:relative;margin:6px 0;border:1px solid var(--line);border-radius:8px;padding:4px;background:var(--surface);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -6px 14px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.12)}
+.atsscan-graph canvas{display:block;width:100%;height:180px;cursor:crosshair}
+.atsscan-tip{position:absolute;top:8px;right:12px;padding:2px 8px;border-radius:4px;background:var(--surface);border:1px solid var(--line);pointer-events:none}
+.atsscan-tip[hidden]{display:none}
 
 /* Own windows */
 .popbtn{float:right;font-size:.8em;padding:1px 6px;margin:2px 0 0 6px;position:relative;z-index:1}
