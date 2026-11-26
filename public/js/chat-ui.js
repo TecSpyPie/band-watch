@@ -53,7 +53,7 @@
   function hhmm(t) { const d = new Date(t); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}z`; }
 
   function renderList(stick) {
-    const ul = byId("bwcList"); if (!ul) return;
+    const ul = byId("bwcList"); if (!ul || S.webOnly) return;
     const atBottom = stick || ul.scrollHeight - ul.scrollTop - ul.clientHeight < 40;
     const me = myCall();
     const shown = S.msgs.filter((m) => !S.hidden.has(m.call));
@@ -81,6 +81,7 @@
       const res = await fetch(`/api/chat?room=${encodeURIComponent(room)}&since=${S.last}`, { cache: "no-store" });
       if (!res.ok) throw new Error(res.status);
       const d = await res.json();
+      if (d.available === false) return webOnly(d.web);
       if (room !== S.room) return;
       if (Array.isArray(d.messages) && d.messages.length) {
         const seen = new Set(S.msgs.map((m) => m.id));
@@ -90,7 +91,19 @@
       S.err = ""; renderList();
     } catch { S.err = "offline"; renderList(); }
   }
+  /** The Windows app has no chat of its own (it would only ever have one person in it): point to the website. */
+  function webOnly(url) {
+    S.webOnly = true; clearTimeout(S.timer);
+    const web = /^https:\/\//.test(String(url || "")) ? url : "https://band-watch.ample.run/";
+    const ul = byId("bwcList"); if (!ul) return;
+    ul.style.height = "auto";
+    ul.replaceChildren(mk("li", { class: "bwc-empty" }, "The chat is on the Band Watch website, where everyone meets. ",
+      mk("a", { href: web, target: "_blank", rel: "noopener noreferrer", text: "Open the chat on the website" }), "."));
+    // style.display, not hidden: these have display:flex in the chat's CSS, which would win over [hidden].
+    for (const el of document.querySelectorAll("#bwcRooms, #secChat .bwc-form, #secChat .bwc-meta")) el.style.display = "none";
+  }
   function schedule() {
+    if (S.webOnly) return;
     clearTimeout(S.timer);
     S.timer = setTimeout(async () => { await poll(); schedule(); }, document.visibilityState === "visible" ? 5000 : 30000);
   }
@@ -137,7 +150,7 @@
 
   function init() {
     build(); renderList(true); poll().then(() => renderList(true)); schedule();
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { poll(); schedule(); } });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !S.webOnly) { poll(); schedule(); } });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
   window.BWChat = { switchRoom, poll, S };

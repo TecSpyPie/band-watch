@@ -215,6 +215,9 @@ var gridRe = regexp.MustCompile(`^[A-R]{2}\d{2}$`)
 var callRe = regexp.MustCompile(`^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(/[A-Z0-9]{1,6})?$`)
 var minsRe = regexp.MustCompile(`^\d+$`)
 
+// Where the Band Watch chat is: the website. The Windows app links there rather than running a chat of its own.
+const chatWebURL = "https://band-watch.ample.run/"
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The desktop app only answers to this PC, which also stops other web sites reaching it by DNS tricks.
 	if s.cfg.Desktop && !localHost.MatchString(r.Host) {
@@ -228,6 +231,16 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if p == "/api/sdr" || strings.HasPrefix(p, "/api/sdr/") {
 		s.handleSdr(w, r)
+		return
+	}
+	if p == "/api/chat" {
+		// The chat lives on the website, where everyone meets: a chat on one PC would only have one person in it.
+		// The page shows a link there instead. Nothing is sent anywhere from here.
+		if r.Method == "GET" || r.Method == "HEAD" {
+			sendJSON(w, 200, map[string]any{"available": false, "web": chatWebURL, "rooms": []string{}, "messages": []any{}, "last": 0}, nil)
+			return
+		}
+		sendJSON(w, 404, errJSON("Chat is on the web version of Band Watch: "+chatWebURL), nil)
 		return
 	}
 	if r.Method == http.MethodPost {

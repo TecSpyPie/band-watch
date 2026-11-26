@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -95,5 +96,24 @@ func TestContestsRouteCachesAndKeepsAnOldCopy(t *testing.T) {
 	empty.ServeHTTP(rec, httptest.NewRequest("GET", "/api/contests", nil))
 	if rec.Code != 502 {
 		t.Errorf("no copy and the calendar down: %d", rec.Code)
+	}
+}
+
+// The Windows app has no chat of its own: it says where the chat is and accepts no messages.
+func TestChatPointsToTheWebsite(t *testing.T) {
+	s := NewServer(Config{})
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, httptest.NewRequest("GET", "/api/chat?room=general&since=0", nil))
+	var body map[string]any
+	json.Unmarshal(rec.Body.Bytes(), &body)
+	if rec.Code != 200 || body["available"] != false || body["web"] != "https://band-watch.ample.run/" || len(body["messages"].([]any)) != 0 {
+		t.Fatalf("GET: %d %v", rec.Code, body)
+	}
+	rec = httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/api/chat", strings.NewReader(`{"room":"general","call":"M3VRV","text":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	s.ServeHTTP(rec, req)
+	if rec.Code != 404 || !strings.Contains(rec.Body.String(), "web version") {
+		t.Fatalf("POST: %d %s", rec.Code, rec.Body.String())
 	}
 }

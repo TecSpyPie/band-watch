@@ -3223,3 +3223,22 @@ test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991
   assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#secDv *")].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).map((e) => e.tagName + "#" + e.id).slice(0, 5)), []);
   assert.deepEqual(errors, []);
 });
+
+test("chat: the website has the chat; the Windows app links to it instead", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.waitForSelector("#secChat");
+  if ((process.env.BW_SERVER || "node") === "go") {
+    await page.waitForSelector("#bwcList a[href='https://band-watch.ample.run/']");
+    assert.match(await page.textContent("#bwcList"), /The chat is on the Band Watch website/);
+    assert.equal(await page.isVisible("#secChat .bwc-form"), false, "nothing to type into on the PC app");
+    assert.equal(await page.isVisible("#bwcRooms"), false);
+    await page.waitForTimeout(6000); // past the 5 second poll: the link stays and no more requests go out
+    assert.match(await page.textContent("#bwcList"), /The chat is on the Band Watch website/);
+  } else {
+    await page.waitForFunction(() => /No messages in General yet/.test(document.getElementById("bwcList").textContent));
+    assert.equal(await page.isVisible("#secChat .bwc-form"), true);
+    assert.equal(await page.$$eval("#bwcRooms button", (b) => b.length), 14);
+  }
+  // Feeds the page fetches from other sites (NOAA, CelesTrak) and the contest calendar aren't part of this test.
+  assert.deepEqual(errors.filter((e) => !/api\/contests|swpc\.noaa|celestrak|ERR_TUNNEL|ERR_NAME|status of 502/.test(e)), []);
+});
