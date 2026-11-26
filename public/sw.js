@@ -2,7 +2,7 @@
 // and opens the last copy of the page when there's no connection. Live data (/api/) is never cached:
 // it always comes straight from the server, so what you see is never out of date without saying so.
 "use strict";
-const VERSION = "1.41.0";
+const VERSION = "1.42.0";
 const CACHE = `bandwatch-${VERSION}`;
 const SHELL = ["/", "/install", "/help", "/style.css", "/listen.css", "/nav.css","/install.css", "/favicon.svg", "/manifest.webmanifest", "/icons/icon-192.png"];
 
