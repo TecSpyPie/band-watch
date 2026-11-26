@@ -589,6 +589,8 @@ process.on("exit", () => { if (rtlProc && !rtlProc.exited) rtlProc.child.kill();
 const sdrHeaderOk = (req) => req.headers["x-band-watch"] === "sdr";
 
 function handleSdr(req, res, url) {
+  // The web version has no rtl_tcp bridge: say so plainly, so browsers do not log an error on every load.
+  if (!SDR_ON && req.method === "GET" && url.pathname === "/api/sdr") return sendJson(res, 200, { available: false });
   if (!SDR_ON) return sendJson(res, 404, { error: "The RTL-SDR receiver works in Band Watch on your own PC." });
   if (req.method === "GET" && url.pathname === "/api/sdr") return sendJson(res, 200, { available: true });
   if (!sdrHeaderOk(req)) return sendJson(res, 403, { error: "missing X-Band-Watch header" });
