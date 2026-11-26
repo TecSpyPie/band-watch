@@ -689,6 +689,8 @@ async function handle(req, res) {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname.startsWith("/api/qrz/")) return handleQrz(req, res, url);
   if (url.pathname === "/api/sdr" || url.pathname.startsWith("/api/sdr/")) return handleSdr(req, res, url);
+  if (url.pathname === "/api/chat") return require("./chat.js").handle(req, res, url); // Band Watch chat (chat.js)
+  if (url.pathname === "/api/contests") return require("./contests.js").handle(req, res); // WA7BNM Contest Calendar (contests.js)
   if (TEST_HOOKS && req.method === "POST" && url.pathname === "/api/test/reset") { resetAll(); return sendJson(res, 200, { ok: true }); }
   if (TEST_HOOKS && req.method === "POST" && url.pathname === "/api/test/advance") {
     clock.advance(Number(url.searchParams.get("ms")) || 0);

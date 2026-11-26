@@ -67,6 +67,10 @@ function qrzLogMock(body, req) {
 function handle(kind, url, body, req) {
   if (kind === "qrzlog") return qrzLogMock(body, req);
   if (kind === "qrz") return qrzMock(url.searchParams);
+  if (kind === "contest") return `<rss><channel>
+<item><title>CQ WW DX Contest, CW</title><link>https://www.contestcalendar.com/contestdetails.php?ref=1</link><description>0000Z, Nov 28 to 2400Z, Nov 29</description></item>
+<item><title>Not from the calendar</title><link>https://example.com/x</link><description>0000Z-0100Z, Nov 27</description></item>
+</channel></rss>`;
   if (kind === "eibi") return up.eibiDown ? { status: 503 } : eibiFile(url, up.eibiMissing || []);
   if (kind === "pota") return up.potaDown ? { status: 503 } : XOTA.potaRows();
   if (kind === "sota") return up.sotaDown ? new Error("down") : XOTA.sotaRows();
@@ -839,6 +843,19 @@ test("GET /api/xota: POTA down is a 502", async () => {
   up.potaDown = true;
   const r = await get("/api/xota");
   assert.equal(r.status, 502);
+});
+
+test("GET /api/contests: the WA7BNM calendar, labelled, only its own links, cached for browsers", async () => {
+  const r = await get("/api/contests");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.equal(j.source, "WA7BNM Contest Calendar");
+  assert.equal(j.link, "https://www.contestcalendar.com/");
+  assert.deepEqual(j.contests.map((c) => c.name), ["CQ WW DX Contest, CW"]);
+  assert.equal(typeof j.contests[0].start, "number");
+  assert.equal(j.contests[0].end - j.contests[0].start, 48 * 3600e3);
+  assert.equal(r.headers["cache-control"], "public, max-age=900");
+  assert.equal((await get("/api/contests", { method: "POST" })).status, 405);
 });
 
 test("GET /api/eibi: this season's EiBi schedule and README, from Latin-1, cached", async () => {

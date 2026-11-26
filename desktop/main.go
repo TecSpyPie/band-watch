@@ -57,6 +57,7 @@ func main() {
 	cfg.QrzLogURL = env("BW_QRZLOG_URL", cfg.QrzLogURL)
 	cfg.PotaURL = env("BW_POTA_URL", cfg.PotaURL)
 	cfg.EibiURL = env("BW_EIBI_URL", cfg.EibiURL)
+	cfg.ContestURL = env("BW_CONTEST_URL", cfg.ContestURL)
 	cfg.UpdateURL = env("BW_UPDATE_URL", cfg.UpdateURL)
 	cfg.UpdateAssets = os.Getenv("BW_UPDATE_ASSETS")
 
