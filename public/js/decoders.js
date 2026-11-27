@@ -56,7 +56,7 @@ async function dcStart() {
   dc.rate = 0;
   if (dc.mode === "CW") dc.cwText = "";
   if (dc.mode === "RTTY") { dc.rttyText = ""; dc.rttyLocked = false; }
-  dc.worker = new Worker("/js/ft8-worker.js?v=1.42.0");
+  dc.worker = new Worker("/js/ft8-worker.js?v=1.43.0");
   dc.worker.onmessage = (e) => onDecoderMessage(e.data);
   dc.worker.onerror = (e) => { dcStop(); dcSetStatus(`The decoder stopped: ${e.message}`); };
   if (dc.src === "mic") {
@@ -65,7 +65,7 @@ async function dcStart() {
       if (dc.device) constraints.deviceId = { exact: dc.device };
       dc.stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
       dc.ctx = new AudioContext();
-      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.42.0");
+      await dc.ctx.audioWorklet.addModule("/js/capture-worklet.js?v=1.43.0");
       const srcNode = dc.ctx.createMediaStreamSource(dc.stream);
       dc.node = new AudioWorkletNode(dc.ctx, "bw-capture");
       dc.node.port.onmessage = (e) => decoderFeed(e.data, dc.ctx.sampleRate);
