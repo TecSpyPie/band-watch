@@ -75,7 +75,7 @@ test("ClearRX starts with a test input, the effects run, presets are saved", { s
   assert.equal(await page.isChecked("#fxNotch"), true);
   assert.equal(await page.textContent("#volVal"), "150%");
 
-  // Band Watch reading the settings lights "Band Watch is using these settings"
+  // HamShack reading the settings lights "HamShack is using these settings"
   await fetch(base + "/api/settings", { headers: { Origin: "http://localhost:8073" } });
   await page.waitForSelector("#bwLink:not([hidden])", { timeout: 6000 });
 
@@ -116,7 +116,7 @@ test("ClearRX My radio: each radio sets its preset and tip, finds its input, and
   });
   assert.deepEqual(found, { icom: "codec", ats: "line", other: null });
 
-  // RTL-SDR: points to Band Watch's Listen; kept by ClearRX.exe
+  // RTL-SDR: points to HamShack's Listen; kept by ClearRX.exe
   await page.click('#radios button[data-r="rtl"]');
   assert.match(await page.textContent("#radioTip"), /Send my RTL-SDR sound through ClearRX/);
   await page.waitForTimeout(600);

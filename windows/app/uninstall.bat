@@ -1,11 +1,11 @@
 @echo off
 setlocal EnableExtensions
-title Band Watch by M3VRV ^& King Coder - Uninstall
+title HamShack by M0GLP ^& M3VRV - Uninstall
 set "DEST=%~dp0"
 if "%DEST:~-1%"=="\" set "DEST=%DEST:~0,-1%"
 
 echo.
-choice /C YN /M "  Remove Band Watch by M3VRV & King Coder (and ClearRX) from this PC"
+choice /C YN /M "  Remove HamShack by M0GLP & M3VRV (and ClearRX) from this PC"
 if errorlevel 2 exit /b 0
 
 call "%~dp0stop-bandwatch.bat" quiet
@@ -16,7 +16,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0make-shortcuts.ps1" -I
 rem Remove the entry in Settings > Apps (made by BandWatch-Setup.exe).
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\BandWatchM3vrv" /f >nul 2>nul
 
-echo   Band Watch has been removed. Your settings stay in your web browser until you clear them.
+echo   HamShack has been removed. Your settings stay in your web browser until you clear them.
 echo.
 pause
 rem Leave the folder before deleting it, including this file.

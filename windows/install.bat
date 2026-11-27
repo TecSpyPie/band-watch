@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-title Band Watch by M3VRV ^& King Coder - Installer
+title HamShack by M0GLP ^& M3VRV - Installer
 cd /d "%~dp0"
 
 rem "install.bat /auto" installs answering every question with its default.
@@ -8,12 +8,12 @@ set "AUTO="
 if /i "%~1"=="/auto" set "AUTO=1"
 
 set "SRC=%~dp0"
-rem Band Watch goes in C:\BandWatch (the Windows drive), the same place as BandWatch-Setup.exe puts it.
+rem HamShack goes in C:\BandWatch (the Windows drive), the same place as BandWatch-Setup.exe puts it.
 if "%SystemDrive%"=="" (set "DEST=C:\BandWatch") else (set "DEST=%SystemDrive%\BandWatch")
 set "OLD=%LOCALAPPDATA%\BandWatch"
 
 echo.
-echo   Band Watch by M3VRV ^& King Coder - Windows installer
+echo   HamShack by M0GLP ^& M3VRV - Windows installer
 echo   ========================================
 echo.
 
@@ -32,7 +32,7 @@ rem ---------- Copy the app ----------
 echo   Installing to %DEST%
 if not exist "%DEST%" mkdir "%DEST%" 2>nul
 if not exist "%DEST%" (
-  echo   %DEST% couldn't be created, so Band Watch goes in %OLD% instead.
+  echo   %DEST% couldn't be created, so HamShack goes in %OLD% instead.
   set "DEST=%OLD%"
   if not exist "%OLD%" mkdir "%OLD%"
 )
@@ -50,17 +50,17 @@ rem ---------- An older copy in %LOCALAPPDATA%\BandWatch (installed by earlier v
 if /i not "%DEST%"=="%OLD%" if exist "%OLD%" (
   if exist "%OLD%\BandWatch.exe" (
     echo.
-    call :ask "Remove the older copy of Band Watch in %OLD% (your settings are kept)" Y
+    call :ask "Remove the older copy of HamShack in %OLD% (your settings are kept)" Y
     if not errorlevel 2 rmdir /s /q "%OLD%"
   ) else (
     rmdir /s /q "%OLD%" 2>nul
   )
 )
 
-rem ---------- List Band Watch in Settings, Apps, so it can be uninstalled from there ----------
+rem ---------- List HamShack in Settings, Apps, so it can be uninstalled from there ----------
 set "UKEY=HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\BandWatchM3vrv"
-reg add "%UKEY%" /v DisplayName /t REG_SZ /d "Band Watch by M3VRV ^& King Coder" /f >nul 2>nul
-reg add "%UKEY%" /v Publisher /t REG_SZ /d "M3VRV ^& King Coder" /f >nul 2>nul
+reg add "%UKEY%" /v DisplayName /t REG_SZ /d "HamShack by M0GLP ^& M3VRV" /f >nul 2>nul
+reg add "%UKEY%" /v Publisher /t REG_SZ /d "M0GLP ^& M3VRV" /f >nul 2>nul
 reg add "%UKEY%" /v DisplayIcon /t REG_SZ /d "%DEST%\bandwatch.ico" /f >nul 2>nul
 reg add "%UKEY%" /v InstallLocation /t REG_SZ /d "%DEST%" /f >nul 2>nul
 reg add "%UKEY%" /v UninstallString /t REG_SZ /d "\"%DEST%\uninstall.bat\"" /f >nul 2>nul
@@ -68,9 +68,9 @@ reg add "%UKEY%" /v NoModify /t REG_DWORD /d 1 /f >nul 2>nul
 reg add "%UKEY%" /v NoRepair /t REG_DWORD /d 1 /f >nul 2>nul
 if exist "%SRC%BUILD-INFO.txt" for /f "tokens=2" %%x in ('findstr /b "Version" "%SRC%BUILD-INFO.txt"') do reg add "%UKEY%" /v DisplayVersion /t REG_SZ /d %%x /f >nul 2>nul
 
-rem ---------- Clear the "downloaded from the internet" mark from Band Watch's own files ----------
+rem ---------- Clear the "downloaded from the internet" mark from HamShack's own files ----------
 rem Windows marks every file that came in a download. Unblocking them here (the same as ticking
-rem "Unblock" in a file's Properties) stops Windows asking about each Band Watch file again.
+rem "Unblock" in a file's Properties) stops Windows asking about each HamShack file again.
 rem It changes nothing else on this PC.
 powershell -NoProfile -Command "Get-ChildItem -LiteralPath '%DEST%' -Recurse -File | Unblock-File" >nul 2>nul
 
@@ -80,18 +80,18 @@ call :sacheck
 rem ---------- Shortcuts ----------
 set "STARTUP=no"
 echo.
-call :ask "Start Band Watch automatically when Windows starts" N
+call :ask "Start HamShack automatically when Windows starts" N
 if not errorlevel 2 set "STARTUP=yes"
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%DEST%\make-shortcuts.ps1" -InstallDir "%DEST%" -Startup %STARTUP%
 if errorlevel 1 echo   Shortcuts could not be created. You can still run "%DEST%\start-bandwatch.bat".
 
 echo.
-echo   Done. Band Watch by M3VRV ^& King Coder is installed.
-echo   Use the "Band Watch by M3vrv" shortcut on your desktop or in the Start menu.
+echo   Done. HamShack by M0GLP ^& M3VRV is installed.
+echo   Use the "HamShack by M0GLP & M3VRV" shortcut on your desktop or in the Start menu.
 echo   It opens at http://localhost:8073 in your web browser.
 echo.
-call :ask "Open Band Watch now" Y
+call :ask "Open HamShack now" Y
 if not errorlevel 2 start "" /min "%DEST%\start-bandwatch.bat"
 echo.
 call :finish
@@ -122,10 +122,10 @@ echo   Smart App Control is ON on this PC.
 echo   It blocks BandWatch.exe, because the exe isn't signed with a paid
 echo   code-signing certificate. Windows gives no "Run anyway" for it.
 echo.
-echo   Band Watch can still run: the shortcuts start it with Node.js
+echo   HamShack can still run: the shortcuts start it with Node.js
 echo   instead (Node.js is signed, so Windows allows it).
 if defined NODE (
-  echo   Node.js is installed, so Band Watch will work as it is.
+  echo   Node.js is installed, so HamShack will work as it is.
   echo   ------------------------------------------------------------------
   exit /b 0
 )
@@ -137,7 +137,7 @@ echo     2  Open Windows Security, so you can turn Smart App Control off yoursel
 echo     3  Skip for now
 echo.
 if defined AUTO (
-  echo   Skipped [automatic]. Install Node.js LTS from https://nodejs.org to run Band Watch.
+  echo   Skipped [automatic]. Install Node.js LTS from https://nodejs.org to run HamShack.
   exit /b 0
 )
 choice /C 123 /N /M "  Type 1, 2 or 3: "
@@ -146,7 +146,7 @@ if errorlevel 2 goto :sacopen
 where winget >nul 2>nul
 if errorlevel 1 (
   echo   winget isn't available, so the Node.js download page will open instead.
-  echo   Install the LTS version, then open Band Watch.
+  echo   Install the LTS version, then open HamShack.
   start "" "https://nodejs.org/en/download"
   exit /b 0
 )
@@ -159,7 +159,7 @@ exit /b 0
 :sacopen
 echo.
 echo   In Windows Security, open "Smart App Control settings" and choose Off.
-echo   That lets every unsigned program run on this PC, not only Band Watch.
+echo   That lets every unsigned program run on this PC, not only HamShack.
 echo   On Windows 11 25H2 and later you can turn it back on there; on older
 echo   versions it can only be turned back on by resetting Windows.
 start "" "windowsdefender://appbrowser"

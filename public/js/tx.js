@@ -1,12 +1,12 @@
-/* Transmit FT8 and FT4, in the Decoder panel. Band Watch keys your radio over its CAT cable (Yaesu TX1;/TX0;,
+/* Transmit FT8 and FT4, in the Decoder panel. HamShack keys your radio over its CAT cable (Yaesu TX1;/TX0;,
    Kenwood TX1;/RX;, Icom CI-V 1C 00) and plays the signal into the radio's USB sound (for the FT-991A, "USB Audio
    CODEC"). The signal and the QSO steps are in ftxtx.js.
 
    Safety first:
-   - Nothing is sent unless you've switched Enable TX on. It's off every time Band Watch starts.
+   - Nothing is sent unless you've switched Enable TX on. It's off every time HamShack starts.
    - Stop TX (or Esc) stops at once: sound off and the radio back to receive, twice to be sure.
    - Every transmission has its own timer that unkeys the radio, whatever else happens.
-   - Band Watch only transmits with a callsign and locator set, a radio that can transmit, the radio in DATA-USB
+   - HamShack only transmits with a callsign and locator set, a radio that can transmit, the radio in DATA-USB
      (USB for Icom and Kenwood) and the whole signal inside a UK amateur band.
    - It stops calling after 6 overs with no answer (10 CQs), and after the QSO's 73.
    - Your power and the parts of the band your licence allows are for you to set on the radio. */
@@ -47,44 +47,44 @@ function txPttCmd(on) {
   return "";
 }
 
-// Bands Band Watch may transmit on: HF and 6 m only. 2 m and 70 cm are in the band plan for listening and
+// Bands HamShack may transmit on: HF and 6 m only. 2 m and 70 cm are in the band plan for listening and
 // repeaters, but transmitting there is not enabled (a safety decision for the owner, not a side effect).
 const TX_BANDS = ["160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6"];
 
-// Band plan segments Band Watch never transmits data or pictures in.
+// Band plan segments HamShack never transmits data or pictures in.
 const TX_NOT_IN = { none: "has no UK amateur allocation", beacon: "is for beacons only", cw: "is for CW only in the band plan" };
 
-/** Is a signal from lo to hi kHz, bwHz wide, somewhere Band Watch may transmit it? "" if so, or why not. */
+/** Is a signal from lo to hi kHz, bwHz wide, somewhere HamShack may transmit it? "" if so, or why not. */
 function txBandProblem(lo, hi, bwHz, what, allowCw = false) {
   if (typeof BANDPLAN === "undefined" || !TX_BANDS.some((b) => BANDPLAN[b] && lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi)) {
     if (typeof BANDPLAN !== "undefined" && Object.keys(BANDPLAN).some((b) => lo >= BANDPLAN[b].lo && hi <= BANDPLAN[b].hi)) {
-      return `Band Watch only transmits on HF and 6 m, not on ${lo >= 400000 ? "70 cm" : "2 m"}.`;
+      return `HamShack only transmits on HF and 6 m, not on ${lo >= 400000 ? "70 cm" : "2 m"}.`;
     }
-    return `${lo.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
+    return `${lo.toFixed(3)} kHz is outside the amateur bands: HamShack won't transmit there.`;
   }
   // Every part of the signal must be in a segment that allows it (60 m has gaps with no UK allocation, say).
   for (let k = lo; ; k = Math.min(hi, k + 0.02)) {
     const s = planSegment(k);
-    if (!s || k < s.from - 1e-9 || k > s.to + 1e-9) return `${k.toFixed(3)} kHz is outside the amateur bands: Band Watch won't transmit there.`;
-    if (TX_NOT_IN[s.type] && !(allowCw && s.type === "cw")) return `${k.toFixed(3)} kHz ${TX_NOT_IN[s.type]}: Band Watch won't send ${what} there.`;
+    if (!s || k < s.from - 1e-9 || k > s.to + 1e-9) return `${k.toFixed(3)} kHz is outside the amateur bands: HamShack won't transmit there.`;
+    if (TX_NOT_IN[s.type] && !(allowCw && s.type === "cw")) return `${k.toFixed(3)} kHz ${TX_NOT_IN[s.type]}: HamShack won't send ${what} there.`;
     if (s.bw > 0 && s.bw < bwHz) return `${s.from}–${s.to} kHz is for signals up to ${s.bw} Hz wide in the band plan, and ${what} is about ${bwHz} Hz wide: move to a wider part of the band.`;
     if (k >= hi) break;
   }
   return "";
 }
 
-/** Why Band Watch can't transmit right now, in plain words, or "" if it can. kind: "ft" (FT8/FT4) or "sstv". */
+/** Why HamShack can't transmit right now, in plain words, or "" if it can. kind: "ft" (FT8/FT4) or "sstv". */
 function txProblem(kind = dc.mode === "SSTV" ? "sstv" : dc.mode === "CW" ? "cw" : "ft") {
   if (kind === "ft" && dc.mode !== "FT8" && dc.mode !== "FT4") return "Set the decoder's Mode to FT8 or FT4.";
   if (!app.myCall) return "Enter your callsign first (Your callsign, at the top).";
   if (!/^[A-R]{2}\d{2}$/.test(txMyGrid())) return "Enter your locator first (Your locator, at the top).";
-  if (!rig.connected) return "Connect your radio first (Connect radio): Band Watch switches it to transmit over the cable.";
+  if (!rig.connected) return "Connect your radio first (Connect radio): HamShack switches it to transmit over the cable.";
   if (!TX_KINDS.includes(rig.kind)) return `${typeof rigLabel === "function" ? rigLabel() : "This radio"} is a receiver: it can't transmit.`;
   if (!rig.hz) return "Waiting for the radio to say its frequency…";
   const sb = rig.listenMode;
   if (kind === "ft" && sb !== "usb") return "Put the radio in USB (DATA-USB): click the Tune to FT8 button with the radio connected.";
   // CW is sent as a clean keyed tone into the radio's USB sound, so the radio is in DATA-USB like FT8.
-  if (kind === "cw" && sb !== "usb") return "For CW from the keyboard, put the radio in DATA-USB (USB on Icom and Kenwood): Band Watch sends a keyed tone into its USB sound. Press MODE on the radio, or tune with the radio connected and choose USB.";
+  if (kind === "cw" && sb !== "usb") return "For CW from the keyboard, put the radio in DATA-USB (USB on Icom and Kenwood): HamShack sends a keyed tone into its USB sound. Press MODE on the radio, or tune with the radio connected and choose USB.";
   if (kind === "sstv" && sb !== "usb" && sb !== "lsb") return "Put the radio in USB or LSB (DATA-USB / DATA-LSB): click Tune to SSTV with the radio connected.";
   if (rig.kind === "yaesu" && rig.modeName !== (sb === "lsb" ? "DATA-LSB" : "DATA-USB")) {
     return `Put the radio in ${sb === "lsb" ? "DATA-LSB" : "DATA-USB"}, so it takes its sound from the USB cable and not the microphone: ${kind === "cw" ? "press MODE on the radio" : `click Tune to ${kind === "ft" ? "FT8" : "SSTV"} (Settings > Radio: tick the data-mode box), or press MODE on the radio`}.`;
@@ -135,7 +135,7 @@ async function txListDevices() {
     const named = outs.some((d) => d.label);
     sel.innerHTML = `<option value="">Choose…</option>` + outs.map((d, i) =>
       `<option value="${esc(d.deviceId)}"${d.deviceId === tx.dev ? " selected" : ""}>${esc(d.label || `Sound output ${i + 1}`)}</option>`).join("");
-    $("txDevNote").textContent = named ? "" : "To see the names of your sound outputs, start the decoder once with This computer's sound input (Band Watch then has permission to list them).";
+    $("txDevNote").textContent = named ? "" : "To see the names of your sound outputs, start the decoder once with This computer's sound input (HamShack then has permission to list them).";
   } catch { /* leave as is */ }
 }
 
@@ -197,7 +197,7 @@ async function txSend(slotStart) {
   const p = txProto();
   const text = tx.state.tx;
   const tones = Ftx.encodeTones(text, p);
-  if (!tones) { txHalt(`Band Watch can't send "${text}" as ${p.name}.`); return; }
+  if (!tones) { txHalt(`HamShack can't send "${text}" as ${p.name}.`); return; }
   tx.on = true;
   tx.slotStart = slotStart;
   let ctx;
@@ -338,7 +338,7 @@ function txOnDecodes(rows) {
 
 /* ---------- What you click ---------- */
 
-/** Enable TX: the one switch that lets Band Watch transmit. */
+/** Enable TX: the one switch that lets HamShack transmit. */
 async function txSetEnabled(on) {
   if (!on) { txHalt(); return; }
   const problem = txProblem();
@@ -476,7 +476,7 @@ function setupTx() {
   });
   // Esc stops transmitting at once, wherever you are on the page.
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && (tx.on || tx.tuning || tx.enabled)) txHalt("Stopped (Esc)."); });
-  // Never leave the radio transmitting when Band Watch closes or reloads.
+  // Never leave the radio transmitting when HamShack closes or reloads.
   window.addEventListener("pagehide", () => { if (tx.on || tx.tuning) txUnkey(); });
   window.addEventListener("beforeunload", () => { if (tx.on || tx.tuning) txUnkey(); });
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", txListDevices);

@@ -111,7 +111,7 @@ function logSubmit(e) {
 }
 
 /**
- * Log a QSO straight away, without the form (an FT8/FT4 QSO Band Watch completed, with "add completed QSOs" on).
+ * Log a QSO straight away, without the form (an FT8/FT4 QSO HamShack completed, with "add completed QSOs" on).
  * f: { call, kHz, mode, rstS, rstR, grid, note }. The same QSO twice (same call, band and mode within 15 minutes)
  * is only logged once. Returns the logged contact, or null if it couldn't be.
  */
@@ -208,7 +208,7 @@ function toAdif(qsos) {
 }
 
 function adifHeader() {
-  return `Band Watch by M3VRV & King Coder logbook export\n${adifField("ADIF_VER", "3.1.4")}${adifField("PROGRAMID", "Band Watch")}${adifField("PROGRAMVERSION", (document.querySelector('script[src*="app.js?v="]')?.src.match(/v=([\d.]+)/) || [])[1] || "")}${adifField("CREATED_TIMESTAMP", `${utcDate()} ${utcTime()}00`)}<EOH>\n`;
+  return `HamShack by M0GLP & M3VRV logbook export\n${adifField("ADIF_VER", "3.1.4")}${adifField("PROGRAMID", "HamShack")}${adifField("PROGRAMVERSION", (document.querySelector('script[src*="app.js?v="]')?.src.match(/v=([\d.]+)/) || [])[1] || "")}${adifField("CREATED_TIMESTAMP", `${utcDate()} ${utcTime()}00`)}<EOH>\n`;
 }
 
 /** One contact as an ADIF record, ending <EOR>. */
@@ -297,7 +297,7 @@ async function logImport(file) {
 }
 
 /* ---------- Sending contacts to the QRZ Logbook ---------- */
-// The QRZ Logbook API key is kept in this browser and sent with each request through Band Watch's
+// The QRZ Logbook API key is kept in this browser and sent with each request through HamShack's
 // server (QRZ doesn't let web pages call it directly). QRZ needs a subscription for its Logbook API.
 
 const QRZLOG_STORE = "bw-qrzlog";
@@ -416,7 +416,7 @@ function setupQrzLog() {
   $("qlForget").addEventListener("click", () => {
     qrzlog.key = ""; qrzlog.book = ""; qrzlog.auto = false; saveQrzLog();
     $("qlKey").value = "";
-    $("qlMsg").textContent = "Band Watch has forgotten your QRZ Logbook key.";
+    $("qlMsg").textContent = "HamShack has forgotten your QRZ Logbook key.";
     renderQrzLog();
   });
 }

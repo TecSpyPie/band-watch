@@ -1,6 +1,6 @@
-// A real Windows app window for Band Watch or ClearRX (TEST VERSION).
+// A real Windows app window for HamShack or ClearRX (TEST VERSION).
 // It starts the installed program's local server without a browser and shows its page in a window of
-// its own, using Microsoft WebView2. Build with /define:CLEARRX for ClearRX, otherwise it is Band Watch.
+// its own, using Microsoft WebView2. Build with /define:CLEARRX for ClearRX, otherwise it is HamShack.
 // "--selftest <file>" checks the features the apps depend on, writes the results and closes.
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ static class Config
     public const int Width = 980, Height = 820;
     public const bool NeedsShim = true;
 #else
-    public const string Name = "Band Watch by M3vrv";
+    public const string Name = "HamShack by M0GLP & M3VRV";
     public const string Url = "http://localhost:8073/";
     public const string Health = "http://127.0.0.1:8073/healthz";
     const string ServerRelative = "BandWatch.exe";
@@ -243,7 +243,7 @@ class HostForm : Form
     void EnsureServer()
     {
         if (Healthy()) return;
-        if (!File.Exists(Config.ServerExe)) throw new FileNotFoundException(Config.ServerExe + " was not found. Install Band Watch and ClearRX first.");
+        if (!File.Exists(Config.ServerExe)) throw new FileNotFoundException(Config.ServerExe + " was not found. Install HamShack and ClearRX first.");
         ProcessStartInfo info = new ProcessStartInfo(Config.ServerExe, Config.ServerArgs);
         info.UseShellExecute = false;
         info.CreateNoWindow = true;
@@ -298,9 +298,9 @@ class HostForm : Form
     }
 
 #if !CLEARRX
-    // ---------- Updates from inside Band Watch ----------
-    // "Install update" runs the normal Band Watch setup, which points the icons back at the Edge version,
-    // removes the start-with-Windows shortcut and opens an Edge window. When Band Watch's server restarts,
+    // ---------- Updates from inside HamShack ----------
+    // "Install update" runs the normal HamShack setup, which points the icons back at the Edge version,
+    // removes the start-with-Windows shortcut and opens an Edge window. When HamShack's server restarts,
     // this window puts all of that back the way it was.
 
     string lastStarted;
@@ -330,7 +330,7 @@ class HostForm : Form
         if (started == null) return;
         if (lastStarted != null && started != lastStarted)
         {
-            Upkeep.Log("Band Watch restarted (" + lastStarted + " -> " + started + "), tidying up after it.");
+            Upkeep.Log("HamShack restarted (" + lastStarted + " -> " + started + "), tidying up after it.");
             await Task.Run(() => Upkeep.Repair(true));
             edgeSweeps = 30; // about two minutes
             Upkeep.CloseEdgeCopies();
@@ -339,7 +339,7 @@ class HostForm : Form
         lastStarted = started;
     }
 
-    // When Band Watch's server started, from its health check, or null if it isn't answering.
+    // When HamShack's server started, from its health check, or null if it isn't answering.
     static string ServerStarted()
     {
         try
@@ -429,7 +429,7 @@ static class Upkeep
     static string Install { get { return Path.GetDirectoryName(Config.ServerExe); } }
     static string AppDir { get { return Path.GetDirectoryName(Application.ExecutablePath); } }
     static string DataDir { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "M3vrv", "BandWatchApp"); } }
-    static string StartupLink { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Band Watch by M3vrv.lnk"); } }
+    static string StartupLink { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "HamShack by M0GLP & M3VRV.lnk"); } }
 
     public static void Log(string text)
     {
@@ -454,11 +454,11 @@ static class Upkeep
                 bool haveClearRx = File.Exists(clearRx) && File.Exists(Path.Combine(Install, @"ClearRX\ClearRX.exe"));
                 string[] folders = {
                     Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "Band Watch by M3vrv")
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "HamShack by M0GLP & M3VRV")
                 };
                 foreach (string folder in folders)
                 {
-                    Point(shell, Path.Combine(folder, "Band Watch by M3vrv.lnk"), bandWatch, Path.Combine(Install, "bandwatch.ico"), "Open Band Watch by M3vrv");
+                    Point(shell, Path.Combine(folder, "HamShack by M0GLP & M3VRV.lnk"), bandWatch, Path.Combine(Install, "bandwatch.ico"), "Open HamShack by M0GLP & M3VRV");
                     if (haveClearRx)
                     {
                         Point(shell, Path.Combine(folder, "ClearRX by M3VRV.lnk"), clearRx, Path.Combine(Install, @"ClearRX\clearrx.ico"), "Open ClearRX by M3VRV, the radio audio processor");
@@ -479,7 +479,7 @@ static class Upkeep
                     link.WorkingDirectory = Install;
                     link.IconLocation = Path.Combine(Install, "bandwatch.ico") + ",0";
                     link.WindowStyle = 7;
-                    link.Description = "Start Band Watch by M3vrv in the background";
+                    link.Description = "Start HamShack by M0GLP & M3VRV in the background";
                     link.Save();
                     Log("Put back the start-with-Windows shortcut.");
                 }
@@ -523,7 +523,7 @@ static class Upkeep
         Log("Updated uninstall.bat to close the app windows.");
     }
 
-    // Closes the Edge app window the setup opens (its title is exactly Band Watch's), not ordinary Edge windows.
+    // Closes the Edge app window the setup opens (its title is exactly HamShack's), not ordinary Edge windows.
     public static void CloseEdgeCopies()
     {
         List<IntPtr> found = new List<IntPtr>();
@@ -548,7 +548,7 @@ static class Upkeep
         foreach (IntPtr hWnd in found)
         {
             PostMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-            Log("Closed the Edge copy of Band Watch that the setup opened.");
+            Log("Closed the Edge copy of HamShack that the setup opened.");
         }
     }
 }

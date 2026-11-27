@@ -44,7 +44,7 @@ for (const [proto, earlySec] of [[F.FT8, 13.6], [F.FT4, 6.0]]) {
     w.send({ type: "start", mode: proto.name, rate });
     const period = proto.period * 1000;
     const c0 = Date.parse("2026-11-19T15:00:00Z");
-    // our signal in the second cycle (c0 + period), starting 0.5 s in, as Band Watch sends it
+    // our signal in the second cycle (c0 + period), starting 0.5 s in, as HamShack sends it
     const text = "CQ M3VRV IO93";
     const { samples, lead } = T.wave(F.encodeTones(text, proto), { proto, rate, baseHz: 1200, amp: 0.4 });
     const sigAt = Math.round(((period + (proto.start - lead) * 1000) / 1000) * rate);

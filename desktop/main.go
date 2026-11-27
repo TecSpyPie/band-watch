@@ -1,10 +1,10 @@
 package main
 
-// BandWatch.exe: starts the Band Watch server on this PC and opens it in the web browser.
+// BandWatch.exe: starts the HamShack server on this PC and opens it in the web browser.
 //
 //   BandWatch.exe               start (or, if already running, just open the browser)
 //   BandWatch.exe --background  start without opening the browser (used at Windows start-up)
-//   BandWatch.exe --stop        stop a running Band Watch
+//   BandWatch.exe --stop        stop a running HamShack
 //
 // For tests and Linux: BW_TEST=1 PORT=1234 bandwatch --serve  (no browser, no localhost guard, test hooks on)
 
@@ -37,7 +37,7 @@ func env(k, def string) string {
 func main() {
 	serve := flag.Bool("serve", false, "run the server only (for tests)")
 	background := flag.Bool("background", false, "start without opening the browser")
-	stop := flag.Bool("stop", false, "stop a running Band Watch")
+	stop := flag.Bool("stop", false, "stop a running HamShack")
 	showVersion := flag.Bool("version", false, "print the version")
 	flag.Parse()
 
@@ -66,7 +66,7 @@ func main() {
 		port := env("PORT", "8080")
 		host := env("HOST", "127.0.0.1")
 		srv := &http.Server{Addr: net.JoinHostPort(host, port), Handler: NewServer(cfg), ReadHeaderTimeout: 10 * time.Second}
-		log.Printf("Band Watch by M3VRV & King Coder %s listening on %s", version, srv.Addr)
+		log.Printf("HamShack by M0GLP & M3VRV %s listening on %s", version, srv.Addr)
 		log.Fatal(srv.ListenAndServe())
 	}
 
@@ -94,8 +94,8 @@ func main() {
 		}
 		return
 	case running:
-		// An older Band Watch: ask it to stop (older Node.js versions are stopped directly).
-		log.Printf("stopping Band Watch %s to start %s", ver, version)
+		// An older HamShack: ask it to stop (older Node.js versions are stopped directly).
+		log.Printf("stopping HamShack %s to start %s", ver, version)
 		askToQuit(base)
 		if !waitFree(port, 5*time.Second) {
 			stopOldNodeServer()
@@ -106,7 +106,7 @@ func main() {
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		if running, _ := probe(base); !running {
-			messageBox("Band Watch by M3VRV & King Coder", fmt.Sprintf("Band Watch couldn't start because another program is using port %d.\n\nClose that program and try again.", port))
+			messageBox("HamShack by M0GLP & M3VRV", fmt.Sprintf("HamShack couldn't start because another program is using port %d.\n\nClose that program and try again.", port))
 		} else {
 			openBrowser(pageURL)
 		}
@@ -126,7 +126,7 @@ func main() {
 		defer done()
 		srv.Shutdown(shutdown)
 	}()
-	log.Printf("Band Watch by M3VRV & King Coder %s (built %s) running at %s", version, buildDate, pageURL)
+	log.Printf("HamShack by M0GLP & M3VRV %s (built %s) running at %s", version, buildDate, pageURL)
 	if !*background {
 		go func() {
 			time.Sleep(300 * time.Millisecond)
@@ -136,10 +136,10 @@ func main() {
 	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("serve: %v", err)
 	}
-	log.Printf("Band Watch stopped")
+	log.Printf("HamShack stopped")
 }
 
-// probe says whether Band Watch answers on this port, and which version.
+// probe says whether HamShack answers on this port, and which version.
 func probe(base string) (bool, string) {
 	c := http.Client{Timeout: 2 * time.Second}
 	res, err := c.Get(base + "/healthz")
@@ -184,7 +184,7 @@ func waitFree(port int, d time.Duration) bool {
 	return false
 }
 
-// logDir is where bandwatch.log goes: next to BandWatch.exe (C:\BandWatch), so everything Band Watch
+// logDir is where bandwatch.log goes: next to BandWatch.exe (C:\BandWatch), so everything HamShack
 // keeps is in its install folder. If that folder can't be written, %LOCALAPPDATA%\BandWatch.
 func logDir() string {
 	if exe, err := os.Executable(); err == nil {

@@ -1,4 +1,4 @@
-// Band Watch by M3vrv: makes Band Watch installable as an app (Windows, Android, iPhone)
+// HamShack by M0GLP & M3VRV: makes HamShack installable as an app (Windows, Android, iPhone)
 // and offers the browser's own "Install" prompt where there is one.
 "use strict";
 (function () {
@@ -29,7 +29,7 @@
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); bw.prompt = e; notify(); });
   window.addEventListener("appinstalled", () => { bw.installed = true; bw.prompt = null; notify(); });
 
-  // The "Install Band Watch" part of Settings in the main page.
+  // The "Install HamShack" part of Settings in the main page.
   document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("optInstall");
     const msg = document.getElementById("optInstMsg");
@@ -37,7 +37,7 @@
     btn.addEventListener("click", () => bw.install());
     bw.onChange(() => {
       btn.hidden = !bw.prompt;
-      if (bw.standalone() || bw.installed) msg.textContent = "Band Watch is installed as an app on this device. You can put it on your other devices too.";
+      if (bw.standalone() || bw.installed) msg.textContent = "HamShack is installed as an app on this device. You can put it on your other devices too.";
     });
   });
 

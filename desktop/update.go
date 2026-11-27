@@ -1,8 +1,8 @@
 package main
 
-// Updates: is there a newer Band Watch on GitHub? In the desktop app on Windows, download the new
+// Updates: is there a newer HamShack on GitHub? In the desktop app on Windows, download the new
 // installer from the release, check it against the release's SHA256SUMS.txt, and run it silently
-// (/S). The installer stops this Band Watch, puts the new version over it in the same folder, and
+// (/S). The installer stops this HamShack, puts the new version over it in the same folder, and
 // starts it again.
 
 import (
@@ -95,7 +95,7 @@ func (s *Server) handleUpdateCheck(w http.ResponseWriter) {
 	}, nil)
 }
 
-// assetAllowed: only files from Band Watch's own GitHub releases (or the test server's).
+// assetAllowed: only files from HamShack's own GitHub releases (or the test server's).
 func (s *Server) assetAllowed(u string) bool {
 	prefix := releaseAssets
 	if s.cfg.TestHooks && s.cfg.UpdateAssets != "" {
@@ -109,7 +109,7 @@ func (s *Server) handleUpdateInstall(w http.ResponseWriter, r *http.Request) {
 		sendJSON(w, 404, errJSON("not found"), nil)
 		return
 	}
-	// Only Band Watch's own page can ask for this: a custom header needs the browser's permission
+	// Only HamShack's own page can ask for this: a custom header needs the browser's permission
 	// from any other web site.
 	if r.Header.Get("X-Band-Watch") != "update" {
 		sendJSON(w, 403, errJSON("Missing the X-Band-Watch header."), nil)
@@ -200,7 +200,7 @@ func (s *Server) downloadSetup(setupURL, sumsURL, ver string) (string, error) {
 	return path, nil
 }
 
-// startInstaller runs the new installer silently, on its own, so it carries on after this Band Watch stops.
+// startInstaller runs the new installer silently, on its own, so it carries on after this HamShack stops.
 func startInstaller(path string) error {
 	cmd := exec.Command(path, "/S")
 	cmd.Dir = filepath.Dir(path)

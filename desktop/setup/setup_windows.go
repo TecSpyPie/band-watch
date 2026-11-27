@@ -68,7 +68,7 @@ if ($d.ShowDialog($owner) -eq 'OK') { [Console]::Out.Write($d.SelectedPath) }`
 	return strings.TrimSpace(string(out))
 }
 
-// previousLocation is where Band Watch is already installed (from Settings > Apps), or "".
+// previousLocation is where HamShack is already installed (from Settings > Apps), or "".
 func previousLocation() string {
 	out, err := hidden(exec.Command("reg", "query", uninstallKey, "/v", "InstallLocation")).Output()
 	if err != nil {
@@ -116,7 +116,7 @@ func localAppData() string {
 	return filepath.Join(home, "AppData", "Local")
 }
 
-// runStopScript stops a running Band Watch: the installed BandWatch.exe --stop, and any Node.js copy.
+// runStopScript stops a running HamShack: the installed BandWatch.exe --stop, and any Node.js copy.
 // ClearRX (which comes with it) is closed too, so its exe can be replaced.
 func runStopScript(script, dest string) {
 	for _, exe := range []string{filepath.Join(dest, "ClearRX.exe"), filepath.Join(dest, "ClearRX", "ClearRX.exe")} {
@@ -159,14 +159,14 @@ func (e *cmdError) Error() string {
 
 const uninstallKey = `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\BandWatchM3vrv`
 
-// registerUninstall lists Band Watch in Settings > Apps (for this user), with its uninstaller.
+// registerUninstall lists HamShack in Settings > Apps (for this user), with its uninstaller.
 func registerUninstall(dest, version string, sizeKB int64) {
 	set := func(name, typ, value string) {
 		_ = hidden(exec.Command("reg", "add", uninstallKey, "/v", name, "/t", typ, "/d", value, "/f")).Run()
 	}
-	set("DisplayName", "REG_SZ", "Band Watch by M3VRV & King Coder")
+	set("DisplayName", "REG_SZ", "HamShack by M0GLP & M3VRV")
 	set("DisplayVersion", "REG_SZ", version)
-	set("Publisher", "REG_SZ", "M3VRV & King Coder")
+	set("Publisher", "REG_SZ", "M0GLP & M3VRV")
 	set("DisplayIcon", "REG_SZ", filepath.Join(dest, "bandwatch.ico"))
 	set("InstallLocation", "REG_SZ", dest)
 	set("UninstallString", "REG_SZ", `"`+filepath.Join(dest, "uninstall.bat")+`"`)
@@ -181,7 +181,7 @@ func registerUninstall(dest, version string, sizeKB int64) {
 }
 
 // checkSmartAppControl: when it's on, Windows blocks BandWatch.exe (it has no paid code-signing
-// certificate) and the shortcuts run Band Watch with Node.js instead. Offer Node.js if it's missing.
+// certificate) and the shortcuts run HamShack with Node.js instead. Offer Node.js if it's missing.
 // Only reads the setting: changing it is the PC owner's choice, in Windows Security.
 func checkSmartAppControl(silent bool) {
 	out, _ := hidden(exec.Command("reg", "query", `HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy`, "/v", "VerifiedAndReputablePolicyState")).Output()
@@ -195,7 +195,7 @@ func checkSmartAppControl(silent bool) {
 		return
 	}
 	r := messageBox(title, "Smart App Control is on, so Windows will block BandWatch.exe: it isn't signed with a paid code-signing certificate, and Windows gives no \"Run anyway\" for it.\n\n"+
-		"Band Watch can run with Node.js instead (free, and signed, so Windows allows it). The Band Watch shortcuts use it automatically.\n\n"+
+		"HamShack can run with Node.js instead (free, and signed, so Windows allows it). The HamShack shortcuts use it automatically.\n\n"+
 		"Yes: install Node.js now (with winget)\n"+
 		"No: open Windows Security, to turn Smart App Control off yourself\n"+
 		"Cancel: do nothing for now", mbYesNoCancel|mbIconWarning)
@@ -208,7 +208,7 @@ func checkSmartAppControl(silent bool) {
 		}
 	case idNo:
 		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", "windowsdefender://appbrowser").Start()
-		messageBox(title, "In Windows Security, open \"Smart App Control settings\" and choose Off.\n\nThat lets every unsigned program run on this PC, not only Band Watch. On Windows 11 25H2 and later you can turn it back on there; on older versions only by resetting Windows.", mbIconInfo)
+		messageBox(title, "In Windows Security, open \"Smart App Control settings\" and choose Off.\n\nThat lets every unsigned program run on this PC, not only HamShack. On Windows 11 25H2 and later you can turn it back on there; on older versions only by resetting Windows.", mbIconInfo)
 	}
 }
 

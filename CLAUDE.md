@@ -1,4 +1,4 @@
-# Band Watch: notes for Claude
+# HamShack: notes for Claude
 
 Read CONTRIBUTING.md first: it has the layout, the tests, and the rules. The short version:
 

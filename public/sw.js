@@ -1,4 +1,4 @@
-// Band Watch by M3vrv: service worker. It lets phones and computers install Band Watch as an app
+// HamShack by M0GLP & M3VRV: service worker. It lets phones and computers install HamShack as an app
 // and opens the last copy of the page when there's no connection. Live data (/api/) is never cached:
 // it always comes straight from the server, so what you see is never out of date without saying so.
 "use strict";

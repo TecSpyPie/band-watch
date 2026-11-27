@@ -1,5 +1,5 @@
 /* ClearRX by M3VRV: the radio audio processor's sound engine. It works on 48 kHz sound: a radio's audio in ClearRX,
- * or Band Watch's RTL-SDR sound after it has been demodulated (the decoders get theirs before this, untouched).
+ * or HamShack's RTL-SDR sound after it has been demodulated (the decoders get theirs before this, untouched).
  *
  * In order:
  *   1. Noise blanker: spots clicks far louder than the sound around them (electric fences, ignition, static
@@ -23,9 +23,9 @@
  * Then a soft limiter so it never clips, and a meter: peak and average level, gain reduction, and whether the sound
  * would have clipped.
  * The numbers above are only the usual order: ClearRX is an effects rack, and "order" (a list of the module ids in
- * MODULES) puts the modules in any order. Band Watch passes no order, so it gets the usual one, exactly as before.
+ * MODULES) puts the modules in any order. HamShack passes no order, so it gets the usual one, exactly as before.
  * Everything is plain arithmetic per sample: light enough for a modest PC.
- * Used by ClearRX (clearrx/, in its sound worklet) and by Band Watch when it sends its RTL-SDR sound through ClearRX.
+ * Used by ClearRX (clearrx/, in its sound worklet) and by HamShack when it sends its RTL-SDR sound through ClearRX.
  * Works in the browser and an AudioWorklet (globalThis.RxFx) and in Node (tests). */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();

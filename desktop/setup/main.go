@@ -1,6 +1,6 @@
-// Band Watch by M3vrv: Windows installer. BandWatch-Setup.exe carries the whole app inside it
+// HamShack by M0GLP & M3VRV: Windows installer. BandWatch-Setup.exe carries the whole app inside it
 // (payload.zip) and installs it for the current user, without administrator rights:
-//   - copies Band Watch to C:\BandWatch (or a drive or folder you choose) (stopping an older copy first)
+//   - copies HamShack to C:\BandWatch (or a drive or folder you choose) (stopping an older copy first)
 //   - adds desktop and Start menu shortcuts, and optionally starts it with Windows
 //   - lists it in Settings > Apps, so it can be uninstalled from there
 //   - checks Smart App Control and offers Node.js if Windows would block BandWatch.exe
@@ -45,7 +45,7 @@ func versionText() string {
 	return version + " (built " + builtText() + ")"
 }
 
-const title = "Band Watch by M3VRV & King Coder - Setup"
+const title = "HamShack by M0GLP & M3VRV - Setup"
 
 // Files earlier versions left in the install folder that are no longer used.
 var oldFiles = []string{"server.js", "qrz.js", "clock.js", "package.json", "bandwatch-status.ps1"}
@@ -68,7 +68,7 @@ func main() {
 	if update && !*silent {
 		// An update: one question, then it goes over the old copy in the same folder.
 		old := installedVersion(*dest)
-		q := fmt.Sprintf("Update Band Watch by M3VRV & King Coder in %s\n\nfrom %s to %s?\n\nYes: update it (your settings and log are kept)\nNo: install somewhere else\nCancel: don't install", *dest, old, versionText())
+		q := fmt.Sprintf("Update HamShack by M0GLP & M3VRV in %s\n\nfrom %s to %s?\n\nYes: update it (your settings and log are kept)\nNo: install somewhere else\nCancel: don't install", *dest, old, versionText())
 		switch askInstallWhere(q) {
 		case answerYes:
 			chosen = true
@@ -80,7 +80,7 @@ func main() {
 		if errors.Is(err, errCancelled) {
 			return
 		}
-		showError(title, "Band Watch couldn't be installed:\n\n"+err.Error())
+		showError(title, "HamShack couldn't be installed:\n\n"+err.Error())
 		os.Exit(1)
 	}
 }
@@ -103,7 +103,7 @@ func install(dest string, silent, chosen bool) error {
 		return fmt.Errorf("the installer is damaged (%v). Download it again", err)
 	}
 
-	// Stop a Band Watch that is running (any version), using the new stop script.
+	// Stop a HamShack that is running (any version), using the new stop script.
 	tmp, err := os.MkdirTemp("", "bandwatch-setup-")
 	if err != nil {
 		return err
@@ -129,16 +129,16 @@ func install(dest string, silent, chosen bool) error {
 
 	startup := false
 	if !silent {
-		startup = askYesNo(title, "Start Band Watch automatically when Windows starts?\n\nIt then runs in the background, ready to open from the desktop shortcut.", false)
+		startup = askYesNo(title, "Start HamShack automatically when Windows starts?\n\nIt then runs in the background, ready to open from the desktop shortcut.", false)
 	}
 	if err := makeShortcuts(dest, startup); err != nil {
-		showWarning(title, "Band Watch is installed, but the shortcuts couldn't be made:\n"+err.Error()+"\n\nYou can start it with "+filepath.Join(dest, "start-bandwatch.bat"))
+		showWarning(title, "HamShack is installed, but the shortcuts couldn't be made:\n"+err.Error()+"\n\nYou can start it with "+filepath.Join(dest, "start-bandwatch.bat"))
 	}
 	registerUninstall(dest, version, dirSizeKB(dest))
 	removeOldCopy(dest, silent)
 	checkSmartAppControl(silent)
 
-	if silent || askYesNo(title, "Band Watch by M3VRV & King Coder is installed.\n\nUse the \"Band Watch by M3vrv\" shortcut on your desktop or in the Start menu. It opens in your web browser.\n\nOpen Band Watch now?", true) {
+	if silent || askYesNo(title, "HamShack by M0GLP & M3VRV is installed.\n\nUse the \"HamShack by M0GLP & M3VRV\" shortcut on your desktop or in the Start menu. It opens in your web browser.\n\nOpen HamShack now?", true) {
 		openBandWatch(dest)
 	}
 	return nil
@@ -148,13 +148,13 @@ func install(dest string, silent, chosen bool) error {
 func chooseDest(suggested string) (string, error) {
 	dest := suggested
 	for {
-		switch askInstallWhere(fmt.Sprintf("Install Band Watch by M3VRV & King Coder %s in this folder?\n\n%s\n\nYes: install there\nNo: choose another drive or folder\nCancel: don't install", versionText(), dest)) {
+		switch askInstallWhere(fmt.Sprintf("Install HamShack by M0GLP & M3VRV %s in this folder?\n\n%s\n\nYes: install there\nNo: choose another drive or folder\nCancel: don't install", versionText(), dest)) {
 		case answerYes:
 			return dest, nil
 		case answerCancel:
 			return "", errCancelled
 		}
-		picked := pickFolder("Choose the drive or folder for Band Watch. A \"BandWatch\" folder is made inside it.")
+		picked := pickFolder("Choose the drive or folder for HamShack. A \"BandWatch\" folder is made inside it.")
 		if picked == "" {
 			continue // closed the picker: ask again
 		}
@@ -169,7 +169,7 @@ func chooseDest(suggested string) (string, error) {
 	}
 }
 
-// suggestedDest is where to install: where Band Watch already is, except that a copy in the old
+// suggestedDest is where to install: where HamShack already is, except that a copy in the old
 // %LOCALAPPDATA%\BandWatch folder moves to C:\BandWatch (removeOldCopy then tidies the old folder away).
 func suggestedDest(previous, def string) string {
 	if previous == "" {
@@ -211,7 +211,7 @@ func defaultDest() string {
 	return filepath.Join(localAppData(), "BandWatch")
 }
 
-// removeOldCopy offers to remove Band Watch from the folder install.bat used, when it's now installed elsewhere.
+// removeOldCopy offers to remove HamShack from the folder install.bat used, when it's now installed elsewhere.
 func removeOldCopy(dest string, silent bool) {
 	old := filepath.Join(localAppData(), "BandWatch")
 	if strings.EqualFold(filepath.Clean(old), filepath.Clean(dest)) {
@@ -224,7 +224,7 @@ func removeOldCopy(dest string, silent bool) {
 		}
 		return
 	}
-	if silent || askYesNo(title, "An older copy of Band Watch is in:\n"+old+"\n\nRemove it? Your settings are kept: they're in your web browser.", true) {
+	if silent || askYesNo(title, "An older copy of HamShack is in:\n"+old+"\n\nRemove it? Your settings are kept: they're in your web browser.", true) {
 		_ = os.RemoveAll(old)
 	}
 }
@@ -239,14 +239,14 @@ func onlyLogs(entries []os.DirEntry) bool {
 	return true
 }
 
-// canWrite checks Band Watch can be installed in dir (it may not exist yet).
+// canWrite checks HamShack can be installed in dir (it may not exist yet).
 func canWrite(dir string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return fmt.Errorf("Band Watch can't be installed in %s (%v). Folders like Program Files need administrator rights; your own folders or another drive (for example D:\\BandWatch) don't", dir, err)
+		return fmt.Errorf("HamShack can't be installed in %s (%v). Folders like Program Files need administrator rights; your own folders or another drive (for example D:\\BandWatch) don't", dir, err)
 	}
 	f, err := os.CreateTemp(dir, ".bw-write-test-*")
 	if err != nil {
-		return fmt.Errorf("Band Watch can't write to %s. Folders like Program Files need administrator rights; your own folders or another drive (for example D:\\BandWatch) don't", dir)
+		return fmt.Errorf("HamShack can't write to %s. Folders like Program Files need administrator rights; your own folders or another drive (for example D:\\BandWatch) don't", dir)
 	}
 	name := f.Name()
 	f.Close()
@@ -285,7 +285,7 @@ func readPayload() (map[string][]byte, error) {
 	return out, nil
 }
 
-// writeFiles copies the app into dest. A file still in use (Band Watch closing) is retried for a few seconds.
+// writeFiles copies the app into dest. A file still in use (HamShack closing) is retried for a few seconds.
 func writeFiles(dest string, files map[string][]byte) error {
 	for name, data := range files {
 		path := filepath.Join(dest, filepath.FromSlash(name))
@@ -300,7 +300,7 @@ func writeFiles(dest string, files map[string][]byte) error {
 			time.Sleep(250 * time.Millisecond)
 		}
 		if err != nil {
-			return fmt.Errorf("couldn't write %s (%v). Close Band Watch and try again", name, err)
+			return fmt.Errorf("couldn't write %s (%v). Close HamShack and try again", name, err)
 		}
 	}
 	return nil

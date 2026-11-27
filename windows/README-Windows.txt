@@ -1,7 +1,7 @@
-Band Watch by M3VRV & King Coder - Windows
+HamShack by M0GLP & M3VRV - Windows
 =============================
 
-Band Watch is one program, BandWatch.exe. It needs nothing else installed
+HamShack is one program, BandWatch.exe. It needs nothing else installed
 (unless Smart App Control blocks it, see below): it runs a small server on this PC only (http://localhost:8073) and shows
 it in a window of its own, using Microsoft Edge (part of Windows) or Chrome. Everything runs on this PC: it
 isn't the website. If neither browser is found it opens in your normal web browser instead.
@@ -16,8 +16,8 @@ Install with BandWatch-Setup.exe (easiest)
   or any drive or folder you choose (answer No to "Install in this
   folder?" to pick one). An older copy installed by install.bat is removed
   if you agree. It adds desktop and Start menu shortcuts, lists
-  Band Watch in Settings > Apps (uninstall it from there), checks Smart App
-  Control and offers Node.js if needed, then opens Band Watch.
+  HamShack in Settings > Apps (uninstall it from there), checks Smart App
+  Control and offers Node.js if needed, then opens HamShack.
   "BandWatch-Setup-<version>.exe /S" installs with no questions.
   Smart App Control blocks unsigned programs, and BandWatch-Setup.exe isn't
   signed either: if it's on, use install.bat from the zip instead (below).
@@ -26,11 +26,11 @@ Install with install.bat (adds desktop and Start menu shortcuts)
   1. Right-click the downloaded zip > Properties, tick "Unblock" at the
      bottom and click OK. Then right-click the zip > Extract All.
      (Unblocking first stops Windows blocking the installer itself.)
-  2. Double-click install.bat. It copies Band Watch to
+  2. Double-click install.bat. It copies HamShack to
      C:\BandWatch (the same folder as BandWatch-Setup.exe uses) and adds the shortcuts. You can also choose to
      start it with Windows (it then runs in the background, ready to open).
-     "Install Band Watch (automatic).bat" does the same with the usual choices.
-  3. Open "Band Watch by M3vrv" from the desktop or Start menu.
+     "Install HamShack (automatic).bat" does the same with the usual choices.
+  3. Open "HamShack by M0GLP & M3VRV" from the desktop or Start menu.
 
 If Windows SmartScreen says "Windows protected your PC", click "More info" then
 "Run anyway". BandWatch.exe isn't signed with a paid certificate, so Windows
@@ -42,25 +42,25 @@ Smart App Control
   with a paid code-signing certificate. The installer checks for this and offers
   two ways round it; you choose:
     - Install Node.js (free, signed by its publisher, so Windows allows it).
-      The Band Watch shortcuts then run Band Watch with Node.js. Everything
-      works the same, except the Quit button: use Start menu > Stop Band Watch.
+      The HamShack shortcuts then run HamShack with Node.js. Everything
+      works the same, except the Quit button: use Start menu > Stop HamShack.
     - Or turn Smart App Control off yourself: Windows Security > App & browser
       control > Smart App Control settings > Off. That allows every unsigned
-      program, not only Band Watch. On Windows 11 25H2 and later you can turn
+      program, not only HamShack. On Windows 11 25H2 and later you can turn
       it back on there; on older versions only by resetting Windows.
 
 Listening
   The Listen panel tunes public web receivers (the WebSDR at the University
   of Twente, or a KiwiSDR or WebSDR whose address you enter). In this Windows
-  app the receiver plays inside Band Watch, and clicking the band scope, the
+  app the receiver plays inside HamShack, and clicking the band scope, the
   band plan or a frequency in Band activity retunes it. Click inside the
   receiver once if you don't hear anything: browsers need a click before they
   play sound.
 
 Your radio (CAT control over its USB cable)
-  Band Watch tunes your radio when you click a spot, the band scope, the band
+  HamShack tunes your radio when you click a spot, the band scope, the band
   plan, a shortwave station or the Radio panel, and follows its dial. It needs
-  Chrome or Edge (Band Watch opens in Edge by itself). Close other programs that
+  Chrome or Edge (HamShack opens in Edge by itself). Close other programs that
   use the radio's CAT port (WSJT-X, a logger) first.
   Yaesu FT-991A (also FT-710, FTDX10, FTDX101)
     1. Install the Silicon Labs CP210x USB driver (yaesu.com, the radio's page).
@@ -73,7 +73,7 @@ Your radio (CAT control over its USB cable)
     2. On the radio: MENU > SET > Connectors > CI-V, and set
          CI-V USB Port:       Unlink from [REMOTE]
          CI-V USB Baud Rate:  Auto
-         CI-V Transceive:     ON   (so Band Watch follows the radio's dial)
+         CI-V Transceive:     ON   (so HamShack follows the radio's dial)
     3. Settings > Radio control > Radio make: Icom. Icom model: IC-7300.
        Baud rate: 115200.
     4. Press Connect radio at the top and pick the radio's port (Silicon Labs
@@ -96,12 +96,12 @@ ClearRX by M3VRV & King Coder (radio audio processor)
   A program of its own: download ClearRX-Windows.zip from the release page,
   unzip it into C:\BandWatch\ClearRX and run ClearRX.exe. Pick "Sound from" (your radio's USB Audio CODEC, a line-in or a
   mixer) and "Play to" (your speakers), press Start and choose a preset:
-  SSB voice, Weak DX, CW or AM broadcast. While ClearRX is open, Band Watch's
+  SSB voice, Weak DX, CW or AM broadcast. While ClearRX is open, HamShack's
   Listen can send the RTL-SDR's sound through it ("Send my RTL-SDR sound
   through ClearRX"). Its settings are kept in clearrx-settings.json.
 
 Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
-  Band Watch can listen through your own dongle instead of a web receiver.
+  HamShack can listen through your own dongle instead of a web receiver.
   1. Set the dongle's USB driver once with Zadig, as for any RTL-SDR program.
      Windows sees the dongle without this, but no program can use it.
        a. Download Zadig from https://zadig.akeo.ie and run it.
@@ -109,9 +109,9 @@ Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
        c. Pick "Bulk-In, Interface (Interface 0)" (or RTL2838UHIDIR /
           RTL2832U). Not your keyboard, mouse or radio.
        d. Make sure the right-hand box says WinUSB, then Replace Driver.
-       e. Unplug the dongle, plug it back in, and restart Band Watch.
-  2. In Band Watch, Listen > Receiver > "My RTL-SDR", then press Listen.
-     Band Watch comes with rtl_tcp.exe (from the RTL-SDR Blog drivers V1.4.0,
+       e. Unplug the dongle, plug it back in, and restart HamShack.
+  2. In HamShack, Listen > Receiver > "My RTL-SDR", then press Listen.
+     HamShack comes with rtl_tcp.exe (from the RTL-SDR Blog drivers V1.4.0,
      which support the Blog V4; see README-rtl-sdr.txt) and starts it for you.
      (Smart App Control may block rtl_tcp.exe the same way it blocks
      BandWatch.exe; see Smart App Control above.)
@@ -121,7 +121,7 @@ Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
   Settings > RTL-SDR receiver has:
     - Connection: the rtl_tcp address (a Raspberry Pi or other PC on your
       home network works too), the dongle number if you have more than one,
-      "Start rtl_tcp for me" (Band Watch runs rtl_tcp.exe itself when you
+      "Start rtl_tcp for me" (HamShack runs rtl_tcp.exe itself when you
       press Listen: it uses the one next to BandWatch.exe, or give the
       location of another), Start/Stop rtl_tcp buttons that show what rtl_tcp
       says, "Reconnect if the connection drops", and Test connection.
@@ -139,7 +139,7 @@ Your own RTL-SDR (RTL-SDR Blog V4 or any RTL-SDR dongle)
   Only tick Bias tee if an active antenna or preamp needs power from the dongle.
 
 FT8 and FT4 decoder
-  The "FT8 / FT4 decoder" panel decodes like WSJT-X, inside Band Watch:
+  The "FT8 / FT4 decoder" panel decodes like WSJT-X, inside HamShack:
   1. Choose FT8 or FT4, and where the audio comes from:
        - My RTL-SDR: press "Tune to FT8 on 20 m" (it follows the Listen
          panel's band), then Listen.
@@ -150,30 +150,30 @@ FT8 and FT4 decoder
      audio frequency (Hz) and the message. CQ calls are tinted green, and
      messages with your callsign red. Click a callsign for its details.
   3. "Results window" opens the decodes in their own window, to put
-     beside Band Watch or on another screen, with CQ-only and search.
+     beside HamShack or on another screen, with CQ-only and search.
   Your PC clock must be right to within a second (Windows: Settings >
-  Time & language > Date & time > Sync now). Band Watch only receives;
+  Time & language > Date & time > Sync now). HamShack only receives;
   to transmit, use WSJT-X.
 
 Updating
   Run the new install.bat, or just start the new BandWatch.exe: if an older
-  Band Watch is running (including the older Node.js versions), it is stopped
+  HamShack is running (including the older Node.js versions), it is stopped
   and the new one takes over.
 
 Stop
-  Settings > Quit Band Watch, or Start menu > Band Watch by M3vrv > Stop Band Watch.
+  Settings > Quit HamShack, or Start menu > HamShack by M0GLP & M3VRV > Stop HamShack.
 
 Uninstall
-  Start menu > Band Watch by M3vrv > Uninstall Band Watch.
+  Start menu > HamShack by M0GLP & M3VRV > Uninstall HamShack.
   BandWatch.exe doesn't need Node.js. Keep Node.js only if Smart App Control
   blocks BandWatch.exe on this PC (see above).
 
 Updating
-  Band Watch looks for a new version once a day. Settings > About this build
-  shows it, with an Install update button: Band Watch downloads the new
+  HamShack looks for a new version once a day. Settings > About this build
+  shows it, with an Install update button: HamShack downloads the new
   installer from its GitHub page, checks it, and installs it over your copy,
   then opens again. Or run a newer BandWatch-Setup.exe yourself: it asks
-  "Update Band Watch from ... to ...?" and updates in place. You never need
+  "Update HamShack from ... to ...?" and updates in place. You never need
   to uninstall first.
 
 Build date and version
@@ -181,11 +181,11 @@ Build date and version
   whether it's running as BandWatch.exe or with Node.js, when the server
   started, and what's new in each version. The same date is in
   BUILD-INFO.txt in the install folder, in BandWatch.exe's Properties >
-  Details > Comments, and in Settings > Apps > Band Watch by M3VRV & King Coder (the
+  Details > Comments, and in Settings > Apps > HamShack by M0GLP & M3VRV (the
   install date is shown there too).
 
 Notes
-  - Band Watch needs an internet connection: it fetches live spots from
+  - HamShack needs an internet connection: it fetches live spots from
     PSK Reporter and solar and sunspot data from NOAA.
   - Your QRZ password is sent only to QRZ.com to sign in and is never stored.
   - Settings and profiles are kept in your web browser. Use Settings >

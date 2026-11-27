@@ -1,4 +1,4 @@
-/* Band Watch extras, round 2: quick log from a spot, worked map (grids and countries), contest calendar,
+/* HamShack extras, round 2: quick log from a spot, worked map (grids and countries), contest calendar,
  * "heard me" map. Plain JavaScript, loaded after extras.js. Uses the page's own logbook (log, logPrefill),
  * spots (app) and land outline (BWLand). Never touches the radio. */
 (function () {
@@ -82,7 +82,7 @@
     const p = newestPair(call);
     const mode = p ? String(p.m || "").toUpperCase().replace(/^PSK$/, "PSK31") : "";
     logPrefill({ call, kHz: p ? p.fq * 1000 : undefined, mode: LOGGABLE.has(mode) ? mode : undefined, grid: p ? p.g : "",
-      rstR: p && p.snr != null ? String(p.snr) : "", note: p ? "Logged from a Band Watch spot" : "" });
+      rstR: p && p.snr != null ? String(p.snr) : "", note: p ? "Logged from a HamShack spot" : "" });
   }
   function addLogButtons(root) {
     if (!root || typeof logPrefill !== "function") return;
@@ -212,7 +212,7 @@
     const box = byId("bwkBody"); if (!box) return;
     box.replaceChildren();
     const d = contests.data;
-    if (!d) { box.append(note(contests.err ? "The contest calendar couldn't be reached. Band Watch will try again later." : "Loading contests…")); return; }
+    if (!d) { box.append(note(contests.err ? "The contest calendar couldn't be reached. HamShack will try again later." : "Loading contests…")); return; }
     const now = Date.now(), horizon = now + 8 * 24 * 3600e3;
     const list = d.contests.filter((c) => !c.start || (c.end > now && c.start < horizon)).sort((a, b) => (a.start || 0) - (b.start || 0)).slice(0, 40);
     const ul = mk("ul", { class: "bwk-list" });
@@ -292,7 +292,7 @@
   function init() {
     place(
       panel("secHeard", "Who's hearing me", note("A map of the stations that have decoded your FT8 or FT4 signal, from PSK Reporter. It only reads reports and never transmits."), mk("div", { id: "bwhBody" })),
-      panel("secWorked", "Worked map", note("Countries and grid squares from your Band Watch logbook."), mk("div", { id: "bwmBody" })),
+      panel("secWorked", "Worked map", note("Countries and grid squares from your HamShack logbook."), mk("div", { id: "bwmBody" })),
       panel("secContests", "Contests this week", mk("div", { id: "bwkBody" })));
     watchLists();
     renderWorked(); renderContests(); renderHeard();

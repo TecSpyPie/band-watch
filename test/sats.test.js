@@ -13,7 +13,7 @@ test.before(async () => {
 });
 
 const T0 = Date.parse("2026-11-19T12:00:00Z");
-const IO93 = S.observer(53.5, -1.0); // Sheffield area, as Band Watch's default locator
+const IO93 = S.observer(53.5, -1.0); // Sheffield area, as HamShack's default locator
 const rec = (id) => S.satrecFor(lib, GP.find((g) => g.NORAD_CAT_ID === id));
 
 test("each orbit from CelesTrak's JSON turns into a satrec; a broken one is null", () => {

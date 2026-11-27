@@ -1,4 +1,4 @@
-/* The Radio panel: Band Watch as the front of a transceiver. A big frequency display, an analogue S-meter
+/* The Radio panel: HamShack as the front of a transceiver. A big frequency display, an analogue S-meter
    (read from the FT-991A, Icom radios and the ATS Mini), a close-up spectrum around the dial, band and mode
    buttons, and a tuning knob you can drag, scroll or turn with the arrow keys.
    It drives the same dial as everything else (tuneTo), so Listen, the scope and a connected radio all follow.
@@ -81,7 +81,7 @@ function panelStep(steps) {
 function renderPanelDisplay(kHz = listen.kHz, mode = listen.mode) {
   if (!$("pnFreq")) return;
   $("pnFreq").textContent = panelFreqText(kHz);
-  // The radio's own name for its mode when it's connected (DATA-USB, CW-U…), else Band Watch's.
+  // The radio's own name for its mode when it's connected (DATA-USB, CW-U…), else HamShack's.
   const radioMode = typeof rig !== "undefined" && rig.connected && rig.modeName && !panel.pending ? rig.modeName : "";
   $("pnMode").textContent = radioMode || (mode || "").toUpperCase();
   const band = bandForKHz(kHz);
@@ -120,7 +120,7 @@ function renderPanel() {
       : "Tune here and your radio follows once it's connected (Connect radio, at the top). Press Listen to hear the band from an online receiver.";
   $("pnListen").textContent = listen.open ? "Stop listening" : "Listen";
   const popped = typeof popWins !== "undefined" && popWins.has("secPanel");
-  $("pnPop").textContent = popped ? "Back in Band Watch" : "Pop out ⧉";
+  $("pnPop").textContent = popped ? "Back in HamShack" : "Pop out ⧉";
   $("pnPop").setAttribute("aria-pressed", String(popped));
   $("pnListen").setAttribute("aria-pressed", String(listen.open));
   drawPanelMeter();

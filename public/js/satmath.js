@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: satellite maths for the Satellites panel. Where a satellite is, where it is in your sky,
+/* HamShack by M0GLP & M3VRV: satellite maths for the Satellites panel. Where a satellite is, where it is in your sky,
  * its next passes over your locator and the Doppler shift on its frequencies. The orbit itself is worked out by
  * satellite.js (SGP4, MIT licence, public/js/vendor/satellite.esm.js), handed in as `lib`.
  * Also the rule for how often CelesTrak may be asked for new orbits (once every 2 hours, their usage policy).

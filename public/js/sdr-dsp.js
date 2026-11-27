@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: software radio for an RTL-SDR (including the RTL-SDR Blog V4).
+/* HamShack by M0GLP & M3VRV: software radio for an RTL-SDR (including the RTL-SDR Blog V4).
  * Turns the dongle's 8-bit I/Q samples into audio (AM, USB, LSB, CW, FM and broadcast FM)
  * and a spectrum for the waterfall. Plain JavaScript, no dependencies; works in the browser
  * (window.SdrDsp) and in Node (require) for the tests.

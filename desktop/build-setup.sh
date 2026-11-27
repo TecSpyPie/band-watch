@@ -12,10 +12,10 @@ P=build/payload
 rm -rf "$P" && mkdir -p "$P/server"
 cp build/BandWatch.exe ../windows/README-Windows.txt ../LICENSE "$P/"
 # ClearRX by M3VRV is a separate download (ClearRX-Windows.zip), so a virus checker's false alarm on it
-# can't stop Band Watch installing.
+# can't stop HamShack installing.
 cp ../windows/app/* "$P/"
 cp ../server.js ../qrz.js ../clock.js ../package.json ../build-info.json "$P/server/"
-printf 'Band Watch by M3VRV & King Coder\r\nVersion %s\r\nBuilt %s\r\n' "$VERSION" "$BUILD_DATE" > "$P/BUILD-INFO.txt"
+printf 'HamShack by M0GLP & M3VRV\r\nVersion %s\r\nBuilt %s\r\n' "$VERSION" "$BUILD_DATE" > "$P/BUILD-INFO.txt"
 cp -R ../public "$P/server/public"
 # rtl_tcp and what it needs, next to BandWatch.exe, so Listen > "My RTL-SDR" works straight away.
 sh ../tools/fetch-rtl-sdr.sh build/rtl-sdr

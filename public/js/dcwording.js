@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: the words the Decoders panel shows while it waits. Only FT8, FT4 and WSPR work in cycles;
+/* HamShack by M0GLP & M3VRV: the words the Decoders panel shows while it waits. Only FT8, FT4 and WSPR work in cycles;
  * CW and RTTY are continuous, SSTV waits for a picture and APRS for a packet. Receive only; no radio control. */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();

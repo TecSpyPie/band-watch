@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds Band Watch's Go server with the web page embedded.
+# Builds HamShack's Go server with the web page embedded.
 #   sh desktop/build.sh        -> desktop/build/BandWatch.exe (Windows, with icon and version info)
 #   sh desktop/build.sh test   -> desktop/build/bandwatch-test (this machine, for the test suite)
 set -eu

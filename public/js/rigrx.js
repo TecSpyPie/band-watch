@@ -1,6 +1,6 @@
 /* Receive controls for the Radio panel: AF and RF gain, AGC, attenuator, preamp (IPO), noise blanker, DNR and auto
    notch, for Yaesu (FT-991A, FT-710, FTdx10, FTdx101) and Icom (IC-7300, IC-705, IC-7610 …). Receive only: nothing
-   here keys the radio or changes its power. Band Watch reads them back every few seconds, so turning the radio's
+   here keys the radio or changes its power. HamShack reads them back every few seconds, so turning the radio's
    own knobs shows here too. */
 "use strict";
 

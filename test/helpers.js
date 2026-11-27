@@ -1,5 +1,5 @@
 "use strict";
-// Test helpers: a fake upstream (PSK Reporter, NOAA, QRZ) and a way to start either Band Watch server
+// Test helpers: a fake upstream (PSK Reporter, NOAA, QRZ) and a way to start either HamShack server
 // against it. BW_SERVER=go runs the tests against the Go build (BandWatch.exe's code) instead of server.js.
 const http = require("http");
 const net = require("net");
@@ -53,7 +53,7 @@ function buildGo() {
   return (goBinary = path.join(ROOT, "desktop", "build", "bandwatch-test"));
 }
 
-/** Start a Band Watch server (node or go) pointed at the fake upstream. */
+/** Start a HamShack server (node or go) pointed at the fake upstream. */
 async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node") {
   const port = await freePort();
   const env = {

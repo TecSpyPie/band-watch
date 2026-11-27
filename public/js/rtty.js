@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: RTTY (radioteletype) decoder, receive only, in plain JavaScript.
+/* HamShack by M0GLP & M3VRV: RTTY (radioteletype) decoder, receive only, in plain JavaScript.
  * Audio in (8000 samples a second): two matched filters, one on the mark tone and one on the space tone,
  * each one bit long. Their difference is the bit stream; a start bit (mark to space) lines up the clock for
  * the 5 data bits (ITA2 / Baudot, LTRS and FIGS shifts) and the stop bit. Works in a Web Worker and in Node

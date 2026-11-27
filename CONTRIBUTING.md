@@ -1,12 +1,12 @@
-# Working on Band Watch
+# Working on HamShack
 
-Thanks for helping. Band Watch is a free (MIT) ham radio app by M3VRV: live band conditions, decoders
+Thanks for helping. HamShack is a free (MIT) ham radio app by M3VRV: live band conditions, decoders
 (FT8, FT4, WSPR, CW, SSTV), FT8/FT4 transmitting, satellites, POTA, a logbook and radio control. It runs as a
 web page served by a small server, either Node.js (`server.js`) or the Windows app (`desktop/`, in Go).
 
 **How changes get in:** make a branch, open a **pull request**, and the owner (M3VRV) decides. Nothing goes to
 `main` without the owner's say-so, because **pushing to `main` with a new version publishes a release** that
-every Band Watch on Windows offers to install.
+every HamShack on Windows offers to install.
 
 Ideas without code are just as welcome: open an **Issue** describing what you'd like and why.
 
@@ -37,15 +37,15 @@ Ideas without code are just as welcome: open an **Issue** describing what you'd 
 
 ## Rules that matter
 
-**Transmitting.** Band Watch keys real radios. Keep every one of these:
-- Nothing transmits unless the user has switched **Enable TX** on, and it is **off every time Band Watch starts**
+**Transmitting.** HamShack keys real radios. Keep every one of these:
+- Nothing transmits unless the user has switched **Enable TX** on, and it is **off every time HamShack starts**
   (never saved).
 - **Stop TX** and **Esc** stop at once: sound off and the radio unkeyed (the unkey is sent twice).
 - Every transmission has its own timer that unkeys the radio, whatever happens to the sound.
 - No transmitting without a callsign and locator, with a receive-only radio, outside DATA-USB (Yaesu) / USB, or
   with any part of the signal outside an amateur band.
 - Watchdogs stop calling when nobody answers. Signals must be clean (FT8/FT4 use GFSK with ramps, as WSJT-X).
-- Band Watch never changes the radio's power. Power and where in a band the licence allows are the operator's.
+- HamShack never changes the radio's power. Power and where in a band the licence allows are the operator's.
 - Receive-only parts (the Radio panel) must never send transmit or power commands; a browser test checks this.
 
 **Data sources.** Read a source's terms before using it, and keep to them:
@@ -78,5 +78,5 @@ Ideas without code are just as welcome: open an **Issue** describing what you'd 
 2. Raise `version` in `package.json`, `VERSION` in `public/sw.js`, and every `?v=` in `public/*.html` and the
    `public/js` files that load others (`decoders.js`, `ft8-worker.js`, `sats.js`).
 3. Push to `main`. GitHub Actions tests, builds `BandWatch-Setup.exe` and the zip, and publishes release
-   `v<version>`. Band Watch on Windows then offers **Settings > Updates > Install update**.
+   `v<version>`. HamShack on Windows then offers **Settings > Updates > Install update**.
 4. Update the web copies.

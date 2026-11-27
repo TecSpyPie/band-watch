@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: the section menu and fold buttons. Plain JavaScript, used by the page (window.Nav) and the
+/* HamShack by M0GLP & M3VRV: the section menu and fold buttons. Plain JavaScript, used by the page (window.Nav) and the
  * tests (require).
  *   menuLabel()  the short button text for a panel's heading ("Decoders: FT8, FT4, WSPR, CW" -> "Decoders")
  *   buildItems() the menu's buttons from the panels that are showing, in page order

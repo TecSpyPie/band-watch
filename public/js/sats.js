@@ -373,7 +373,7 @@ function renderSatCard() {
 
   const l = rec && SatMath.look(sats.lib, rec, new Date(now), obs);
   if (!l) {
-    satSet($("siNow"), `<p class="muted">Band Watch can't work out where ${esc(short)} is from the orbit CelesTrak has (it may have come down, or the numbers are too old).</p>`);
+    satSet($("siNow"), `<p class="muted">HamShack can't work out where ${esc(short)} is from the orbit CelesTrak has (it may have come down, or the numbers are too old).</p>`);
     return;
   }
   if (now - satCard.passesAt > 60e3) {
@@ -440,7 +440,7 @@ function renderSatCard() {
       : `<div class="satfq small"><b>${esc(r.what)}</b>: listen ${satBand(r.down)} MHz${r.up != null ? `, send ${satBand(r.up)} MHz` : ""}` +
         `${r.note ? `, ${esc(r.note)}` : ""}${r.inverting ? ", inverting" : ""} (${esc(String(r.mode).toUpperCase())})</div>`)).join("") +
       (up ? `<p class="small muted">Click a frequency to tune there and follow the Doppler shift.</p>` : `<p class="small muted">When it's up, the frequencies here include the Doppler shift, and you can click one to tune there.</p>`)
-    : `<p class="small muted">Band Watch doesn't have frequencies for this one. AMSAT's status page and the satellite's own website list them.</p>`);
+    : `<p class="small muted">HamShack doesn't have frequencies for this one. AMSAT's status page and the satellite's own website list them.</p>`);
 
   // Next passes
   satSet($("siPasses"), passes.slice(0, 8).map((q) =>

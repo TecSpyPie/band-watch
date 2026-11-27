@@ -182,7 +182,7 @@ function renderScopeSrc() {
   go.hidden = liveScope.src !== "live" || running || sdr.available === false;
   msg.textContent = liveScope.src !== "live" ? ""
     : running ? "Live from your RTL-SDR."
-      : sdr.available === false ? "Live needs Band Watch on your PC with an RTL-SDR; showing spots meanwhile."
+      : sdr.available === false ? "Live needs HamShack on your PC with an RTL-SDR; showing spots meanwhile."
         : "Your RTL-SDR isn't running; showing spots meanwhile.";
 }
 

@@ -1,6 +1,6 @@
 /* ClearRX by M3VRV: the window. Sound comes in from the chosen input (your radio's USB sound card or a line-in),
    goes through the effects in clearrx-worklet.js (which uses rxfx.js), and out to the chosen speakers.
-   The settings are kept by ClearRX.exe (/api/settings), so they're there next time and Band Watch can use them. */
+   The settings are kept by ClearRX.exe (/api/settings), so they're there next time and HamShack can use them. */
 "use strict";
 
 const $ = (id) => document.getElementById(id);
@@ -10,7 +10,7 @@ const TONES = [500, 600, 650, 700, 750, 800], WIDTHS = [100, 150, 200, 300, 500]
 /* "My radio": which sound input to look for, a starting preset, and a tip for that radio. */
 const RADIOS = [
   { id: "rtl", label: "RTL-SDR", preset: "ssb",
-    tip: "Your RTL-SDR's sound comes through Band Watch: in Band Watch, open Listen, pick Receiver: My RTL-SDR and tick "
+    tip: "Your RTL-SDR's sound comes through HamShack: in HamShack, open Listen, pick Receiver: My RTL-SDR and tick "
       + "\"Send my RTL-SDR sound through ClearRX\". You don't need to press Start here; just keep ClearRX open and set the switches." },
   { id: "yaesu", label: "Yaesu", preset: "ssb", match: [/usb audio codec/i, /usb audio/i],
     tip: "Yaesu (FT-991A, FT-710, FTdx10 and others): the sound comes in on the radio's USB Audio CODEC, the same USB lead as "
@@ -591,7 +591,7 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
-/* ---------- Band Watch's link ---------- */
+/* ---------- HamShack's link ---------- */
 async function checkLink() {
   try {
     const h = await (await fetch("/healthz", { cache: "no-store" })).json();

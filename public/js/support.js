@@ -1,7 +1,7 @@
-/* Band Watch by M3VRV & King Coder: the optional "Support" pieces. Plain JavaScript, used by the page and the Help page
+/* HamShack by M0GLP & M3VRV: the optional "Support" pieces. Plain JavaScript, used by the page and the Help page
  * (window.Support) and the tests (require).
  *
- * Band Watch and ClearRX are free and open source and always will be. Nothing is locked, there are no popups, no
+ * HamShack and ClearRX are free and open source and always will be. Nothing is locked, there are no popups, no
  * timers and no reminders. This file is the ONE place the owner sets a support link:
  *   SUPPORT_URL  leave it "" and every support button and section stays hidden.
  *                Only an https link on ko-fi.com, github.com/sponsors, buymeacoffee.com or liberapay.com is accepted;

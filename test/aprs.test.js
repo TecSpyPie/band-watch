@@ -26,7 +26,7 @@ test("frame check (CRC-16 X.25): the standard check value", () => {
 });
 
 test("a position report is heard and read: call, path, place, symbol, comment", () => {
-  const f = A.frame("M3VRV-9", "APRS", ["WIDE1-1", "WIDE2-1"], "!5330.00N/00130.00W>Band Watch test");
+  const f = A.frame("M3VRV-9", "APRS", ["WIDE1-1", "WIDE2-1"], "!5330.00N/00130.00W>HamShack test");
   const [p] = hear([f]);
   assert.ok(p, "decoded");
   assert.equal(p.from, "M3VRV-9");
@@ -35,19 +35,19 @@ test("a position report is heard and read: call, path, place, symbol, comment", 
   assert.equal(p.type, "position");
   assert.ok(Math.abs(p.lat - 53.5) < 1e-6 && Math.abs(p.lon + 1.5) < 1e-6, `${p.lat},${p.lon}`);
   assert.equal(p.symbol, "/>");
-  assert.equal(p.comment, "Band Watch test");
+  assert.equal(p.comment, "HamShack test");
 });
 
 test("several packets in a row, through an FM radio's tilt and some noise", () => {
   const frames = [
     A.frame("G4ABC", "APRS", ["WIDE2-2"], "=5300.00N/00100.00W-Home QTH"),
-    A.frame("G7XYZ-7", "APRS", [], ">On the air from Band Watch"),
+    A.frame("G7XYZ-7", "APRS", [], ">On the air from HamShack"),
     A.frame("MB7UFO", "APRS", ["WIDE2-1"], "!5200.00N/00200.00W#Digipeater"),
   ];
   const got = hear(frames, { noise: 0.08, tilt: 0.6 });
   assert.deepEqual(got.map((g) => g.from), ["G4ABC", "G7XYZ-7", "MB7UFO"]);
   assert.equal(got[1].type, "status");
-  assert.equal(got[1].status, "On the air from Band Watch");
+  assert.equal(got[1].status, "On the air from HamShack");
 });
 
 test("course, speed and altitude", () => {

@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: passes sound-card input to the page in blocks, for the FT8/FT4 decoder. */
+/* HamShack by M0GLP & M3VRV: passes sound-card input to the page in blocks, for the FT8/FT4 decoder. */
 "use strict";
 
 class BandWatchCapture extends AudioWorkletProcessor {

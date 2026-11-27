@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-rem Starts Band Watch: BandWatch.exe if Windows lets it run. If Windows blocks it (for example
+rem Starts HamShack: BandWatch.exe if Windows lets it run. If Windows blocks it (for example
 rem Smart App Control, which blocks programs without a paid signing certificate), it starts the
 rem same server with Node.js instead, if Node.js is installed. Pass --background to skip the browser.
 cd /d "%~dp0"
@@ -25,7 +25,7 @@ exit /b 0
 
 :fallback
 call :status
-rem 2: BandWatch.exe already answered (it opened the browser itself). 1: an older or Node.js Band Watch.
+rem 2: BandWatch.exe already answered (it opened the browser itself). 1: an older or Node.js HamShack.
 if "%BWSTATUS%"=="2" exit /b 0
 if "%BWSTATUS%"=="1" goto :open
 set "NODE="
@@ -37,7 +37,7 @@ set "PORT=8073"
 set "HOST=127.0.0.1"
 rem Lets the RTL-SDR receiver reach rtl_tcp (only ever switched on here, on your own PC).
 set "BW_SDR=1"
-start "Band Watch server - close this window to stop" /min "%NODE%" "%~dp0server\server.js"
+start "HamShack server - close this window to stop" /min "%NODE%" "%~dp0server\server.js"
 set /a N=0
 :waitnode
 call :status
@@ -54,15 +54,15 @@ exit /b 0
 
 :fail
 echo.
-echo   Band Watch couldn't start.
+echo   HamShack couldn't start.
 echo   If Windows blocks BandWatch.exe (Smart App Control), install Node.js LTS from
-echo   https://nodejs.org and open Band Watch again: it will run with Node.js instead.
+echo   https://nodejs.org and open HamShack again: it will run with Node.js instead.
 echo   Or use the online version at https://band-watch.ample.run
 echo.
 pause
 exit /b 1
 
-rem BWSTATUS: 2 when BandWatch.exe answers on port 8073, 1 for any other Band Watch, otherwise 0.
+rem BWSTATUS: 2 when BandWatch.exe answers on port 8073, 1 for any other HamShack, otherwise 0.
 :status
 set "BWSTATUS=0"
 for /f "usebackq delims=" %%s in (`powershell -NoProfile -Command "try { $h = Invoke-RestMethod -TimeoutSec 2 -Uri 'http://127.0.0.1:8073/healthz'; if ($h.ok -and $h.desktop) { '2' } elseif ($h.ok) { '1' } else { '0' } } catch { '0' }"`) do set "BWSTATUS=%%s"
