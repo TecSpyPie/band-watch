@@ -136,7 +136,7 @@ test("ClearRX rack: modules move and keep their order, the EQ and compressor are
   const domOrder = () => page.$$eval("#mods > li", (els) => els.map((e) => e.dataset.mod).join());
   await page.goto(base + "/");
   await page.waitForSelector('#mods [data-mod="eq"]');
-  const usual = "nb,voice,cw,mnotch,notch,nr,sq,comp,eq,tone,cmp";
+  const usual = "nb,voice,cw,mnotch,notch,snr,nr,sq,comp,eq,tone,cmp";
   assert.equal(await domOrder(), usual);
   await page.click("#power");
   await page.waitForFunction(() => app.running, null, { timeout: 10000 });
@@ -170,17 +170,17 @@ test("ClearRX rack: modules move and keep their order, the EQ and compressor are
   // Move the compressor up two places: the cards, the numbers and the saved order follow, and the keyboard focus stays on the arrow
   await page.click('[data-mod="cmp"] [data-move="-1"]');
   await page.click('[data-mod="cmp"] [data-move="-1"]');
-  assert.equal(await domOrder(), "nb,voice,cw,mnotch,notch,nr,sq,comp,cmp,eq,tone");
-  assert.equal(await page.textContent('[data-mod="cmp"] .idx'), "9");
+  assert.equal(await domOrder(), "nb,voice,cw,mnotch,notch,snr,nr,sq,comp,cmp,eq,tone");
+  assert.equal(await page.textContent('[data-mod="cmp"] .idx'), "10");
   assert.equal(await page.evaluate(() => document.activeElement.getAttribute("aria-label")), "Move Compressor / limiter up");
   assert.equal(await page.isDisabled('[data-mod="nb"] [data-move="-1"]'), true, "the top one can't go up");
   assert.equal(await page.isDisabled('[data-mod="tone"] [data-move="1"]'), true, "the bottom one can't go down");
-  assert.equal((await saved()).order.join(), "nb,voice,cw,mnotch,notch,nr,sq,comp,cmp,eq,tone");
+  assert.equal((await saved()).order.join(), "nb,voice,cw,mnotch,notch,snr,nr,sq,comp,cmp,eq,tone");
 
   // It all comes back on a fresh page; Reset puts a module back; Default order puts them all back
   await page.reload();
   await page.waitForSelector('#mods [data-mod="eq"]');
-  assert.equal(await domOrder(), "nb,voice,cw,mnotch,notch,nr,sq,comp,cmp,eq,tone");
+  assert.equal(await domOrder(), "nb,voice,cw,mnotch,notch,snr,nr,sq,comp,cmp,eq,tone");
   assert.equal(await page.inputValue('[data-eq="5"]'), "12");
   assert.equal(await page.inputValue('[data-k="cmpThr"]'), "-30");
   await page.click('[data-mod="eq"] [data-reset]');
@@ -190,8 +190,8 @@ test("ClearRX rack: modules move and keep their order, the EQ and compressor are
   s = await saved();
   assert.deepEqual([s.order.join(), s.eqGains.join()], [usual, "0,0,0,0,0,0,0,0,0,0"]);
 
-  // The output meter and the narrow layout
-  assert.equal(await page.isVisible("#outBar"), true);
+  // The output meter (its bar is empty while nothing is playing, so check the meter itself) and the narrow layout
+  assert.equal(await page.isVisible(".bar:has(#outBar)"), true);
   await page.setViewportSize({ width: 360, height: 800 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, "no sideways scrolling on a phone");
   assert.deepEqual(errors, []);
