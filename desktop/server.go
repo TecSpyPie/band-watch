@@ -30,11 +30,12 @@ var buildDate = ""  // set at build time: when this exe was built (UTC)
 var startedAt = time.Now()
 
 const (
-	solarTTL = 15 * time.Minute
-	xotaTTL  = 2 * time.Minute
-	spotsTTL = 5 * time.Minute
-	sunTTL   = 30 * time.Minute
-	cacheMax = 200
+	solarTTL    = 15 * time.Minute
+	forecastTTL = 30 * time.Minute
+	xotaTTL     = 2 * time.Minute
+	spotsTTL    = 5 * time.Minute
+	sunTTL      = 30 * time.Minute
+	cacheMax    = 200
 )
 
 // Config says where the feeds are and which extras are switched on.
@@ -283,6 +284,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case p == "/api/solar":
 		data, err = s.getSolar()
+	case p == "/api/forecast":
+		data, err = s.getForecast()
 	case p == "/api/update":
 		s.handleUpdateCheck(w)
 		return

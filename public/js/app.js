@@ -62,7 +62,7 @@ start();
 // Extras, loaded in order: extras.js (shack screen, forecast, Morse trainer), chat-ui.js (chat),
 // round2.js (quick log, worked map, contests, who's hearing me).
 (function () {
-  const files = ["/js/extras.js?v=r1", "/js/chat-ui.js?v=r3", "/js/round2.js?v=r2"];
+  const files = ["/js/extras.js?v=r2", "/js/chat-ui.js?v=r3", "/js/round2.js?v=r2"];
   const next = () => {
     const src = files.shift(); if (!src) return;
     const s = document.createElement("script");

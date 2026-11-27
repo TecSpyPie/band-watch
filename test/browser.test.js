@@ -81,6 +81,11 @@ function upstreamHandler(kind, url, body) {
   if (p.endsWith("xray-flares-latest.json")) return SUN.flares;
   if (p.endsWith("noaa-scales.json")) return SUN.scales;
   if (p.endsWith("solar-wind-speed.json")) return SUN.wind;
+  if (p.endsWith("noaa-planetary-k-index-forecast.json")) {
+    const at = (h) => new Date(Date.now() + h * 3600e3).toISOString().slice(0, 13).replace("T", " ") + ":00:00";
+    return [["time_tag", "kp", "observed", "noaa_scale"], [at(-6), "2.00", "observed", null], [at(-3), "3.00", "estimated", null], [at(3), "5.33", "predicted", "G1"], [at(6), "4.00", "predicted", null]];
+  }
+  if (p.endsWith("3-day-forecast.txt")) return "The greatest expected 3 hr Kp for Nov 27-Nov 29 2026 is 5.33 (NOAA Scale\nG1).\nR1-R2           15%           15%           10%\n";
   if (feed.solarDown) return new Error("down");
   return p.includes("f107") ? [{ time_tag: "t", flux: 113 }] : [{ time_tag: "t", kp_index: 0.33 }];
 }
@@ -3222,6 +3227,21 @@ test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991
   await page.setViewportSize({ width: 380, height: 800 });
   assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#secDv *")].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).map((e) => e.tagName + "#" + e.id).slice(0, 5)), []);
   assert.deepEqual(errors, []);
+});
+
+test("space weather forecast comes from the Band Watch server, not from NOAA in each browser", { skip }, async (t) => {
+  const noaa = [];
+  const { page, errors } = await openPage(t);
+  page.on("request", (r) => { if (/swpc\.noaa\.gov/.test(r.url())) noaa.push(r.url()); });
+  await page.waitForFunction(() => /Highest Kp expected/.test((document.getElementById("bwxFcBody") || {}).textContent || ""));
+  const txt = await page.textContent("#bwxFcBody");
+  assert.match(txt, /5\.3/);
+  assert.match(txt, /15%/, "radio blackout chance from the 3-day text");
+  assert.match(txt, /G1 storm/);
+  await page.evaluate(() => location.reload());
+  await page.waitForFunction(() => /Highest Kp expected/.test((document.getElementById("bwxFcBody") || {}).textContent || ""));
+  assert.deepEqual(noaa, [], "the page never asks NOAA itself");
+  assert.deepEqual(errors.filter((e) => !/api\/contests|celestrak|ERR_TUNNEL|ERR_NAME|status of 502/.test(e)), []);
 });
 
 test("chat: the website has the chat; the Windows app links to it instead", { skip }, async (t) => {

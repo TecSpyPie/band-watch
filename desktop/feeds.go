@@ -133,6 +133,40 @@ func (s *Server) getSolar() (map[string]any, error) {
 	})
 }
 
+/* ---------- Space weather forecast ---------- */
+
+// getForecast is NOAA's Kp forecast and 3-day text, fetched once for everyone (the forecast panel used to ask
+// NOAA from each browser). The text is nice to have; without the Kp forecast there's nothing to show.
+func (s *Server) getForecast() (map[string]any, error) {
+	return s.cache.Get("forecast", forecastTTL, func() (map[string]any, error) {
+		var kp []any
+		textCh := make(chan string, 1)
+		go func() {
+			b, err := s.fetch(s.noaa("text/3-day-forecast.txt"), 20*time.Second)
+			if err != nil {
+				textCh <- ""
+				return
+			}
+			textCh <- string(b)
+		}()
+		err := s.fetchJSON(s.noaa("products/noaa-planetary-k-index-forecast.json"), 20*time.Second, &kp)
+		text := <-textCh
+		if err != nil {
+			return nil, err
+		}
+		if len(kp) == 0 {
+			return nil, errors.New("NOAA returned no Kp forecast")
+		}
+		if len(kp) > 300 {
+			kp = kp[:300]
+		}
+		if len(text) > 20000 {
+			text = text[:20000]
+		}
+		return map[string]any{"kp": kp, "text": text, "at": s.clock.Millis()}, nil
+	})
+}
+
 /* ---------- PSK Reporter spots ---------- */
 
 // Spot is one path: the far station (C), the station in our grid (L), and how they were heard.

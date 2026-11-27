@@ -84,6 +84,8 @@ function handle(kind, url, body, req) {
   if (p.endsWith("xray-flares-latest.json")) return up.sun.flares;
   if (p.endsWith("noaa-scales.json")) return up.sun.scales;
   if (p.endsWith("solar-wind-speed.json")) return up.sun.wind;
+  if (p.endsWith("noaa-planetary-k-index-forecast.json")) return up.fcDown ? { status: 503 } : up.kpForecast;
+  if (p.endsWith("3-day-forecast.txt")) return up.fcTextDown ? { status: 503 } : up.fcText;
   return undefined;
 }
 
@@ -109,6 +111,8 @@ test.beforeEach(async () => {
       ${report({ receiverCallsign: "G0AAA", receiverLocator: "IO93ab", senderCallsign: "JA1ZZZ", senderLocator: "PM95", frequency: 21075000, flowStartSeconds: nowSec() - 300, mode: "FT8", sNR: "" })}
     </receptionReports>`,
     sun: JSON.parse(JSON.stringify(SUN)),
+    kpForecast: [["time_tag", "kp", "observed", "noaa_scale"], ["2026-11-27 00:00:00", "2.67", "observed", null], ["2026-11-28 03:00:00", "5.33", "predicted", "G1"]],
+    fcText: ":Product: 3-Day Forecast\nThe greatest expected 3 hr Kp for Nov 27-Nov 29 2026 is 5.33 (NOAA Scale\nG1).\nR1-R2           15%           15%           10%\n",
   };
   await srv.reset();
 });
@@ -815,6 +819,31 @@ test("healthz says when this copy was built and what it runs on", async (t) => {
   assert.match(h.build.server, /^(Node\.js|BandWatch\.exe)$/);
   assert.ok(h.build.runtime);
   assert.ok(!Number.isNaN(Date.parse(h.build.started)));
+});
+
+test("GET /api/forecast: NOAA's Kp forecast and 3-day text, one shared copy for 30 minutes", async () => {
+  const r = await get("/api/forecast");
+  assert.equal(r.status, 200);
+  const j = JSON.parse(r.body);
+  assert.deepEqual(j.kp, up.kpForecast);
+  assert.match(j.text, /greatest expected 3 hr Kp/);
+  assert.equal(typeof j.at, "number");
+  const n = upstream.calls.filter((u) => /k-index-forecast|3-day-forecast/.test(u)).length;
+  assert.equal(n, 2);
+  await get("/api/forecast"); await get("/api/forecast");
+  assert.equal(upstream.calls.filter((u) => /k-index-forecast|3-day-forecast/.test(u)).length, 2, "cached");
+});
+
+test("GET /api/forecast: the text is optional, the Kp forecast isn't", async () => {
+  up.fcTextDown = true;
+  const r = await get("/api/forecast");
+  assert.equal(r.status, 200);
+  assert.equal(JSON.parse(r.body).text, "");
+  await srv.reset();
+  up.fcDown = true;
+  const d = await get("/api/forecast");
+  assert.equal(d.status, 502);
+  assert.doesNotMatch(d.body, /127\.0\.0\.1|503/);
 });
 
 test("GET /api/xota: POTA activators, newest first, cached; SOTA's API isn't used", async () => {
