@@ -324,7 +324,7 @@ async function qrzLogCall(action, adif) {
   });
   let body = {};
   try { body = await res.json(); } catch { /* not JSON */ }
-  if (!res.ok) throw new Error(body.error || `Band Watch's server answered ${res.status}.`);
+  if (!res.ok) throw new Error(body.error || NetWords.fromStatus(res.status, "QRZ"));
   return body;
 }
 
@@ -349,7 +349,7 @@ async function qrzCheckKey() {
       msg.textContent = r.auth ? qrzAuthText : `QRZ said: ${r.reason || r.result}.`;
     }
   } catch (e) {
-    msg.textContent = e.message;
+    msg.textContent = NetWords.friendly(e, "QRZ");
   }
   renderQrzLog();
 }
@@ -371,8 +371,9 @@ async function qrzSend(list, { quiet = false } = {}) {
       try {
         r = await qrzLogCall("insert", adifRecord(q));
       } catch (e) {
-        failed++; lastReason = e.message;
-        if (/could not be reached|Too many/.test(e.message)) break;
+        failed++; lastReason = NetWords.friendly(e, "QRZ");
+        // No answer at all (offline, server down): stop, rather than failing every contact one by one.
+        if (NetWords.isNoAnswer(e) || /could not be reached|Couldn't reach|Too many|busy/.test(e.message)) break;
         continue;
       }
       if (r.ok) { q.qrz = r.logid || "ok"; sent++; }

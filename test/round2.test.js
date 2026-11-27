@@ -98,6 +98,19 @@ test("chat: three people reporting a message removes it for everyone", async () 
   assert.equal((await report("x", "10.8.0.4")).code, 400);
 });
 
+test("chat: made-up addresses at the front of X-Forwarded-For can't pose as more people reporting", async () => {
+  let t = 4_500_000; chat._reset(() => t);
+  const msg = (await call(chat.handle, { method: "POST", body: { room: "40", call: "G4ABC", text: "73 all" }, ip: "10.9.0.9" })).json.message;
+  // One person sends three reports through the proxy, each with a different invented address in front.
+  for (const fake of ["1.1.1.1", "2.2.2.2", "3.3.3.3"]) {
+    const r = await call(chat.handle, { method: "POST", body: { room: "40", report: msg.id }, ip: `${fake}, 10.5.0.1` });
+    assert.equal(r.json.removed, false, "still one person");
+  }
+  assert.equal((await call(chat.handle, { url: "/api/chat?room=40" })).json.messages.length, 1);
+  assert.equal(chat.reporterOf({ headers: { "x-forwarded-for": " 9.9.9.9 , 10.5.0.1 " }, socket: {} }), "10.5.0.1");
+  assert.equal(chat.reporterOf({ headers: {}, socket: { remoteAddress: "10.5.0.2" } }), "10.5.0.2");
+});
+
 test("chat: reports are rate limited per address", async () => {
   let t = 5_000_000; chat._reset(() => t);
   const ids = [];

@@ -86,7 +86,7 @@ function renderXota() {
   }).join("") || `<li class="small muted">${xota.loading ? "Loading activators…" : "No activators on the air right now with these filters."}</li>`;
   const counts = `${shown.length} of ${xota.spots.length} activators`;
   $("xtNote").textContent = xota.error
-    ? `Couldn't load POTA spots: ${xota.error}`
+    ? xota.error
     : `${counts}${xota.failed.length ? ` (${xota.failed.map((f) => f.toUpperCase()).join(" and ")} not available just now)` : ""}. Updated every two minutes. Click a frequency to tune there.`;
 }
 
@@ -94,7 +94,7 @@ async function refreshXota() {
   xota.loading = true;
   try {
     const r = await fetch("/api/xota");
-    if (!r.ok) throw new Error(`the server answered ${r.status}`);
+    if (!r.ok) throw new Error(NetWords.fromStatus(r.status, "POTA"));
     const d = await r.json();
     xota.spots = Array.isArray(d.spots) ? d.spots : [];
     xota.failed = Array.isArray(d.failed) ? d.failed : [];
@@ -102,7 +102,7 @@ async function refreshXota() {
     xota.error = "";
     xotaAlertNew();
   } catch (e) {
-    xota.error = e.message || String(e);
+    xota.error = NetWords.friendly(e, "POTA");
   } finally {
     xota.loading = false;
     renderXota();

@@ -95,7 +95,7 @@
       S.reported.add(m.id);
       if (d.removed || res.status === 404) S.msgs = S.msgs.filter((x) => x.id !== m.id);
       note.textContent = d.removed ? "Thanks. That message has been removed." : "Thanks. It comes down when three people report it."; note.className = "";
-    } catch (err) { note.textContent = err.message; note.className = "bwc-err"; }
+    } catch (err) { note.textContent = typeof NetWords !== "undefined" ? NetWords.friendly(err, "the chat") : err.message; note.className = "bwc-err"; }
     renderList();
   }
   function hideCall(c) { S.hidden.add(c); put("bwx-chat-hidden", [...S.hidden]); renderList(); }
@@ -152,7 +152,7 @@
       if (!res.ok) throw new Error(d.error || "Couldn't send. Try again.");
       ta.value = ""; note.textContent = ""; note.className = "";
       await poll(); renderList(true);
-    } catch (err) { note.textContent = err.message; note.className = "bwc-err"; }
+    } catch (err) { note.textContent = typeof NetWords !== "undefined" ? NetWords.friendly(err, "the chat") : err.message; note.className = "bwc-err"; }
     S.busy = false; byId("bwcSend").disabled = false; countLeft();
   }
   function countLeft() { const ta = byId("bwcText"), c = byId("bwcCount"); if (ta && c) c.textContent = `${300 - ta.value.length} left`; }
