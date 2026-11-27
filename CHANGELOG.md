@@ -1,5 +1,9 @@
 # What's new
 
+## 1.44.0 (27 Nov 2026)
+- **Band Watch is now HamShack by M0GLP & M3VRV.** The new name is on the pages, the help, the phone app, the Windows installer, the shortcuts and Settings > Apps. Nothing else changes: your settings, logbook and radio setup carry over, the program is still `BandWatch.exe` in `C:\BandWatch`, and updates keep coming the same way. The old "Band Watch" shortcuts are swapped for "HamShack" ones when you update.
+- **ClearRX 1.5.0: a new look.** A toolbar of big buttons, a big graph showing the sound before and after ClearRX with the EQ as a curve you can drag point by point (log or linear scale), effects in panels with a fold arrow and a green power button, and a status bar with a green-yellow-red output meter.
+
 ## 1.43.1 (27 Nov 2026)
 - **Plain-English messages when something can't be reached.** POTA, Send to QRZ and the chat used to show the browser's own wording ("Failed to fetch") or a number from the server ("the server answered 502"). They now say what happened and what to do next, for example "Couldn't reach POTA. Check your internet connection; HamShack will try again." The words come from a new `public/js/networds.js`.
 - **Send to QRZ stops when the connection drops**, instead of trying every contact and failing each one in turn.
