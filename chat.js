@@ -66,6 +66,13 @@ const pub = (m) => ({ id: m.id, call: m.call, text: m.text, t: m.t });
 function send(res, code, body) { res.writeHead(code, HEADERS); res.end(JSON.stringify(body)); }
 
 function ipOf(req) { return String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || (req.socket && req.socket.remoteAddress) || "?"; }
+/** Who is reporting. Anyone can put a made-up address at the front of X-Forwarded-For, so for reports (where one
+ * person could otherwise pose as three and take any message down) only the last address counts: the one the
+ * proxy in front of Band Watch added itself. The worst a shared proxy address can do is make removal slower. */
+function reporterOf(req) {
+  const list = String(req.headers["x-forwarded-for"] || "").split(",").map((s) => s.trim()).filter(Boolean);
+  return list[list.length - 1] || (req.socket && req.socket.remoteAddress) || "?";
+}
 
 function readBody(req, limit = 2048) {
   return new Promise((resolve, reject) => {
@@ -112,7 +119,7 @@ async function handle(req, res, url) {
     const body = await readBody(req);
     const r = String(body.room || "general").toLowerCase();
     if (!rooms.has(r)) return send(res, 400, { error: "Unknown room." });
-    if (body.report != null) return report(res, r, body.report, ipOf(req));
+    if (body.report != null) return report(res, r, body.report, reporterOf(req));
     const call = String(body.call || "").trim().toUpperCase();
     if (!CALL_RE.test(call)) return send(res, 400, { error: "Enter your callsign at the top of the page first (like M3VRV)." });
     const text = cleanText(body.text);
@@ -159,4 +166,4 @@ function _reset(clockFn) {
   posts.clear(); reportsBy.clear(); nextId = 1; if (clockFn) now = clockFn;
 }
 
-module.exports = { handle, cleanText, ROOMS, CALL_RE, _reset };
+module.exports = { handle, cleanText, ROOMS, CALL_RE, _reset, reporterOf };

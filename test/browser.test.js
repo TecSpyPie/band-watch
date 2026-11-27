@@ -2607,7 +2607,7 @@ test("parks on the air: POTA activators listed, filtered, on the map and scope, 
 
 test("parks on the air: says so when the feed is down", { skip }, async (t) => {
   const { page } = await openPage(t, { potaDown: true });
-  await page.waitForFunction(() => /Couldn't load POTA spots/.test(document.getElementById("xtNote").textContent));
+  await page.waitForFunction(() => /Couldn't reach POTA/.test(document.getElementById("xtNote").textContent));
   assert.equal(await page.locator("#xtList .xtrow").count(), 0);
 });
 
