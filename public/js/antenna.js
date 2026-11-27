@@ -1,15 +1,15 @@
-/* Band Watch by M3vrv: Antenna A/B, comparing two antennas with real reception reports of your own signal.
+/* HamShack by M0GLP & M3VRV: Antenna A/B, comparing two antennas with real reception reports of your own signal.
  * Plain JavaScript, used by the page (window.Antenna) and the tests (require).
  * ANALYSIS ONLY: this never controls the radio and never transmits. You send WSPR with your own software and
- * switch antennas yourself; Band Watch only keeps a log of when you were on which, fetches the reports other
+ * switch antennas yourself; HamShack only keeps a log of when you were on which, fetches the reports other
  * stations made of your callsign, and compares them.
  *   assignPeriod()  which antenna was in use for one report (a whole 2-minute slot must fit inside one period)
  *   analyse()       match reports by the same receiving station and band, then average the SNR difference
  *   sectorOf(), distanceBin()  8 compass sectors and 4 distance bands
  *   buildQuery(), parseRows()  the wspr.live question and its answer
- *   myReportsUrl(), parseMyReports()  the Band Watch server's /api/myreports (FT8 and FT4 from PSK Reporter)
+ *   myReportsUrl(), parseMyReports()  the HamShack server's /api/myreports (FT8 and FT4 from PSK Reporter)
  * WSPR reports come from wspr.live (public WSPR database, browser access allowed). FT8 and FT4 reports come
- * from PSK Reporter through Band Watch's own server (PSK Reporter doesn't allow browser access, and asks for
+ * from PSK Reporter through HamShack's own server (PSK Reporter doesn't allow browser access, and asks for
  * at most one request per 5 minutes, which the server keeps to). A report's slot is as long as its mode's
  * over: WSPR 2 minutes, FT8 15 seconds, FT4 7.5 seconds. */
 (function (root, factory) {
@@ -258,7 +258,7 @@
     return out;
   }
 
-  /** The Band Watch server's address for FT8 and FT4 reports of `call` (the last `mins` minutes, at most 24 hours).
+  /** The HamShack server's address for FT8 and FT4 reports of `call` (the last `mins` minutes, at most 24 hours).
    * Throws on a callsign that doesn't look like one. */
   function myReportsUrl(call, mins = PSK_MAX_MINS) {
     const c = String(call || "").trim().toUpperCase();
@@ -283,7 +283,7 @@
   }
 
   /* PSK Reporter keeps only the latest report per receiver, so one reply can never show a receiver on both
-   * antennas. Band Watch therefore collects replies every 5 minutes while you log, and keeps them here. */
+   * antennas. HamShack therefore collects replies every 5 minutes while you log, and keeps them here. */
   const HISTORY_DAYS = 7;
   const HISTORY_MAX = 20000;
   const POLL_MS = 5 * 60000;         // never ask more often than PSK Reporter's guidance (the server enforces it too)
@@ -430,7 +430,7 @@
   }
 
   /** wspr.live: one question per Compare click, cached in memory (10 minutes), 20 seconds apart at most.
-   * wspr.live allows browser access, so no Band Watch server is involved. Throws a plain-English message. */
+   * wspr.live allows browser access, so no HamShack server is involved. Throws a plain-English message. */
   async function fetchReports(call, from, to) {
     const url = buildQuery(call, from, to);
     const hit = cache.get(url);
@@ -441,7 +441,7 @@
     try { r = await fetch(url, { cache: "no-store" }); } catch { throw new Error("Couldn't reach wspr.live just now. Check your connection and try again in a minute."); }
     if (!r.ok) throw new Error("wspr.live couldn't answer just now. Try again in a few minutes.");
     let json;
-    try { json = await r.json(); } catch { throw new Error("wspr.live sent an answer Band Watch couldn't read. Try again later."); }
+    try { json = await r.json(); } catch { throw new Error("wspr.live sent an answer HamShack couldn't read. Try again later."); }
     const reports = parseRows(json);
     cache.set(url, { at: Date.now(), reports, full: reports.length >= MAX_ROWS });
     return { reports, cached: false, full: reports.length >= MAX_ROWS };
@@ -481,8 +481,8 @@
     history.polledAt = Date.now();     // set first, so a failure doesn't make us retry early
     try {
       let r;
-      try { r = await fetch(myReportsUrl(call, PSK_MAX_MINS), { cache: "no-store" }); } catch { throw new Error("Couldn't reach Band Watch's server just now. Check your connection and try again in a minute."); }
-      if (!r.ok) throw new Error("PSK Reporter couldn't answer just now. Band Watch will try again in a few minutes.");
+      try { r = await fetch(myReportsUrl(call, PSK_MAX_MINS), { cache: "no-store" }); } catch { throw new Error("Couldn't reach HamShack's server just now. Check your connection and try again in a minute."); }
+      if (!r.ok) throw new Error("PSK Reporter couldn't answer just now. HamShack will try again in a few minutes.");
       let json;
       try { json = await r.json(); } catch { throw new Error("PSK Reporter's answer couldn't be read. Try again later."); }
       history.rows = mergeHistory(history.rows, parseMyReports(json), Date.now());
@@ -533,7 +533,7 @@
   async function compare() {
     if (busy) return;
     const call = (typeof app !== "undefined" && app.myCall) || "";
-    if (!call) { showMsg("Enter your callsign at the top of the page first. Band Watch looks up reports of that callsign.", true); return; }
+    if (!call) { showMsg("Enter your callsign at the top of the page first. HamShack looks up reports of that callsign.", true); return; }
     const now = Date.now();
     const w = windowOf(state.periods, now);
     if (!w) { showMsg("Log at least one period on antenna A and one on B first.", true); return; }

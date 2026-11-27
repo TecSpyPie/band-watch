@@ -1,4 +1,4 @@
-/* Band Watch chat panel: General plus one room per band. Messages are shown as text only. */
+/* HamShack chat panel: General plus one room per band. Messages are shown as text only. */
 (function () {
   "use strict";
   if (window.__bwChat) return;
@@ -123,7 +123,7 @@
     const web = /^https:\/\//.test(String(url || "")) ? url : "https://band-watch.ample.run/";
     const ul = byId("bwcList"); if (!ul) return;
     ul.style.height = "auto";
-    ul.replaceChildren(mk("li", { class: "bwc-empty" }, "The chat is on the Band Watch website, where everyone meets. ",
+    ul.replaceChildren(mk("li", { class: "bwc-empty" }, "The chat is on the HamShack website, where everyone meets. ",
       mk("a", { href: web, target: "_blank", rel: "noopener noreferrer", text: "Open the chat on the website" }), "."));
     // style.display, not hidden: these have display:flex in the chat's CSS, which would win over [hidden].
     for (const el of document.querySelectorAll("#bwcRooms, #secChat .bwc-form, #secChat .bwc-meta")) el.style.display = "none";
@@ -163,7 +163,7 @@
     ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ta.form.requestSubmit(); } });
     const sec = mk("section", { class: "panel bwx-panel", id: "secChat", "aria-labelledby": "secChatT" },
       mk("div", { class: "phead" }, mk("h2", { id: "secChatT", text: "Chat" })),
-      mk("p", { class: "bwx-note", style: "font-size:.875rem;color:var(--muted);margin:6px 0", text: "Talk to other Band Watch users. Pick General or a band room. Anyone using Band Watch can read these messages, so don't post anything private." }),
+      mk("p", { class: "bwx-note", style: "font-size:.875rem;color:var(--muted);margin:6px 0", text: "Talk to other HamShack users. Pick General or a band room. Anyone using HamShack can read these messages, so don't post anything private." }),
       mk("div", { class: "bwc-rooms", id: "bwcRooms", role: "group", "aria-label": "Chat rooms" },
         ROOMS.map((r) => mk("button", { type: "button", "data-room": r, "aria-pressed": r === S.room ? "true" : "false", text: roomName(r), onclick: () => switchRoom(r) }))),
       mk("ul", { class: "bwc-list", id: "bwcList", "aria-live": "polite", "aria-label": "Messages" }),

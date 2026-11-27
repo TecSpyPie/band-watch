@@ -1,6 +1,6 @@
 # Code signing policy
 
-Band Watch's Windows files (BandWatch.exe and BandWatch-Setup.exe) are built by GitHub Actions
+HamShack's Windows files (BandWatch.exe and BandWatch-Setup.exe) are built by GitHub Actions
 from this public repository, from a tagged commit, by the workflow in
 `.github/workflows/release.yml`. Nothing is built or signed on anyone's own PC.
 
@@ -18,7 +18,7 @@ Every release is approved by hand in SignPath before it is signed.
 
 ## Privacy
 
-Band Watch runs on your own PC and sends nothing about you to the Band Watch author.
+HamShack runs on your own PC and sends nothing about you to the HamShack author.
 It fetches public data: spots from PSK Reporter (for the grid square you choose) and
 solar and space-weather data from NOAA. If you sign in to QRZ.com, your QRZ username
 and password go only to QRZ.com and the password is never stored. The RTL-SDR

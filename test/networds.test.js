@@ -25,11 +25,11 @@ test("JSON and programming errors never reach the screen", () => {
   for (const m of ["Unexpected token < in JSON at position 0", "SyntaxError: bad", "TypeError: x is undefined", ""]) {
     assert.match(N.friendly(new Error(m), "QRZ"), /^Couldn't reach QRZ just now/);
   }
-  assert.match(N.friendly(null), /Band Watch's server/);
+  assert.match(N.friendly(null), /HamShack's server/);
 });
 
 test("status numbers become words, and no number is shown", () => {
-  assert.match(N.fromStatus(502, "POTA"), /^Couldn't reach POTA just now\. Band Watch will try again/);
+  assert.match(N.fromStatus(502, "POTA"), /^Couldn't reach POTA just now\. HamShack will try again/);
   assert.match(N.fromStatus(503, "POTA"), /Couldn't reach POTA/);
   assert.match(N.fromStatus(429, "QRZ"), /busy\. Wait a minute/);
   assert.match(N.fromStatus(404), /isn't available on this copy/);

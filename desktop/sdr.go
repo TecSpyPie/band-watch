@@ -1,4 +1,4 @@
-// Band Watch by M3vrv: the RTL-SDR bridge. The browser can't open a TCP connection, so the
+// HamShack by M0GLP & M3VRV: the RTL-SDR bridge. The browser can't open a TCP connection, so the
 // server connects to rtl_tcp (from the RTL-SDR Blog drivers, which support the Blog V4)
 // and passes the raw I/Q samples through; the page does the radio itself (public/js/sdr-dsp.js).
 package main
@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-// rtl_tcp commands Band Watch may send: frequency, sample rate, gain mode, gain, ppm,
+// rtl_tcp commands HamShack may send: frequency, sample rate, gain mode, gain, ppm,
 // RTL AGC, gain by index, bias tee.
 var sdrCommands = map[int]bool{0x01: true, 0x02: true, 0x03: true, 0x04: true, 0x05: true, 0x08: true, 0x09: true, 0x0d: true, 0x0e: true}
 
@@ -34,7 +34,7 @@ type sdrBridge struct {
 	proc     *rtlProc
 }
 
-// rtlProc is an rtl_tcp that Band Watch started for the user ("Start rtl_tcp for me").
+// rtlProc is an rtl_tcp that HamShack started for the user ("Start rtl_tcp for me").
 type rtlProc struct {
 	cmd     *exec.Cmd
 	args    []string
@@ -62,7 +62,7 @@ func (p *rtlProc) status() map[string]any {
 
 var rtlNameRe = regexp.MustCompile(`(?i)^rtl_tcp(\.exe)?$`)
 
-// findRtlTcp returns the rtl_tcp program to run: the one given, or else one next to Band Watch or on the PATH.
+// findRtlTcp returns the rtl_tcp program to run: the one given, or else one next to HamShack or on the PATH.
 func findRtlTcp(given string) (string, string) {
 	given = strings.TrimSpace(strings.Trim(given, `"`))
 	if given != "" {
@@ -85,7 +85,7 @@ func findRtlTcp(given string) (string, string) {
 	if p, err := exec.LookPath("rtl_tcp"); err == nil {
 		return p, ""
 	}
-	return "", "Band Watch couldn't find rtl_tcp. Enter where rtl_tcp.exe is, in Settings > RTL-SDR receiver."
+	return "", "HamShack couldn't find rtl_tcp. Enter where rtl_tcp.exe is, in Settings > RTL-SDR receiver."
 }
 
 func newSdrBridge() *sdrBridge { return &sdrBridge{sessions: map[string]net.Conn{}} }
@@ -129,7 +129,7 @@ func (s *Server) sdrOn() bool { return s.cfg.Desktop || s.cfg.TestHooks }
 
 func (s *Server) handleSdr(w http.ResponseWriter, r *http.Request) {
 	if !s.sdrOn() {
-		sendJSON(w, 404, errJSON("The RTL-SDR receiver works in Band Watch on your own PC."), nil)
+		sendJSON(w, 404, errJSON("The RTL-SDR receiver works in HamShack on your own PC."), nil)
 		return
 	}
 	p := r.URL.Path
@@ -355,7 +355,7 @@ func (s *Server) sdrLaunchStop(w http.ResponseWriter) {
 	sendJSON(w, 200, map[string]any{"running": false}, nil)
 }
 
-// StopRtlTcp stops an rtl_tcp that Band Watch started, when Band Watch quits.
+// StopRtlTcp stops an rtl_tcp that HamShack started, when HamShack quits.
 func (s *Server) StopRtlTcp() {
 	s.sdr.mu.Lock()
 	p := s.sdr.proc

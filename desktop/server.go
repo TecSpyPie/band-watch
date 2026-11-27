@@ -1,4 +1,4 @@
-// Band Watch by M3vrv: the same web server as server.js, written in Go so it compiles to a
+// HamShack by M0GLP & M3VRV: the same web server as server.js, written in Go so it compiles to a
 // single BandWatch.exe that needs nothing else installed. The web page is embedded in the program.
 package main
 
@@ -47,8 +47,8 @@ type Config struct {
 	PotaURL      string // https://api.pota.app/spot/activator
 	EibiURL      string // http://www.eibispace.de/dx/
 	ContestURL   string // https://www.contestcalendar.com/calendar.rss (WA7BNM Contest Calendar)
-	UpdateURL    string // GitHub's latest-release API for Band Watch
-	UpdateAssets string // where release files may come from (tests only; default Band Watch's GitHub releases)
+	UpdateURL    string // GitHub's latest-release API for HamShack
+	UpdateAssets string // where release files may come from (tests only; default HamShack's GitHub releases)
 	TestHooks    bool   // /api/test/reset and /api/test/advance
 	Desktop      bool   // only answer to localhost, and allow /api/quit
 	Quit         func() // called by /api/quit
@@ -216,13 +216,13 @@ var gridRe = regexp.MustCompile(`^[A-R]{2}\d{2}$`)
 var callRe = regexp.MustCompile(`^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(/[A-Z0-9]{1,6})?$`)
 var minsRe = regexp.MustCompile(`^\d+$`)
 
-// Where the Band Watch chat is: the website. The Windows app links there rather than running a chat of its own.
+// Where the HamShack chat is: the website. The Windows app links there rather than running a chat of its own.
 const chatWebURL = "https://band-watch.ample.run/"
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The desktop app only answers to this PC, which also stops other web sites reaching it by DNS tricks.
 	if s.cfg.Desktop && !localHost.MatchString(r.Host) {
-		sendJSON(w, 421, errJSON("Band Watch only answers on localhost."), nil)
+		sendJSON(w, 421, errJSON("HamShack only answers on localhost."), nil)
 		return
 	}
 	p := r.URL.Path
@@ -241,7 +241,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			sendJSON(w, 200, map[string]any{"available": false, "web": chatWebURL, "rooms": []string{}, "messages": []any{}, "last": 0}, nil)
 			return
 		}
-		sendJSON(w, 404, errJSON("Chat is on the web version of Band Watch: "+chatWebURL), nil)
+		sendJSON(w, 404, errJSON("Chat is on the web version of HamShack: "+chatWebURL), nil)
 		return
 	}
 	if r.Method == http.MethodPost {

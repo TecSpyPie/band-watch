@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: SSTV (slow-scan television) pictures, analogue modes, in plain JavaScript.
+/* HamShack by M0GLP & M3VRV: SSTV (slow-scan television) pictures, analogue modes, in plain JavaScript.
  * Works in the decoder's Web Worker and in Node (tests); the page shows the pictures.
  *
  *   MODES     Martin M1/M2, Scottie S1/S2/DX, Robot 36/72, PD 50/90/120/160/180/240/290, Wraase SC2-180,

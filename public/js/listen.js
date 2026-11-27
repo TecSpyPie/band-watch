@@ -1,5 +1,5 @@
 /* Listen: tune a public web receiver (WebSDR or KiwiSDR) to a band, frequency and mode.
- * The receiver plays inside Band Watch when the page is served over plain http (BandWatch.exe on this PC),
+ * The receiver plays inside HamShack when the page is served over plain http (BandWatch.exe on this PC),
  * otherwise in its own window. While it's open, clicking the scope, band plan or a spot retunes it. */
 "use strict";
 
@@ -68,7 +68,7 @@ function receiverUrl() {
 
 /* CB radio (27 MHz), to listen to: the UK's own FM channels ("27/81", 10 kHz apart from 27.60125 MHz; channel 19
    is 27.78125) and the European CEPT channels (26.965-27.405 MHz, in their traditional order: channel 23 is
-   27.255 MHz, above 24 and 25, as on every CB rig). Band Watch never transmits on CB. */
+   27.255 MHz, above 24 and 25, as on every CB rig). HamShack never transmits on CB. */
 const CB_UK = Array.from({ length: 40 }, (_, i) => [i + 1, Math.round((27601.25 + i * 10) * 100) / 100]);
 const CB_EU = [26965, 26975, 26985, 27005, 27015, 27025, 27035, 27055, 27065, 27075, 27085, 27105, 27115, 27125, 27135,
   27155, 27165, 27175, 27185, 27205, 27215, 27225, 27255, 27235, 27245, 27265, 27275, 27285, 27295, 27305, 27315, 27325,
@@ -100,7 +100,7 @@ function listenProblem() {
   const rx = RECEIVERS[listen.rx];
   if (!(listen.kHz > 0)) return "Enter a frequency in kHz.";
   if (rx.kind === "rtl") {
-    if (sdr.available === false) return "The RTL-SDR receiver works in Band Watch on your own PC (the Windows app), not on the website.";
+    if (sdr.available === false) return "The RTL-SDR receiver works in HamShack on your own PC (the Windows app), not on the website.";
     if (listen.kHz < rx.min || listen.kHz > rx.max) return `The ${DONGLES[sdr.dongle].name} tunes from ${rx.min >= 1000 ? `${rx.min / 1000} MHz` : `${rx.min} kHz`} to 1,766 MHz.`;
     return "";
   }
@@ -131,7 +131,7 @@ function renderListen() {
   $("lsEmbed").checked = listen.embed && canEmbed() && !own;
   $("lsEmbed").disabled = !canEmbed() || own;
   $("lsEmbedNote").textContent = own ? "The Twente WebSDR doesn't allow being shown inside other apps, so it opens in its own window. KiwiSDRs and other WebSDRs can play inside."
-    : canEmbed() ? "" : "Web receivers use plain http, so on this secure page they open in their own window. In the Windows app they play inside Band Watch.";
+    : canEmbed() ? "" : "Web receivers use plain http, so on this secure page they open in their own window. In the Windows app they play inside HamShack.";
 
   const p = BANDPLAN[listen.band];
   $("lsPresets").innerHTML = p.centres.map(([k, label]) => `<button type="button" data-k="${k}">${esc(label)} ${k.toLocaleString()}</button>`).join("");

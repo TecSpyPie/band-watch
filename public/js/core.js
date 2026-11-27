@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: constants, helpers, state, data loading and the main render. */
+/* HamShack by M0GLP & M3VRV: constants, helpers, state, data loading and the main render. */
 "use strict";
 
 /* ===================== Constants ===================== */
@@ -98,7 +98,7 @@ function latLonToLocator(lat, lon) {
   return String.fromCharCode(65 + A, 65 + B) + c + d + String.fromCharCode(97 + e, 97 + f);
 }
 
-/** Any locator (4, 6, 8+ characters, any case) -> the 6- or 4-character form Band Watch uses, or "". */
+/** Any locator (4, 6, 8+ characters, any case) -> the 6- or 4-character form HamShack uses, or "". */
 function normaliseLocator(raw) {
   const g = String(raw || "").trim();
   const m6 = g.match(/^([A-Ra-r]{2})(\d{2})([A-Xa-x]{2})/);
@@ -232,7 +232,7 @@ function renderBanner() {
   if (!app.spots) {
     el.className = "banner err";
     el.textContent = app.feedError
-      ? "Live spots could not be loaded from PSK Reporter. Band Watch will keep trying every minute."
+      ? "Live spots could not be loaded from PSK Reporter. HamShack will keep trying every minute."
       : "Loading live data…";
     return;
   }

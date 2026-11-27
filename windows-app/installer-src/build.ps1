@@ -21,8 +21,8 @@ $out = Join-Path (Split-Path -Parent $here) "BandWatch-ClearRX-Setup-$bwVersion.
 $gen = Join-Path $env:TEMP ("bundle-version-" + [guid]::NewGuid().ToString("N") + ".cs")
 @"
 using System.Reflection;
-[assembly: AssemblyTitle("Band Watch and ClearRX Setup")]
-[assembly: AssemblyProduct("Band Watch by M3vrv")]
+[assembly: AssemblyTitle("HamShack and ClearRX Setup")]
+[assembly: AssemblyProduct("HamShack by M0GLP & M3VRV")]
 [assembly: AssemblyCompany("M3vrv")]
 [assembly: AssemblyFileVersion("$bwVersion")]
 [assembly: AssemblyInformationalVersion("$bwVersion")]

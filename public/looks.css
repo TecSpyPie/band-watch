@@ -1,4 +1,4 @@
-/* Band Watch looks (Settings > Look): Radio front panel, Glass and depth, Space station.
+/* HamShack looks (Settings > Look): Radio front panel, Glass and depth, Space station.
    Set as <html data-look="…"> by options.js, never with High contrast or Night (those stay plain).
    Each rule starts with :root[data-look=…]:not(#_) so it wins over the standard glossy layer in style.css. */
 

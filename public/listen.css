@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: Listen panel tuning controls and its pop-out window */
+/* HamShack by M0GLP & M3VRV: Listen panel tuning controls and its pop-out window */
 /* Listen: tuning controls */
 .tuner{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:0 0 8px}
 .tuner select{font-size:.875rem}

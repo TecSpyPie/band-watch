@@ -1,4 +1,4 @@
-// Band Watch: transmitting stays on HF and 6 m. 2 m and 70 cm are in the band plan for listening only.
+// HamShack: transmitting stays on HF and 6 m. 2 m and 70 cm are in the band plan for listening only.
 const test = require("node:test");
 const assert = require("node:assert");
 const fs = require("fs");
@@ -13,7 +13,7 @@ function txContext() {
   const src = fs.readFileSync(path.join(__dirname, "../public/js/tx.js"), "utf8");
   // Load just the band check: TX_BANDS, TX_NOT_IN and txBandProblem, without the rest of the page.
   const start = src.indexOf("const TX_BANDS");
-  const end = src.indexOf("/** Why Band Watch can't transmit right now");
+  const end = src.indexOf("/** Why HamShack can't transmit right now");
   assert.ok(start >= 0 && end > start, "tx.js band check found");
   vm.runInContext(src.slice(start, end) + "\nthis.txBandProblem = txBandProblem;", ctx);
   return ctx;

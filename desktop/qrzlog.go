@@ -158,7 +158,7 @@ func parseLogbookReply(text string) map[string]any {
 	if result == "" {
 		out["result"] = "FAIL"
 		if reason == "" {
-			out["reason"] = "QRZ gave an answer Band Watch didn’t understand."
+			out["reason"] = "QRZ gave an answer HamShack didn’t understand."
 		}
 	}
 	if id := get("LOGID"); id != "" {

@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: FT8 and FT4 transmitting. Two parts, both plain JavaScript with no page code, so the tests
+/* HamShack by M0GLP & M3VRV: FT8 and FT4 transmitting. Two parts, both plain JavaScript with no page code, so the tests
  * can check them in Node (require) and the page uses them as window.FtxTx:
  *
  *  1. wave(): the on-air audio for a message. GFSK (Gaussian-smoothed tones, BT 2 for FT8 and 1 for FT4) with soft
@@ -138,7 +138,7 @@
     return (v >= 0 ? "+" : "-") + String(Math.abs(v)).padStart(2, "0");
   }
 
-  const MAX_TRIES = 6; // overs with no answer before Band Watch stops calling (like WSJT-X's Tx watchdog, but sooner)
+  const MAX_TRIES = 6; // overs with no answer before HamShack stops calling (like WSJT-X's Tx watchdog, but sooner)
   const MAX_CQ = 10; // CQ overs before stopping
   const ENDING_TRIES = 2; // RR73 sent this many times with no 73 back: the QSO is complete anyway
 

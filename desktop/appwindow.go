@@ -2,7 +2,7 @@ package main
 
 import "path/filepath"
 
-// appBrowser finds Microsoft Edge or Google Chrome on Windows, the browsers that can show Band Watch in
+// appBrowser finds Microsoft Edge or Google Chrome on Windows, the browsers that can show HamShack in
 // an app window. It returns "" when neither is installed.
 func appBrowser(getenv func(string) string, exists func(string) bool) string {
 	var tries []string
@@ -26,7 +26,7 @@ func appBrowser(getenv func(string) string, exists func(string) bool) string {
 	return ""
 }
 
-// appWindowArgs opens url as an app window: no tabs or address bar, sized for the Band Watch layout.
+// appWindowArgs opens url as an app window: no tabs or address bar, sized for the HamShack layout.
 func appWindowArgs(url string) []string {
 	return []string{"--app=" + url, "--window-size=1280,860"}
 }

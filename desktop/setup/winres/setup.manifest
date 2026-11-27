@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <assemblyIdentity type="win32" name="M3vrv.BandWatch.Setup" version="1.0.0.0" processorArchitecture="amd64"/>
-  <description>Band Watch by M3VRV &amp; King Coder Setup</description>
+  <description>HamShack by M0GLP &amp; M3VRV Setup</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>

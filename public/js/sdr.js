@@ -1,5 +1,5 @@
 /* Listen with your own RTL-SDR (the RTL-SDR Blog V4, or any RTL2832U dongle) through rtl_tcp.
- * Band Watch's server relays rtl_tcp's samples (it works in Band Watch on your own PC only);
+ * HamShack's server relays rtl_tcp's samples (it works in HamShack on your own PC only);
  * this page demodulates them (sdr-dsp.js), plays them (sdr-worklet.js) and draws a waterfall. */
 "use strict";
 
@@ -7,7 +7,7 @@
 const RTL_GAINS = [0, 9, 14, 27, 37, 77, 87, 125, 144, 157, 166, 197, 207, 229, 254, 280, 297, 328, 338, 364, 372, 386, 402, 421, 434, 439, 445, 480, 496];
 const RTL_TUNERS = { 1: "E4000", 2: "FC0012", 3: "FC0013", 4: "FC2580", 5: "R820T", 6: "R828D" };
 const RTL_MAX_KHZ = 1766000;
-// The dongles Band Watch knows: how each reaches HF, and where it tunes from.
+// The dongles HamShack knows: how each reaches HF, and where it tunes from.
 const DONGLES = {
   v4: { name: "RTL-SDR Blog V4", minKHz: 500, note: "HF through its built-in upconverter (automatic)" },
   v3: { name: "RTL-SDR Blog V3", minKHz: 500, note: "HF by direct sampling (Q branch) below 24 MHz" },
@@ -145,7 +145,7 @@ async function sdrLaunch(opts = {}) {
     if (!r.ok) return j.error || `rtl_tcp couldn't start (${r.status}).`;
     if (j.running === false) return j.exit || "rtl_tcp stopped straight away.";
     return "";
-  } catch { return "Couldn't reach Band Watch's server."; }
+  } catch { return "Couldn't reach HamShack's server."; }
 }
 
 async function sdrLaunchStatus() {
@@ -158,7 +158,7 @@ async function sdrLaunchStatus() {
 function renderRtlProc(st) {
   const el = $("optRtlProc");
   if (!el || !st) return;
-  if (!st.path) { el.textContent = st.running === false ? "rtl_tcp isn't running from Band Watch." : ""; return; }
+  if (!st.path) { el.textContent = st.running === false ? "rtl_tcp isn't running from HamShack." : ""; return; }
   const head = st.running ? `rtl_tcp is running: ${st.path} ${(st.args || []).join(" ")}` : `rtl_tcp isn't running. ${st.exit || ""}`;
   el.textContent = [head, ...(st.output || []).slice(-6)].join("\n");
 }
@@ -168,7 +168,7 @@ const cleanAddr = (v) => (/^[\w.-]+:\d{1,5}$/.test(String(v).trim()) ? String(v)
 /** Connect to rtl_tcp just long enough to see which tuner answers. */
 async function sdrTestConnection() {
   if (sdr.running) return `Connected now: ${sdr.tuner}${sdr.tuner === "R828D" ? " (RTL-SDR Blog V4)" : ""} at ${sdr.addr}.`;
-  if (!(await checkSdr())) return "The RTL-SDR receiver works in Band Watch on your own PC (the Windows app), not on the website.";
+  if (!(await checkSdr())) return "The RTL-SDR receiver works in HamShack on your own PC (the Windows app), not on the website.";
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 10000);
   try {
@@ -200,7 +200,7 @@ async function sdrTestConnection() {
   }
 }
 
-/** Does this Band Watch have the rtl_tcp bridge? (Only when it runs on your own PC.) */
+/** Does this HamShack have the rtl_tcp bridge? (Only when it runs on your own PC.) */
 async function checkSdr() {
   if (sdr.available !== null) return sdr.available;
   try {
@@ -278,7 +278,7 @@ function sdrTune() {
 
 async function sdrStart() {
   if (sdr.running) { sdrTune(); return; }
-  if (!(await checkSdr())) { sdrSetStatus("The RTL-SDR receiver works in Band Watch on your own PC (the Windows app)."); return; }
+  if (!(await checkSdr())) { sdrSetStatus("The RTL-SDR receiver works in HamShack on your own PC (the Windows app)."); return; }
   sdr.running = true;
   sdr.lastError = "";
   sdr.headerOnly = 0;
@@ -311,9 +311,9 @@ async function sdrStart() {
   // On this PC, if rtl_tcp isn't running, start it rather than just failing.
   let ok = await sdrConnect(launched ? 8 : 1, { canLaunch: !launched && sdrIsLocal() });
   if (ok === "launch") {
-    sdrSetStatus("rtl_tcp isn't running, so Band Watch is starting it…");
+    sdrSetStatus("rtl_tcp isn't running, so HamShack is starting it…");
     const problem = await sdrLaunch();
-    if (problem) { sdrStop(`${sdr.connectMsg} Band Watch tried to start it for you, but: ${problem}`); return; }
+    if (problem) { sdrStop(`${sdr.connectMsg} HamShack tried to start it for you, but: ${problem}`); return; }
     ok = await sdrConnect(8);
   }
   if (!ok) return;
@@ -349,7 +349,7 @@ async function sdrConnect(tries, { canLaunch = false } = {}) {
     try {
       res = await fetch(`/api/sdr/stream?addr=${encodeURIComponent(sdr.addr)}`, { headers: { "X-Band-Watch": "sdr" }, signal: sdr.abort.signal, cache: "no-store" });
     } catch {
-      if (sdr.running) sdrStop("Couldn't reach Band Watch's server.");
+      if (sdr.running) sdrStop("Couldn't reach HamShack's server.");
       return false;
     }
     if (res.ok) {
@@ -517,7 +517,7 @@ async function sdrStall(kind) {
       sdr.restarts = [...SdrStall.restartBudget(sdr.restarts, now).recent, now];
       sdr.readId++; // retire the quiet connection
       if (sdr.abort) sdr.abort.abort();
-      sdrSetStatus("rtl_tcp stopped sending signal. Band Watch is restarting it…");
+      sdrSetStatus("rtl_tcp stopped sending signal. HamShack is restarting it…");
       await sdrStopOurs();
       if (!sdr.running) return;
       const problem = await sdrStartOwn({ path: st.path, port, device: sdrDeviceOf(st) });
@@ -544,7 +544,7 @@ async function sdrStall(kind) {
   } finally { sdr.stallBusy = false; }
 }
 
-/** "Restart receiver": starts Band Watch's own rtl_tcp. It never closes a program Band Watch didn't start. */
+/** "Restart receiver": starts HamShack's own rtl_tcp. It never closes a program HamShack didn't start. */
 async function sdrRestartClick() {
   if (sdr.stallBusy) return;
   const st = await sdrLaunchState();
@@ -719,7 +719,7 @@ function renderSdr() {
   $("rtlStatus").textContent = sdr.status;
   $("rtlScope").hidden = !sdr.running;
   if (sdr.available === false) {
-    $("rtlStatus").textContent = "The RTL-SDR receiver works in Band Watch on your own PC (the Windows app), not on the website.";
+    $("rtlStatus").textContent = "The RTL-SDR receiver works in HamShack on your own PC (the Windows app), not on the website.";
   }
 }
 
@@ -786,7 +786,7 @@ function setupSdr() {
   on("optRtlAuto2", "change", () => sdrSet("autoStart", $("optRtlAuto2").checked));
   on("optRtlReconnect", "change", () => sdrSet("reconnect", $("optRtlReconnect").checked));
   on("optRtlLaunch", "click", async () => {
-    if (!(await checkSdr())) { $("optRtlMsg").textContent = "Starting rtl_tcp works in Band Watch on your own PC."; return; }
+    if (!(await checkSdr())) { $("optRtlMsg").textContent = "Starting rtl_tcp works in HamShack on your own PC."; return; }
     $("optRtlMsg").textContent = "Starting rtl_tcp…";
     const problem = await sdrLaunch();
     $("optRtlMsg").textContent = problem || `rtl_tcp started on port ${sdrPort()}. Press Test connection, or Listen.`;

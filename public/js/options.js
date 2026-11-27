@@ -233,7 +233,7 @@ function loadProfiles() {
   try { const p = JSON.parse(load("bw-profiles")); return p && typeof p === "object" && !Array.isArray(p) ? p : {}; } catch { return {}; }
 }
 
-/** Everything that makes Band Watch yours: display, locator, callsign, watched bands, clocks, listening and background. */
+/** Everything that makes HamShack yours: display, locator, callsign, watched bands, clocks, listening and background. */
 function currentProfile() {
   const data = {};
   for (const k of PROFILE_KEYS) { const v = load(k); if (v != null) data[k] = v; }
@@ -246,7 +246,7 @@ function saveProfiles(all) {
 
 /** Load a profile: write its settings, then reload so every part of the page starts from them. */
 function applyProfile(p) {
-  if (!p || typeof p !== "object" || typeof p.data !== "object") throw new Error("That isn't a Band Watch profile.");
+  if (!p || typeof p !== "object" || typeof p.data !== "object") throw new Error("That isn't a HamShack profile.");
   for (const k of PROFILE_KEYS) {
     const v = p.data[k];
     try {
@@ -304,7 +304,7 @@ function setupProfiles() {
       const j = JSON.parse(await file.text());
       applyProfile(j.bandWatchProfile || j);
     } catch (err) {
-      msg(err instanceof SyntaxError ? "That file isn't a Band Watch profile." : err.message);
+      msg(err instanceof SyntaxError ? "That file isn't a HamShack profile." : err.message);
     }
   });
 }
@@ -316,7 +316,7 @@ async function quitDesktop() {
     await fetch("/api/quit", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
   } catch { /* it's stopping */ }
   $("optDlg").close();
-  document.body.innerHTML = `<div class="wrap"><h1>Band Watch has stopped</h1><p>You can close this tab. Open Band Watch from the desktop or Start menu to start it again.</p></div>`;
+  document.body.innerHTML = `<div class="wrap"><h1>HamShack has stopped</h1><p>You can close this tab. Open HamShack from the desktop or Start menu to start it again.</p></div>`;
 }
 
 /* ---------- About this build ---------- */
@@ -324,8 +324,8 @@ async function quitDesktop() {
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
   ["1.43.1", "Plain-English messages when POTA, QRZ or the chat can't be reached; Send to QRZ stops when the connection drops; chat reports can't be faked"],
-  ["1.43.0", "Report button in the chat (three reports take a message down for everyone); the space weather forecast now comes from Band Watch, one shared copy instead of every browser asking NOAA"],
-  ["1.42.0", "Chat with other Band Watch users, contests this week, who's hearing me and worked maps, log from a spot, space weather forecast with an aurora alert, Morse trainer and a full-screen shack screen"],
+  ["1.43.0", "Report button in the chat (three reports take a message down for everyone); the space weather forecast now comes from HamShack, one shared copy instead of every browser asking NOAA"],
+  ["1.42.0", "Chat with other HamShack users, contests this week, who's hearing me and worked maps, log from a spot, space weather forecast with an aurora alert, Morse trainer and a full-screen shack screen"],
   ["1.41.0", "Looks: soft light that follows your mouse, sharper spectrum and screens, smooth motion, cross-fading look changes and a glowing keyboard focus; ClearRX Hiss remover that can learn your noise"],
   ["1.40.0", "Section menu and folding panels, RTTY receiver, Antenna A/B (WSPR, FT8, FT4), live world map, layered Glass look, 2 m and 70 cm with My repeaters, stuck-receiver recovery; ClearRX effects rack and 3D scope"],
   ["1.39.0", "Digital voice add-on: one-click C4FM on a Yaesu radio, BrandMeister (Hoseline, talkgroups, last heard), UK repeater lists, your hotspot's dashboard"],
@@ -341,12 +341,12 @@ const VERSION_HISTORY = [
   ["1.29.0", "Click a satellite (map, list or passes) for its card: identifiers, where it is, orbit, a sky chart of the pass, frequencies and next passes"],
   ["1.28.0", "Satellites: the ISS and amateur satellites over your locator, next passes, pass alerts, the map, and Doppler-corrected tuning"],
   ["1.27.0", "RTL-SDR attenuator: ATT (10, 20, 30 dB) on the Radio panel and in Listen, for strong signals"],
-  ["1.26.0", "ClearRX 1.2.0: noise blanker, AGC speed, squelch, bass and treble, and a manual notch (used by Band Watch's RTL-SDR sound too)"],
+  ["1.26.0", "ClearRX 1.2.0: noise blanker, AGC speed, squelch, bass and treble, and a manual notch (used by HamShack's RTL-SDR sound too)"],
   ["1.25.1", "The Radio panel's S-meter follows the RTL-SDR's signal level (a rough guide) when no radio is connected"],
   ["1.25.0", "Receive controls on the Radio panel: AF/RF gain, AGC, ATT, IPO, NB, DNR and auto notch (Yaesu and Icom)"],
   ["1.24.2", "ClearRX 1.1.0: My radio buttons (RTL-SDR, Yaesu, Icom, ATS Mini, Malahit, Other) pick the right sound input"],
-  ["1.24.1", "ClearRX is a separate download (ClearRX-Windows.zip), so the Band Watch installer stays clean"],
-  ["1.24.0", "New: ClearRX by M3VRV, a radio audio processor of its own, linked to Band Watch's RTL-SDR sound"],
+  ["1.24.1", "ClearRX is a separate download (ClearRX-Windows.zip), so the HamShack installer stays clean"],
+  ["1.24.0", "New: ClearRX by M3VRV, a radio audio processor of its own, linked to HamShack's RTL-SDR sound"],
   ["1.23.0", "A Help guide (the Help button at the top), and step-by-step set-up for the Icom IC-7300"],
   ["1.22.0", "Listen goes with the popped-out radio and plays there; everything looks 3D and sharp"],
   ["1.21.0", "Radio panel: a waterfall under the spectrum, Pop out into its own window, and a 3D glossy look"],
@@ -356,10 +356,10 @@ const VERSION_HISTORY = [
   ["1.17.0", "Malahit DSP2 support (10 kHz to 2 GHz); ATS Mini live screen fixed for firmware before 2.41; shows which USB port is in use"],
   ["1.16.0", "Own windows: press ⧉ on the scope, map, Listen, ATS Mini and other parts to put them on another screen"],
   ["1.15.0", "ATS Mini panel: a live picture of the radio's screen with buttons, and each radio make keeps to its own USB port"],
-  ["1.14.0", "ATS Mini support: pick it in Settings > Radio control and Band Watch changes its band and mode and tunes it for you"],
+  ["1.14.0", "ATS Mini support: pick it in Settings > Radio control and HamShack changes its band and mode and tunes it for you"],
   ["1.13.1", "rtl_tcp comes with the Windows app, so Listen with your RTL-SDR works straight away (rtl-sdr's GPL licence is in C:\\BandWatch\\COPYING-rtl-sdr.txt)"],
-  ["1.13.0", "Icom (CI-V) and Kenwood radio control beside Yaesu; Send to QRZ puts your log straight into your QRZ logbook; Listen starts rtl_tcp for you and shows problems clearly; the Twente WebSDR opens in its own window; an Updates section at the top of Settings, with links to Band Watch on GitHub"],
-  ["1.12.3", "On Windows, Band Watch opens in its own window (no address bar or tabs) instead of a browser tab; brighter, glossy colours"],
+  ["1.13.0", "Icom (CI-V) and Kenwood radio control beside Yaesu; Send to QRZ puts your log straight into your QRZ logbook; Listen starts rtl_tcp for you and shows problems clearly; the Twente WebSDR opens in its own window; an Updates section at the top of Settings, with links to HamShack on GitHub"],
+  ["1.12.3", "On Windows, HamShack opens in its own window (no address bar or tabs) instead of a browser tab; brighter, glossy colours"],
   ["1.12.2", "Install updates from Settings, About this build; the installer updates your copy in place (no need to uninstall)"],
   ["1.12.1", "SOTA spots removed (SOTA's API terms don't allow AI-written software without approval); POTA checked every two minutes"],
   ["1.12.0", "Yaesu FT-991A radio control over USB; POTA activators on a list, the map and the scope; a logbook with ADIF export and import; wanted alerts; WSPR and CW decoders"],
@@ -394,8 +394,8 @@ function renderAbout() {
       const days = Math.floor(ms / 86400000);
       return days >= 1 ? ` (${days} day${days === 1 ? "" : "s"} ago)` : "";
     };
-    const where = h.desktop ? "Band Watch app on this PC (BandWatch.exe)"
-      : b.server === "Node.js" && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ? "Band Watch on this PC (Node.js)"
+    const where = h.desktop ? "HamShack app on this PC (BandWatch.exe)"
+      : b.server === "Node.js" && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ? "HamShack on this PC (Node.js)"
       : "Web version";
     const rows = [
       ["Version", h.version || pageVer],
@@ -415,7 +415,7 @@ function renderAbout() {
 
 const updateState = { info: null, installing: false };
 
-/** Ask the server whether there's a newer Band Watch. */
+/** Ask the server whether there's a newer HamShack. */
 async function checkForUpdate() {
   try {
     const r = await fetch("/api/update", { cache: "no-store" });
@@ -433,17 +433,17 @@ function renderUpdate() {
   if (!el) return;
   const u = updateState.info;
   if (updateState.installing) {
-    el.innerHTML = `Installing Band Watch ${esc(updateState.installing)}… Band Watch closes and opens again by itself in a minute or so.`;
+    el.innerHTML = `Installing HamShack ${esc(updateState.installing)}… HamShack closes and opens again by itself in a minute or so.`;
     return;
   }
   if (!u) { el.textContent = "Checking for updates…"; return; }
   if (u.error) { el.innerHTML = `Couldn't check for updates just now. <button type="button" class="linkbtn" id="abCheck">Try again</button>`; }
   else if (!u.newer) { el.innerHTML = `You have the newest version. <button type="button" class="linkbtn" id="abCheck">Check again</button>`; }
   else if (u.canInstall) {
-    el.innerHTML = `<b>Band Watch ${esc(u.latest)} is available.</b> <button type="button" class="tune" id="abInstall">Install update</button>
+    el.innerHTML = `<b>HamShack ${esc(u.latest)} is available.</b> <button type="button" class="tune" id="abInstall">Install update</button>
       <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">What's new</a>`;
   } else {
-    el.innerHTML = `<b>Band Watch ${esc(u.latest)} is available.</b> <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">Download it</a>
+    el.innerHTML = `<b>HamShack ${esc(u.latest)} is available.</b> <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">Download it</a>
       <span class="small muted">(The web version updates itself: just reload the page.)</span>`;
   }
   if ($("abCheck")) $("abCheck").onclick = () => { updateState.info = null; renderUpdate(); checkForUpdate(); };
@@ -485,6 +485,6 @@ function updateNudge() {
   if (Date.now() - last < 20 * 3600 * 1000) return;
   store("bw-update-checked", String(Date.now()));
   checkForUpdate().then((u) => {
-    if (u && u.newer) showToast(`Band Watch ${u.latest} is available`, "Open Settings: Install update is at the top, under Updates.");
+    if (u && u.newer) showToast(`HamShack ${u.latest} is available`, "Open Settings: Install update is at the top, under Updates.");
   });
 }

@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: styles */
+/* HamShack by M0GLP & M3VRV: styles */
 :root{--bg:#f3f5f0;--surface:#fff;--line:#cfd8d2;--text:#14262b;--muted:#52666a;--warm:#a76a00;--cool:#0b7285;--night:rgba(20,38,43,.16);--grid:#d8dfda;--wfbg:#e9eee9;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a1f;--surface:#16252c;--line:#27404a;--text:#e8efe9;--muted:#8fa6a8;--warm:#f0b44c;--cool:#5cc8d7;--night:rgba(0,0,0,.38);--grid:#223840;--wfbg:#0b1418;color-scheme:dark}}

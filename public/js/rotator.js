@@ -1,7 +1,7 @@
-/* Rotator add-on: turn your antenna from Band Watch. Connects to the rotator controller over its own USB serial port
+/* Rotator add-on: turn your antenna from HamShack. Connects to the rotator controller over its own USB serial port
    (Web Serial, Chrome or Edge), speaking Yaesu GS-232A/B, EasyComm II or Hy-Gain DCU-1 (rotmath.js). A compass dial
    shows where the beam points and where it's going; click the dial, a compass button or type a heading; point at a
-   locator or a callsign Band Watch has heard (short or long path); or follow a satellite across the sky.
+   locator or a callsign HamShack has heard (short or long path); or follow a satellite across the sky.
    The rotator only moves when you ask; Stop (or Esc) stops it. */
 "use strict";
 
@@ -103,7 +103,7 @@ function rotStop() {
   renderRot();
 }
 
-/** Where is this? A locator, or a callsign Band Watch has heard (decodes, spots, POTA). */
+/** Where is this? A locator, or a callsign HamShack has heard (decodes, spots, POTA). */
 function rotWhere(text) {
   const t = String(text || "").trim().toUpperCase();
   if (!t) return null;
@@ -124,7 +124,7 @@ function rotWhere(text) {
 function rotPointAt() {
   const v = $("rotAt").value;
   const w = rotWhere(v);
-  if (!w) { rot.note = `Band Watch doesn't know where "${v.trim()}" is yet: type their locator (e.g. FN31) instead.`; renderRot(); return; }
+  if (!w) { rot.note = `HamShack doesn't know where "${v.trim()}" is yet: type their locator (e.g. FN31) instead.`; renderRot(); return; }
   rotStopFollow();
   const az = RotMath.bearing(app.home.lat, app.home.lon, w.lat, w.lon, rot.longPath);
   const km = Math.round(distanceKm(app.home.lat, app.home.lon, w.lat, w.lon));

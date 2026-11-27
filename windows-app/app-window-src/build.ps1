@@ -18,7 +18,7 @@ $common = @(
 )
 
 & $csc @common "/out:$out\BandWatchApp.exe" "/win32icon:$here\icons\bandwatch.ico" "$here\AppHost.cs"
-if ($LASTEXITCODE -ne 0) { throw "Band Watch app failed to compile." }
+if ($LASTEXITCODE -ne 0) { throw "HamShack app failed to compile." }
 & $csc @common "/define:CLEARRX" "/out:$out\ClearRXApp.exe" "/win32icon:$here\icons\clearrx.ico" "$here\AppHost.cs"
 if ($LASTEXITCODE -ne 0) { throw "ClearRX app failed to compile." }
 & $csc /nologo /target:winexe /optimize+ /platform:x64 "/out:$shimDir\msedge.exe" "$here\Shim.cs"

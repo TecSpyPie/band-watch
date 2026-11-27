@@ -1,5 +1,5 @@
 "use strict";
-// Sending CW: timing (PARIS and Farnsworth), prosigns, clean edges, messages, and Band Watch's own CW decoder
+// Sending CW: timing (PARIS and Farnsworth), prosigns, clean edges, messages, and HamShack's own CW decoder
 // reading back what it sends.
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -58,7 +58,7 @@ test("messages are filled in with your callsign, theirs, your locator and the re
 });
 
 for (const wpm of [12, 20, 28]) {
-  test(`Band Watch's CW decoder reads back what it sends at ${wpm} WPM`, () => {
+  test(`HamShack's CW decoder reads back what it sends at ${wpm} WPM`, () => {
     const text = "CQ CQ DE M3VRV M3VRV K";
     const body = K.render(text, { wpm, hz: 700, rate: Cw.FS, amp: 0.6 });
     const pad = new Float32Array(Cw.FS);

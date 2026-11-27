@@ -1,6 +1,6 @@
 /* FT8 / FT4 / WSPR / CW / RTTY decoder panel: audio from your RTL-SDR (Listen panel) or this computer's sound input,
  * decoded in a background worker (ft8-worker.js), with a results table here and in a separate
- * results window (decodes.html) that can sit beside Band Watch or on another screen. */
+ * results window (decodes.html) that can sit beside HamShack or on another screen. */
 "use strict";
 
 const DC_MAX_ROWS = 600;
@@ -74,7 +74,7 @@ async function dcStart() {
       dcSetStatus(DcWording.micStart(dc.mode));
     } catch (err) {
       dcStop();
-      dcSetStatus(err && err.name === "NotAllowedError" ? "Band Watch wasn't allowed to use the sound input." : `Couldn't open the sound input (${err.message}).`);
+      dcSetStatus(err && err.name === "NotAllowedError" ? "HamShack wasn't allowed to use the sound input." : `Couldn't open the sound input (${err.message}).`);
       return;
     }
   } else {
@@ -310,7 +310,7 @@ function dcBroadcastAll() {
 
 function openDecodesWindow() {
   const w = window.open("/decodes", "bw-decodes", "popup,width=780,height=720");
-  if (!w) dcSetStatus("Your browser blocked the results window: allow pop-ups for Band Watch.");
+  if (!w) dcSetStatus("Your browser blocked the results window: allow pop-ups for HamShack.");
 }
 
 function setupDecoders() {

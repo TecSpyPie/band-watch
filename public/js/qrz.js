@@ -80,7 +80,7 @@ async function submitQrzLogin(e) {
     $("qrzLogin").close();
     autoLocatorFromQrz();
   } catch {
-    $("qlErr").textContent = "Could not reach Band Watch. Check your connection.";
+    $("qlErr").textContent = "Could not reach HamShack. Check your connection.";
   } finally {
     $("qlSubmit").disabled = false;
   }

@@ -191,7 +191,7 @@ function renderStationListen(spots) {
     const t = tuning(remote);
     note = `Last spotted on ${esc(remote.m || "an unknown mode")} at ${(remote.fq).toFixed(4)} MHz. ` +
       (t.digital ? `${esc(remote.m)} is a data mode, so you’ll hear tones rather than speech; decode them with software such as WSJT-X. ` : "") +
-      "Spots don’t carry audio: Band Watch tunes a public web receiver to the frequency, which hears whatever reaches it.";
+      "Spots don’t carry audio: HamShack tunes a public web receiver to the frequency, which hears whatever reaches it.";
     buttons = `<button type="button" id="stTune">Listen on ${t.kHz.toLocaleString()} kHz ${t.mode.toUpperCase()}</button>`;
     station.tune = t;
   } else {

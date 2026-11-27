@@ -1,11 +1,11 @@
 # Windows app windows and combined installer
 
-This folder holds two small Windows programs that sit around the normal Band Watch and ClearRX downloads.
-Neither one changes Band Watch's or ClearRX's own code.
+This folder holds two small Windows programs that sit around the normal HamShack and ClearRX downloads.
+Neither one changes HamShack's or ClearRX's own code.
 
 ## app-window-src: real app windows
 
-`BandWatchApp.exe` and `ClearRXApp.exe` show Band Watch (port 8073) and ClearRX (port 8074) in windows of
+`BandWatchApp.exe` and `ClearRXApp.exe` show HamShack (port 8073) and ClearRX (port 8074) in windows of
 their own, using Microsoft WebView2, instead of Edge or Chrome `--app` windows.
 
 - Each one starts the installed program's local server if it isn't running, and stops it again on close
@@ -14,8 +14,8 @@ their own, using Microsoft WebView2, instead of Edge or Chrome `--app` windows.
   settings all work inside the window. Links to other sites (QRZ.com and so on) open in the normal browser.
 - ClearRX always tries to open an Edge window when it starts. A tiny empty program (`Shim.cs`, built as
   `shim\Microsoft\Edge\Application\msedge.exe`) is given to it instead, so only the app window opens.
-- Band Watch's "Install update" runs the normal setup, which points the icons back at the Edge version,
-  removes the start-with-Windows shortcut and opens an Edge window. The Band Watch app window notices the
+- HamShack's "Install update" runs the normal setup, which points the icons back at the Edge version,
+  removes the start-with-Windows shortcut and opens an Edge window. The HamShack app window notices the
   server restart and puts the icons, the start-with-Windows shortcut and the uninstaller back, and closes
   that Edge window. (Built, not yet tested end to end.)
 - `--selftest <file>` checks the features above inside the window and writes the results as JSON.

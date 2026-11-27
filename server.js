@@ -1,4 +1,4 @@
-// Band Watch by M3vrv: server.
+// HamShack by M0GLP & M3VRV: server.
 // Serves the static page from ./public and these JSON endpoints:
 //   GET  /api/solar            -> { sfi, kp, at }          (NOAA SWPC, cached 15 min)
 //   GET  /api/forecast         -> { kp, text, at }         (NOAA Kp forecast + 3-day text, cached 30 min)
@@ -60,7 +60,7 @@ const UPDATE_URL = process.env.BW_UPDATE_URL || "https://api.github.com/repos/Te
 const UPDATE_TTL = 60 * 60 * 1000;
 const TEST_HOOKS = process.env.BW_TEST === "1";
 // The RTL-SDR bridge connects to rtl_tcp on this PC or the local network, so it is only switched
-// on where Band Watch runs on the user's own PC (start-bandwatch.bat sets BW_SDR=1), never online.
+// on where HamShack runs on the user's own PC (start-bandwatch.bat sets BW_SDR=1), never online.
 const SDR_ON = process.env.BW_SDR === "1" || TEST_HOOKS;
 
 const MIME = {
@@ -119,7 +119,7 @@ function utcTime(t) {
 }
 const str = (v, max = 120) => String(v == null ? "" : v).trim().slice(0, max);
 
-/** One POTA spot (api.pota.app/spot/activator) in Band Watch's shape. */
+/** One POTA spot (api.pota.app/spot/activator) in HamShack's shape. */
 function potaSpot(r) {
   const kHz = num(r.frequency);
   const lat = num(r.latitude), lon = num(r.longitude);
@@ -531,7 +531,7 @@ async function handleQrz(req, res, url) {
 
 /* ---------- RTL-SDR bridge: browser <-> rtl_tcp ---------- */
 
-// rtl_tcp commands Band Watch may send: frequency, sample rate, gain mode, gain, ppm,
+// rtl_tcp commands HamShack may send: frequency, sample rate, gain mode, gain, ppm,
 // RTL AGC, gain by index, bias tee.
 const SDR_COMMANDS = new Set([0x01, 0x02, 0x03, 0x04, 0x05, 0x08, 0x09, 0x0d, 0x0e]); // 0x09: direct sampling (Blog V3 on HF)
 const SDR_MAX_SESSIONS = 2;
@@ -552,13 +552,13 @@ function parseSdrAddr(addr) {
   return ok ? { host, port } : null;
 }
 
-/* An rtl_tcp that Band Watch started for the user ("Start rtl_tcp for me"). */
+/* An rtl_tcp that HamShack started for the user ("Start rtl_tcp for me"). */
 let rtlProc = null;
 const rtlStatus = () => (rtlProc
   ? { running: !rtlProc.exited, path: rtlProc.path, args: rtlProc.args, output: rtlProc.output.slice(), exit: rtlProc.exitMsg || "" }
   : { running: false });
 
-/** The rtl_tcp program to run: the one given, or one next to Band Watch or on the PATH. */
+/** The rtl_tcp program to run: the one given, or one next to HamShack or on the PATH. */
 function findRtlTcp(given) {
   const g = String(given || "").trim().replace(/^"|"$/g, "");
   const isFile = (p) => { try { return fs.statSync(p).isFile(); } catch { return false; } };
@@ -568,7 +568,7 @@ function findRtlTcp(given) {
   }
   const dirs = [path.join(__dirname, ".."), __dirname, ...String(process.env.PATH || "").split(path.delimiter)];
   for (const d of dirs) for (const n of ["rtl_tcp.exe", "rtl_tcp"]) if (d && isFile(path.join(d, n))) return { path: path.join(d, n) };
-  return { error: "Band Watch couldn't find rtl_tcp. Enter where rtl_tcp.exe is, in Settings > RTL-SDR receiver." };
+  return { error: "HamShack couldn't find rtl_tcp. Enter where rtl_tcp.exe is, in Settings > RTL-SDR receiver." };
 }
 
 function launchRtlTcp(res, body) {
@@ -607,7 +607,7 @@ const sdrHeaderOk = (req) => req.headers["x-band-watch"] === "sdr";
 function handleSdr(req, res, url) {
   // The web version has no rtl_tcp bridge: say so plainly, so browsers do not log an error on every load.
   if (!SDR_ON && req.method === "GET" && url.pathname === "/api/sdr") return sendJson(res, 200, { available: false });
-  if (!SDR_ON) return sendJson(res, 404, { error: "The RTL-SDR receiver works in Band Watch on your own PC." });
+  if (!SDR_ON) return sendJson(res, 404, { error: "The RTL-SDR receiver works in HamShack on your own PC." });
   if (req.method === "GET" && url.pathname === "/api/sdr") return sendJson(res, 200, { available: true });
   if (!sdrHeaderOk(req)) return sendJson(res, 403, { error: "missing X-Band-Watch header" });
 
@@ -705,7 +705,7 @@ async function handle(req, res) {
   const url = new URL(req.url, "http://localhost");
   if (url.pathname.startsWith("/api/qrz/")) return handleQrz(req, res, url);
   if (url.pathname === "/api/sdr" || url.pathname.startsWith("/api/sdr/")) return handleSdr(req, res, url);
-  if (url.pathname === "/api/chat") return require("./chat.js").handle(req, res, url); // Band Watch chat (chat.js)
+  if (url.pathname === "/api/chat") return require("./chat.js").handle(req, res, url); // HamShack chat (chat.js)
   if (url.pathname === "/api/contests") return require("./contests.js").handle(req, res); // WA7BNM Contest Calendar (contests.js)
   if (TEST_HOOKS && req.method === "POST" && url.pathname === "/api/test/reset") { resetAll(); return sendJson(res, 200, { ok: true }); }
   if (TEST_HOOKS && req.method === "POST" && url.pathname === "/api/test/advance") {
@@ -763,7 +763,7 @@ function createServer() {
 if (require.main === module) {
   const port = Number(process.env.PORT) || 8080;
   const host = process.env.HOST || undefined; // e.g. 127.0.0.1 on a PC, so no firewall prompt
-  createServer().listen(port, host, () => console.log(`Band Watch by M3VRV & King Coder listening on ${host || "all interfaces"}:${port}`));
+  createServer().listen(port, host, () => console.log(`HamShack by M0GLP & M3VRV listening on ${host || "all interfaces"}:${port}`));
 }
 
 function resetAll() {

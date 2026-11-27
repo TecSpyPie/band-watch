@@ -10,7 +10,7 @@ VERSION=$(node -p 'require("./package.json").version')
 T=$(mktemp -d)
 W="$T/BandWatch-Windows"
 mkdir -p "$W/app/server"
-cp desktop/build/BandWatch.exe windows/README-Windows.txt windows/install.bat "windows/Install Band Watch (automatic).bat" "$W/"
+cp desktop/build/BandWatch.exe windows/README-Windows.txt windows/install.bat "windows/Install HamShack (automatic).bat" "$W/"
 cp desktop/build/payload/BUILD-INFO.txt LICENSE "$W/"
 cp windows/app/* "$W/app/"
 cp server.js qrz.js clock.js package.json build-info.json "$W/app/server/"

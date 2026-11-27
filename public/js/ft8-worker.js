@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: runs the FT8/FT4 decoder in the background, so the page stays smooth.
+/* HamShack by M0GLP & M3VRV: runs the FT8/FT4 decoder in the background, so the page stays smooth.
  * The page sends audio blocks with the time the last sample arrived; this keeps the last
  * cycle or two, and decodes each 15 s (FT8) or 7.5 s (FT4) cycle as soon as it is complete,
  * lined up with UTC as WSJT-X does (so the PC clock needs to be right to within a second). */

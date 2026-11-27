@@ -1,5 +1,5 @@
 "use strict";
-// FT8/FT4 transmitting: the on-air signal (decoded back by Band Watch's own decoder, and clean outside its
+// FT8/FT4 transmitting: the on-air signal (decoded back by HamShack's own decoder, and clean outside its
 // bandwidth), the time slots, and the QSO sequence (what to send next, and when to stop).
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -19,7 +19,7 @@ function cycleWith(text, proto, baseHz, noise = 0.02, seed = 7) {
 }
 
 for (const proto of [F.FT8, F.FT4]) {
-  test(`${proto.name}: what Band Watch sends, its own decoder reads back (right text, frequency and time)`, () => {
+  test(`${proto.name}: what HamShack sends, its own decoder reads back (right text, frequency and time)`, () => {
     for (const [text, hz] of [["CQ M3VRV IO93", 1500], ["G4ABC M3VRV R-08", 840], ["G4ABC M3VRV RR73", 2210]]) {
       const got = new F.Decoder(proto).decode(cycleWith(text, proto, hz));
       const d = got.find((g) => g.text === text);
@@ -185,7 +185,7 @@ test("watchdog: stops calling after 6 unanswered overs (10 CQs); RR73 twice is e
   assert.equal(r.tries, 0);
 });
 
-test("every message Band Watch can send packs into a real FT8/FT4 message and reads back the same", () => {
+test("every message HamShack can send packs into a real FT8/FT4 message and reads back the same", () => {
   const s = T.fresh("M3VRV", "IO93");
   for (const step of ["cq", "call", "report", "rreport", "rr73", "73"]) {
     const text = T.message({ ...s, step, their: "G4ABC", sent: "-07" });

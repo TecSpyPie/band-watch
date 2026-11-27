@@ -2,11 +2,11 @@
  * with distance and beam heading from your locator, and a Tune button that sets your radio or RTL-SDR to the
  * repeater's OUTPUT frequency to listen.
  *
- * Receive only. Tune sets a frequency and a listening mode, nothing else: Band Watch never sets a repeater's shift
+ * Receive only. Tune sets a frequency and a listening mode, nothing else: HamShack never sets a repeater's shift
  * or tone on your radio, never keys the radio and has no transmit path here. (Setting the shift or a tone would only
  * be needed to transmit through a repeater, so it is left out on purpose.)
  *
- * Data: nothing is bundled. Band Watch ships no repeater list, and doesn't fetch one from ukrepeater.net, Hearham,
+ * Data: nothing is bundled. HamShack ships no repeater list, and doesn't fetch one from ukrepeater.net, Hearham,
  * RepeaterBook or anyone else. The list is what you typed, or a file you chose, read in your browser and never
  * uploaded. The quick links just open those sites' own pages in a new tab.
  *
@@ -338,7 +338,7 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
       listen.rx === "rtl" ? (listen.open ? "Your RTL-SDR is on it." : "Press Listen to hear it on your RTL-SDR.") :
         "Connect your radio, or choose My RTL-SDR in Listen, to hear it.";
     rpNote(`Tuned to ${r.call} output, ${mhzText(r.out)} MHz, FM. ${where}` +
-      (r.mode !== "FM" ? ` This is a ${r.mode} repeater: Band Watch can't decode it, so set that mode on your radio.` : "") +
+      (r.mode !== "FM" ? ` This is a ${r.mode} repeater: HamShack can't decode it, so set that mode on your radio.` : "") +
       " Listening only: the shift and tone aren't set and nothing is sent.");
     return true;
   };

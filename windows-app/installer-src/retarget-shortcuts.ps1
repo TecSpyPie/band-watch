@@ -1,9 +1,9 @@
-# Points the Band Watch and ClearRX shortcuts at their real app windows.
+# Points the HamShack and ClearRX shortcuts at their real app windows.
 param([Parameter(Mandatory = $true)][string]$InstallDir)
 $ErrorActionPreference = "Stop"
 $shell = New-Object -ComObject WScript.Shell
 $desktop = [Environment]::GetFolderPath("Desktop")
-$menu = Join-Path ([Environment]::GetFolderPath("Programs")) "Band Watch by M3vrv"
+$menu = Join-Path ([Environment]::GetFolderPath("Programs")) "HamShack by M0GLP & M3VRV"
 $appDir = Join-Path $InstallDir "App"
 
 function Set-AppLink([string]$path, [string]$target, [string]$icon, [string]$description) {
@@ -19,7 +19,7 @@ function Set-AppLink([string]$path, [string]$target, [string]$icon, [string]$des
 
 New-Item -ItemType Directory -Force -Path $menu | Out-Null
 foreach ($folder in $desktop, $menu) {
-  Set-AppLink (Join-Path $folder "Band Watch by M3vrv.lnk") (Join-Path $appDir "BandWatchApp.exe") (Join-Path $InstallDir "bandwatch.ico") "Open Band Watch by M3vrv"
+  Set-AppLink (Join-Path $folder "HamShack by M0GLP & M3VRV.lnk") (Join-Path $appDir "BandWatchApp.exe") (Join-Path $InstallDir "bandwatch.ico") "Open HamShack by M0GLP & M3VRV"
   Set-AppLink (Join-Path $folder "ClearRX by M3VRV.lnk") (Join-Path $appDir "ClearRXApp.exe") (Join-Path $InstallDir "ClearRX\clearrx.ico") "Open ClearRX by M3VRV, the radio audio processor"
 }
 exit 0
