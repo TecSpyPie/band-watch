@@ -323,6 +323,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.43.1", "Plain-English messages when POTA, QRZ or the chat can't be reached; Send to QRZ stops when the connection drops; chat reports can't be faked"],
   ["1.43.0", "Report button in the chat (three reports take a message down for everyone); the space weather forecast now comes from Band Watch, one shared copy instead of every browser asking NOAA"],
   ["1.42.0", "Chat with other Band Watch users, contests this week, who's hearing me and worked maps, log from a spot, space weather forecast with an aurora alert, Morse trainer and a full-screen shack screen"],
   ["1.41.0", "Looks: soft light that follows your mouse, sharper spectrum and screens, smooth motion, cross-fading look changes and a glowing keyboard focus; ClearRX Hiss remover that can learn your noise"],

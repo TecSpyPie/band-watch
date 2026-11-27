@@ -1,5 +1,10 @@
 # What's new
 
+## 1.43.1 (27 Nov 2026)
+- **Plain-English messages when something can't be reached.** POTA, Send to QRZ and the chat used to show the browser's own wording ("Failed to fetch") or a number from the server ("the server answered 502"). They now say what happened and what to do next, for example "Couldn't reach POTA. Check your internet connection; Band Watch will try again." The words come from a new `public/js/networds.js`.
+- **Send to QRZ stops when the connection drops**, instead of trying every contact and failing each one in turn.
+- **Chat: reports can't be faked.** For reports, only the address added by the proxy in front of Band Watch counts, so one person can't pose as three reporters with made-up addresses and take someone's message down. Web version; no API change.
+
 ## 1.43.0 (27 Nov 2026)
 - **Chat: Report.** Each message from someone else now has **Report** next to **Hide**. Tap it, then tap again to confirm. When three different people report a message it's removed for everyone, and screens already showing it drop it on their next refresh. Who reported a message is kept only as a scrambled code that changes every time the server restarts, and is never shown to anyone. Reports are limited to 10 a minute per address. **Hide** still hides one callsign on your own screen only. New: `POST /api/chat` with `{ room, report }` (web version; the Windows app's chat already points to the website).
 - **Space weather forecast from Band Watch.** The forecast panel used to ask NOAA for the Kp forecast and 3-day text from every visitor's browser. Band Watch now fetches it once every 30 minutes and shares it, in both the website and the Windows app (new route `GET /api/forecast`). If NOAA can't be reached, the last copy is shown.
