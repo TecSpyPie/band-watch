@@ -18,10 +18,20 @@ test("playing into the cable ClearRX listens to is a loop, and stops ClearRX sta
   assert.match(P.loopWords("loop"), /howl.*Play to.*speakers/);
 });
 
-test("Stereo Mix, or playing into a cable from a radio, may echo: a warning, not a stop", () => {
+test("Stereo Mix may echo, and playing into a cable means nobody hears it: warnings, not stops", () => {
   assert.equal(P.loopRisk("Stereo Mix (Realtek(R) Audio)", ""), "echo");
-  assert.equal(P.loopRisk("Microphone (USB Audio CODEC)", "CABLE Input (VB-Audio Virtual Cable)"), "echo");
+  assert.equal(P.loopRisk("Microphone (USB Audio CODEC)", "CABLE Input (VB-Audio Virtual Cable)"), "nohear");
   assert.match(P.loopWords("echo"), /virtual cable/);
+  assert.match(P.loopWords("nohear"), /won't hear it.*Play to/);
+});
+
+test("Windows' default speakers being the cable is caught (VB-CABLE often makes itself the default)", () => {
+  assert.equal(P.defaultName("Default - CABLE Input (VB-Audio Virtual Cable)"), "CABLE Input (VB-Audio Virtual Cable)");
+  assert.equal(P.defaultName("Speakers (Realtek(R) Audio)"), "");
+  assert.equal(P.defaultName(undefined), "");
+  assert.equal(P.loopRisk("CABLE Output (VB-Audio Virtual Cable)", "Default - CABLE Input (VB-Audio Virtual Cable)"), "loop");
+  assert.equal(P.loopRisk("CABLE Output (VB-Audio Virtual Cable)", P.defaultName("Default - Speakers (Realtek(R) Audio)")), null);
+  assert.match(P.loopWords("loop", true), /default speakers are the cable.*Settings > System > Sound > Output/);
 });
 
 test("the usual setups are fine", () => {

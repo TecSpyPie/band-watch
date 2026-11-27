@@ -165,8 +165,27 @@ jobs:
           - **ClearRX by M3VRV & King Coder** (radio audio processor, Windows): `ClearRX-Windows.zip`: unzip it into
             `C:\BandWatch` (it makes the `ClearRX` folder) and run `ClearRX\ClearRX.exe`.
           - **Phone, tablet or any browser:** https://band-watch.ample.run
+          - **Already have ClearRX 1.6.1 or newer?** Press the green **Update** button on its toolbar instead.
 
           Check a download with `SHA256SUMS.txt`.
+
+          ### ClearRX with internet radio, WebSDR, KiwiSDR or YouTube (works with VB-CABLE)
+          ClearRX can clean up sound that's already playing on your PC. Windows needs a free virtual cable for that:
+          **VB-CABLE** from https://vb-audio.com/Cable/ (Voicemeeter works too).
+          1. **Install VB-CABLE once:** download it, unzip it, right-click `VBCABLE_Setup_x64.exe` > **Run as administrator** >
+             **Install Driver**, then restart the PC.
+          2. **Windows default speakers:** installing it often makes "CABLE Input" the default. Open
+             **Settings > System > Sound > Output** and pick your own speakers or headphones again.
+          3. **Send the browser into the cable:** **Settings > System > Sound > Volume mixer**, find **Microsoft Edge** (or
+             Chrome) and set its **Output device** to **CABLE Input**. Only the browser goes through ClearRX; everything else
+             plays as normal.
+          4. **In ClearRX:** press **PC sound** under My radio (it picks **CABLE Output** in "Sound from"), set **Play to**
+             to your speakers or headphones **by name**, and press **Start**.
+          5. Play the stream in the browser. If ClearRX says the sound is too loud, turn the browser's or the site's volume
+             down a little, and keep ClearRX's Volume at 100%.
+
+          ClearRX tells you if something's set up so you'd hear nothing or it would howl, and what to change. To go back
+          to normal, set the browser's Output device back to **Default** in the Volume mixer.
           NOTES
       - name: Publish the release
         env:
