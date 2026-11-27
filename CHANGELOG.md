@@ -1,5 +1,9 @@
 # What's new
 
+## 1.44.1 (27 Nov 2026)
+- **ClearRX 1.6.0: PC sound.** A new **PC sound** button under My radio cleans up sound that's already playing on the PC: an internet radio, a WebSDR or KiwiSDR in the browser, or a recording. Windows can't hand a program "what the PC is playing" on its own, so it uses the free VB-CABLE (vb-audio.com): set your browser's output to "CABLE Input" in Windows' Volume mixer, and ClearRX finds "CABLE Output" for you and plays the cleaned-up sound to your speakers. It explains each step, says plainly if there's no cable yet, and won't start if "Play to" is the cable it's listening to (that would howl). It warns about Stereo Mix, which hears ClearRX too.
+- **ClearRX download:** the release notes and ClearRX's read-me now say to unzip into `C:\BandWatch`. The zip has its own ClearRX folder, so unzipping into `C:\BandWatch\ClearRX` made a folder inside a folder.
+
 ## 1.44.0 (27 Nov 2026)
 - **Band Watch is now HamShack by M0GLP & M3VRV.** The new name is on the pages, the help, the phone app, the Windows installer, the shortcuts and Settings > Apps. Nothing else changes: your settings, logbook and radio setup carry over, the program is still `BandWatch.exe` in `C:\BandWatch`, and updates keep coming the same way. The old "Band Watch" shortcuts are swapped for "HamShack" ones when you update.
 - **ClearRX 1.5.0: a new look.** A toolbar of big buttons, a big graph showing the sound before and after ClearRX with the EQ as a curve you can drag point by point (log or linear scale), effects in panels with a fold arrow and a green power button, and a status bar with a green-yellow-red output meter.

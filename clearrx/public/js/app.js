@@ -24,6 +24,7 @@ const RADIOS = [
   { id: "malahit", label: "Malahit", preset: "ssb", match: [/malahit/i, /usb audio/i, /line/i],
     tip: "Malahit DSP2: if Windows shows a Malahit or USB audio input, ClearRX picks it. If not, run a lead from its headphone "
       + "socket to the PC's line-in." },
+  { id: "pc", label: "PC sound", match: PcSound.CABLE_OUT, tip: PcSound.TIP, notFound: PcSound.NOT_FOUND },
   { id: "other", label: "Other / mixer", tip: "Pick where the sound comes from yourself: a mixer, a sound card or a line-in." },
 ];
 
@@ -97,6 +98,9 @@ async function listDevices() {
 
 async function start() {
   if (app.running) return;
+  // Never start a circle: ClearRX playing into the cable it listens to would howl at once
+  const risk0 = PcSound.loopRisk(selectedName($("inDev")), $("outDev").value ? selectedName($("outDev")) : "");
+  if (risk0 === "loop") { setStatus(PcSound.loopWords(risk0)); render(); return; }
   try {
     const id = $("inDev").value;
     // The radio's sound as it is: no echo cancelling, noise suppression or automatic gain from the browser
@@ -127,7 +131,10 @@ async function start() {
     applySettings();
     scopeKick();
     await listDevices(); // now the names show (the browser only gives them after you allow the sound)
-    setStatus(`Running: ${selectedName($("inDev"))} → ${selectedName($("outDev"))}.`);
+    // The names may only show now, so check for a circle again
+    const risk = PcSound.loopRisk(selectedName($("inDev")), $("outDev").value ? selectedName($("outDev")) : "");
+    if (risk === "loop") { stop(); setStatus(PcSound.loopWords(risk)); return; }
+    setStatus(`Running: ${selectedName($("inDev"))} → ${selectedName($("outDev"))}.${risk ? " " + PcSound.loopWords(risk) : ""}`);
     if (app.findAfterStart) { app.findAfterStart = false; setTimeout(() => pickRadio(app.s.radio, false), 0); }
   } catch (e) {
     stop();
@@ -174,7 +181,7 @@ async function pickRadio(id, byHand) {
   const dev = findInput(radio);
   if (dev === null) {
     setStatus(names
-      ? `ClearRX couldn't find a sound input for your ${radio.label}. Check it's plugged in, or pick it in "Sound from".`
+      ? radio.notFound || `ClearRX couldn't find a sound input for your ${radio.label}. Check it's plugged in, or pick it in "Sound from".`
       : `Press Start once and allow the sound input, so ClearRX can see your sound devices' names and find your ${radio.label}.`);
     if (!names) app.findAfterStart = true;
     return;
@@ -182,7 +189,9 @@ async function pickRadio(id, byHand) {
   if ($("inDev").value === dev) return;
   $("inDev").value = dev;
   try { localStorage.setItem("clearrx-inDev", dev); } catch { /* fine */ }
-  setStatus(`Sound from: ${selectedName($("inDev"))} (for your ${radio.label}).`);
+  setStatus(id === "pc"
+    ? `Sound from: ${selectedName($("inDev"))}. Now set your browser's output to the cable's input (Windows Volume mixer), and press Start.`
+    : `Sound from: ${selectedName($("inDev"))} (for your ${radio.label}).`);
   if (app.running) { stop(); await start(); }
 }
 

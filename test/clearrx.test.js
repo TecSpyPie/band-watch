@@ -196,3 +196,22 @@ test("ClearRX rack: modules move and keep their order, the EQ and compressor are
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, "no sideways scrolling on a phone");
   assert.deepEqual(errors, []);
 });
+
+test("PC sound: says how to set up a virtual cable, and says so plainly when there isn't one", { skip, timeout: 40000 }, async () => {
+  const page = await (await browser.newContext({ viewport: { width: 1000, height: 900 } })).newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(base + "/");
+  await page.waitForSelector('#radios button:has-text("PC sound")');
+  await page.click('#radios button:has-text("PC sound")');
+  assert.match(await page.textContent("#radioTip"), /VB-CABLE.*Volume mixer.*CABLE Input/s);
+  // Start once so the device names show; the test machine has no virtual cable
+  await page.click("#power");
+  await page.waitForFunction(() => document.querySelector("#power").getAttribute("aria-pressed") === "true");
+  await page.click('#radios button:has-text("PC sound")');
+  await page.waitForFunction(() => /virtual cable/.test(document.querySelector("#status").textContent));
+  assert.match(await page.textContent("#status"), /couldn't find a virtual cable.*vb-audio\.com/s);
+  assert.equal(await page.textContent("#power"), "Stop", "still running on the input it had");
+  await page.click("#power");
+  assert.deepEqual(errors, []);
+});
