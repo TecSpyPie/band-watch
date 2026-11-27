@@ -41,6 +41,7 @@ const app = {
   last: { sq: -50, mnotch: 1000, bass: 0, treble: 0 }, armed: { tone: false }, focusMove: null, gr: 0, outClipAt: 0, snrLearning: 0,
   ctx: null, node: null, stream: null, before: null, after: null, running: false, bypass: false, gain: 1,
   meter: { inPeak: -120, outPeak: -120, outRms: -120, gr: 0, clip: false, outClip: false }, saveTimer: null,
+  folded: new Set(), graph: { spec: true, eq: true, scale: "log", drag: -1 },
 };
 
 /* ---------- Settings: kept by ClearRX.exe ---------- */
@@ -329,8 +330,9 @@ function buildRack() {
     const m = MOD_UI[id], name = RxFx.MODULE_NAMES[id];
     return `<li class="mod" data-mod="${id}" aria-label="${esc(name)}">
       <div class="mhead">
+        <button type="button" class="fold" data-fold aria-expanded="true" aria-label="Fold ${esc(name)}"></button>
         <span class="idx" aria-hidden="true"></span>
-        <label class="sw"><input type="checkbox" id="${m.power}" data-power><span class="mtitle">${esc(name)}</span></label>
+        <label class="sw pw"><input type="checkbox" id="${m.power}" data-power><span class="mtitle">${esc(name)}</span></label>
         <span class="mbtns">
           <button type="button" class="key mini" data-reset${m.reset ? "" : " disabled title=\"Nothing to reset\""}>Reset</button>
           <button type="button" class="key mini arrow" data-move="-1" aria-label="Move ${esc(name)} up">&#9650;</button>
@@ -423,6 +425,7 @@ function setupRack() {
     const id = b.closest("[data-mod]").dataset.mod;
     if (b.dataset.move) moveModule(id, Number(b.dataset.move));
     else if (b.hasAttribute("data-reset")) resetModule(id);
+    else if (b.hasAttribute("data-fold")) setFolded(id, !app.folded.has(id));
     else if (b.hasAttribute("data-snrlearn")) learnNoise();
     else if (b.hasAttribute("data-snrforget")) {
       change({ snrProfile: [] }, "extra");
@@ -473,6 +476,10 @@ function renderRack() {
   s.order.forEach((id, i) => {
     const c = cards.get(id), on = isOn(id);
     c.querySelector(".idx").textContent = String(i + 1);
+    const folded = app.folded.has(id), fb = c.querySelector("[data-fold]");
+    c.classList.toggle("folded", folded);
+    fb.setAttribute("aria-expanded", String(!folded));
+    fb.setAttribute("aria-label", `${folded ? "Unfold" : "Fold"} ${RxFx.MODULE_NAMES[id]}`);
     c.classList.toggle("off", !on);
     c.querySelector("[data-power]").checked = on;
     const up = c.querySelector('[data-move="-1"]'), down = c.querySelector('[data-move="1"]');
@@ -515,8 +522,9 @@ function render() {
   $("radioTip").textContent = r ? r.tip : "Pick your radio, and ClearRX finds its sound input and a good starting preset.";
   renderRack();
   $("bypass").checked = app.bypass;
-  $("power").textContent = app.running ? "Stop" : "Start";
+  $("power").querySelector(".lbl").textContent = app.running ? "Stop" : "Start";
   $("power").setAttribute("aria-pressed", String(app.running));
+  $("sLamp").classList.toggle("on", app.running);
   $("vol").value = String(Math.round(app.gain * 100));
   $("volVal").textContent = `${Math.round(app.gain * 100)}%`;
 }
@@ -550,39 +558,137 @@ function drawMeters() {
   snrStatus();
 }
 
+/* ---------- The big graph: spectrum and EQ curve ---------- */
+/** Draws the spectrum (before and after ClearRX) and the graphic EQ as a curve with a point for each band. */
 function drawSpectrum() {
-  const cv = $("spec");
-  const W = cv.clientWidth || 600, H = cv.clientHeight || 160, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cv = $("spec"), G = app.graph, E = EqGraph;
+  const W = cv.clientWidth || 600, H = cv.clientHeight || 220, dpr = Math.min(window.devicePixelRatio || 1, 2);
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const g = cv.getContext("2d");
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.clearRect(0, 0, W, H);
-  const TOP = 6000; // Hz: radio sound lives below this (AM to about 4.5 kHz), so the filters show
-  // Grid with kHz marks
-  g.strokeStyle = "rgba(127,154,166,.25)"; g.fillStyle = "#7f9aa6"; g.font = "11px system-ui, sans-serif"; g.lineWidth = 1;
-  for (let k = 0; k <= 6; k++) {
-    const x = (k * 1000 / TOP) * W;
-    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H - 14); g.stroke();
-    g.textAlign = k === 0 ? "left" : k === 6 ? "right" : "center";
-    g.fillText(`${k} kHz`, Math.min(W - 2, Math.max(2, x)), H - 2);
+  const PH = E.plotH(H), X = (hz) => E.xFrac(hz, G.scale) * W;
+  // Grid: frequency lines with labels underneath, and level lines every 6 dB of EQ
+  g.lineWidth = 1; g.font = "11px system-ui, sans-serif"; g.fillStyle = "#8fb3bf";
+  g.strokeStyle = "rgba(96,190,205,.22)";
+  for (const hz of E.ticks(G.scale)) {
+    const x = Math.round(X(hz)) + 0.5;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, PH); g.stroke();
+    g.textAlign = x < 14 ? "left" : x > W - 14 ? "right" : "center";
+    g.fillText(E.tickName(hz), Math.min(W - 2, Math.max(2, x)), H - 3);
   }
-  if (!app.running || !app.before) return;
-  const trace = (an, colour, fill) => {
-    const bins = new Float32Array(an.frequencyBinCount);
-    an.getFloatFrequencyData(bins);
-    const hz = app.ctx.sampleRate / an.fftSize;
+  for (let db = -E.RANGE; db <= E.RANGE; db += 6) {
+    const y = Math.round(E.yOfDb(db, H)) + 0.5;
+    g.strokeStyle = db === 0 ? "rgba(150,220,230,.45)" : "rgba(96,190,205,.18)";
+    g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+  }
+  // Spectrum
+  if (G.spec && app.running && app.before) {
+    const trace = (an, colour, fill) => {
+      const bins = new Float32Array(an.frequencyBinCount);
+      an.getFloatFrequencyData(bins);
+      const hz = app.ctx.sampleRate / an.fftSize;
+      g.beginPath();
+      for (let x = 0; x < W; x++) {
+        const k = Math.min(bins.length - 1, Math.round(E.hzAt(x / W, G.scale) / hz));
+        const v = Math.max(0, Math.min(1, (bins[k] + 110) / 90));
+        const y = PH - v * (PH - 6);
+        x ? g.lineTo(x, y) : g.moveTo(x, y);
+      }
+      if (fill) { g.lineTo(W, PH); g.lineTo(0, PH); g.closePath(); g.fillStyle = fill; g.fill(); }
+      else { g.strokeStyle = colour; g.lineWidth = 1.5; g.stroke(); }
+    };
+    trace(app.before, null, "rgba(160,170,180,.25)");
+    trace(app.after, "#45e0f5", null);
+  }
+  // EQ curve: the real response of the ten bands, and a point for each band
+  if (G.eq) {
+    const gains = app.s.eqGains, on = app.s.eq;
     g.beginPath();
-    for (let x = 0; x < W; x++) {
-      const k = Math.min(bins.length - 1, Math.round(((x / W) * TOP) / hz));
-      const v = Math.max(0, Math.min(1, (bins[k] + 110) / 90));
-      const y = (H - 14) - v * (H - 20);
+    for (let x = 0; x <= W; x += 2) {
+      const db = on ? RxFx.eqResponseDb(gains, E.hzAt(x / W, G.scale)) : 0;
+      const y = E.yOfDb(db, H);
       x ? g.lineTo(x, y) : g.moveTo(x, y);
     }
-    if (fill) { g.lineTo(W, H - 14); g.lineTo(0, H - 14); g.closePath(); g.fillStyle = fill; g.fill(); }
-    else { g.strokeStyle = colour; g.lineWidth = 1.5; g.stroke(); }
+    g.strokeStyle = on ? "#d6e84a" : "rgba(214,232,74,.45)"; g.lineWidth = 2; g.stroke();
+    RxFx.EQ_FREQS.forEach((f, i) => {
+      // The point sits on the curve (bands overlap, so the curve there isn't exactly the band's own gain)
+      const x = X(f), y = E.yOfDb(on ? RxFx.eqResponseDb(gains, f) : 0, H), hot = i === G.drag || i === G.hover;
+      g.beginPath(); g.arc(x, y, hot ? 6 : 4.5, 0, Math.PI * 2);
+      g.fillStyle = hot ? "#ffffff" : "#1a2a10"; g.fill();
+      g.lineWidth = 2; g.strokeStyle = on ? "#d6e84a" : "rgba(214,232,74,.6)"; g.stroke();
+      if (hot) { g.fillStyle = "#f4f9d0"; g.textAlign = "center"; g.fillText(`${E.tickName(f)} Hz ${gains[i] > 0 ? "+" : ""}${gains[i]} dB`, Math.min(W - 50, Math.max(50, x)), Math.max(12, y - 10)); }
+    });
+  }
+}
+
+/** Dragging an EQ point on the graph moves that band's slider, which does the rest (switches the EQ on, saves). */
+function setupGraph() {
+  const cv = $("spec"), G = app.graph;
+  try {
+    const saved = JSON.parse(localStorage.getItem("clearrx-graph") || "{}");
+    if (typeof saved.spec === "boolean") G.spec = saved.spec;
+    if (typeof saved.eq === "boolean") G.eq = saved.eq;
+    if (saved.scale === "linear" || saved.scale === "log") G.scale = saved.scale;
+  } catch { /* fine: the usual view */ }
+  const keep = () => { try { localStorage.setItem("clearrx-graph", JSON.stringify({ spec: G.spec, eq: G.eq, scale: G.scale })); } catch { /* fine */ } };
+  $("showSpec").checked = G.spec; $("showEq").checked = G.eq;
+  for (const r of document.querySelectorAll('input[name="fscale"]')) r.checked = r.value === G.scale;
+  $("showSpec").addEventListener("change", (e) => { G.spec = e.target.checked; keep(); });
+  $("showEq").addEventListener("change", (e) => { G.eq = e.target.checked; keep(); });
+  for (const r of document.querySelectorAll('input[name="fscale"]')) r.addEventListener("change", (e) => { if (e.target.checked) { G.scale = e.target.value; keep(); } });
+  const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, W: r.width, H: r.height }; };
+  const setBand = (i, db) => {
+    const el = $("mods").querySelector(`[data-eq="${i}"]`);
+    if (!el || Number(el.value) === db) return;
+    el.value = String(db);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
   };
-  trace(app.before, null, "rgba(160,170,180,.28)");
-  trace(app.after, "#45e0f5", null);
+  cv.addEventListener("pointerdown", (e) => {
+    if (!G.eq) return;
+    const p = pos(e), i = EqGraph.nearestPoint(RxFx.EQ_FREQS, p.x, p.W, G.scale);
+    if (i < 0) return;
+    // Dragging moves the band by how far the pointer moves, so grabbing a point never makes it jump
+    G.drag = i; G.from = { y: p.y, db: app.s.eq ? app.s.eqGains[i] : 0 };
+    cv.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  cv.addEventListener("pointermove", (e) => {
+    const p = pos(e);
+    if (G.drag >= 0) { setBand(G.drag, EqGraph.dragDb(G.from.db, G.from.y, p.y, p.H)); return; }
+    G.hover = G.eq ? EqGraph.nearestPoint(RxFx.EQ_FREQS, p.x, p.W, G.scale, 14) : -1;
+    cv.style.cursor = G.hover >= 0 ? "ns-resize" : "default";
+  });
+  const end = () => { G.drag = -1; };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+  cv.addEventListener("pointerleave", () => { if (G.drag < 0) G.hover = -1; });
+}
+
+/* ---------- Folding the effect panels ---------- */
+function setFolded(id, folded) {
+  if (folded) app.folded.add(id); else app.folded.delete(id);
+  try { localStorage.setItem("clearrx-folded", JSON.stringify([...app.folded])); } catch { /* fine */ }
+  renderRack();
+  updateFoldAll();
+}
+function updateFoldAll() {
+  const all = RxFx.MODULES.every((id) => app.folded.has(id)), b = $("foldAll");
+  b.setAttribute("aria-pressed", String(all));
+  b.querySelector(".lbl").textContent = all ? "Unfold all" : "Fold all";
+}
+function setupFolding() {
+  try {
+    const list = JSON.parse(localStorage.getItem("clearrx-folded") || "[]");
+    if (Array.isArray(list)) for (const id of list) if (RxFx.MODULES.includes(id)) app.folded.add(id);
+  } catch { /* fine: all open */ }
+  $("foldAll").addEventListener("click", () => {
+    const all = RxFx.MODULES.every((id) => app.folded.has(id));
+    app.folded = all ? new Set() : new Set(RxFx.MODULES);
+    try { localStorage.setItem("clearrx-folded", JSON.stringify([...app.folded])); } catch { /* fine */ }
+    renderRack();
+    updateFoldAll();
+  });
+  updateFoldAll();
 }
 
 function frame() {
@@ -616,7 +722,9 @@ async function setup() {
     applySettings(); saveSettings();
   });
   setupRack();
+  setupFolding();
   setupScope();
+  setupGraph();
   $("bypass").addEventListener("change", (e) => { app.bypass = e.target.checked; applySettings(); });
   $("vol").addEventListener("input", (e) => {
     app.gain = Number(e.target.value) / 100;
