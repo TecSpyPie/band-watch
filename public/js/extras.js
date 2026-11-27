@@ -135,7 +135,6 @@
   }
 
   /* ============================== 2. space weather forecast + aurora ============================== */
-  const NOAA = "https://services.swpc.noaa.gov";
   const FC_KEY = "bwx-aurora";
   const fc = { rows: null, text: "", err: false, at: 0 };
   const auroraCfg = Object.assign({ on: false, kp: 5, lastAlert: "" }, get(FC_KEY, {}));
@@ -160,11 +159,11 @@
   }
   async function loadForecast() {
     try {
-      const [k, t] = await Promise.all([
-        fetch(`${NOAA}/products/noaa-planetary-k-index-forecast.json`, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
-        fetch(`${NOAA}/text/3-day-forecast.txt`, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => ""),
-      ]);
-      fc.rows = parseKp(k); fc.text = t; fc.err = false; fc.at = Date.now();
+      // One shared copy from the Band Watch server (cached 30 min there), not a request to NOAA from every browser.
+      const r = await fetch("/api/forecast", { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      fc.rows = parseKp(d.kp); fc.text = String(d.text || ""); fc.err = false; fc.at = Date.now();
     } catch { fc.err = true; }
     renderForecast(); checkAurora();
   }

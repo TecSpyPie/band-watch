@@ -1,6 +1,7 @@
 // Band Watch by M3vrv: server.
 // Serves the static page from ./public and these JSON endpoints:
 //   GET  /api/solar            -> { sfi, kp, at }          (NOAA SWPC, cached 15 min)
+//   GET  /api/forecast         -> { kp, text, at }         (NOAA Kp forecast + 3-day text, cached 30 min)
 //   GET  /api/spots?grid=IO93  -> { grid, spots[], at }    (PSK Reporter, cached 5 min per grid)
 //   GET  /api/myreports?call=M3VRV&mins=120 -> { call, mins, reports[], at }  FT8/FT4 reports of that sender
 //                                 (PSK Reporter, cached 5 min per callsign; mins 1..1440, default 1440)
@@ -35,6 +36,7 @@ const STARTED = new Date().toISOString().replace(/\.\d+Z$/, "Z");
 const PUBLIC_DIR = path.join(__dirname, "public");
 const USER_AGENT = `BandWatch-M3VRV/${VERSION} (amateur radio propagation monitor)`;
 const SOLAR_TTL = 15 * 60e3;
+const FORECAST_TTL = 30 * 60e3;
 const SPOTS_TTL = 5 * 60e3;
 const SUN_TTL = 30 * 60e3;
 const CACHE_MAX = 200;
@@ -43,6 +45,8 @@ const CACHE_MAX = 200;
 const NOAA = (process.env.BW_NOAA_URL || "https://services.swpc.noaa.gov").replace(/\/$/, "");
 const NOAA_FLUX = `${NOAA}/json/f107_cm_flux.json`;
 const NOAA_KP = `${NOAA}/json/planetary_k_index_1m.json`;
+const NOAA_KP_FORECAST = `${NOAA}/products/noaa-planetary-k-index-forecast.json`;
+const NOAA_3DAY = `${NOAA}/text/3-day-forecast.txt`;
 const PSK_QUERY = process.env.BW_PSK_URL || "https://retrieve.pskreporter.info/query";
 const POTA_URL = process.env.BW_POTA_URL || "https://api.pota.app/spot/activator";
 // SOTA spots are not used: SOTA's API terms don't allow AI-written software without their approval.
@@ -290,6 +294,18 @@ function getSolar() {
     const kp = latestByTime(await kpRes.json(), "kp_index");
     if (!flux || !kp) throw new Error("NOAA returned no usable data");
     return { sfi: Math.round(Number(flux.flux)), kp: Math.round(Number(kp.kp_index)), at: clock.now() };
+  });
+}
+
+/** NOAA's Kp forecast and 3-day text, fetched once for everyone (the forecast panel used to ask NOAA from each browser). */
+function getForecast() {
+  return cached("forecast", FORECAST_TTL, async () => {
+    const [kp, text] = await Promise.all([
+      fetchOk(NOAA_KP_FORECAST, 20e3).then((r) => r.json()),
+      fetchOk(NOAA_3DAY, 20e3).then((r) => r.text()).catch(() => ""), // nice to have
+    ]);
+    if (!Array.isArray(kp) || !kp.length) throw new Error("NOAA returned no Kp forecast");
+    return { kp: kp.slice(0, 300), text: String(text).slice(0, 20000), at: clock.now() };
   });
 }
 
@@ -706,6 +722,7 @@ async function handle(req, res) {
     }
     if (url.pathname === "/api/sun") return sendJson(res, 200, await getSun());
     if (url.pathname === "/api/solar") return sendJson(res, 200, await getSolar());
+    if (url.pathname === "/api/forecast") return sendJson(res, 200, await getForecast());
     if (url.pathname === "/api/xota") return sendJson(res, 200, await getXota());
     if (url.pathname === "/api/eibi") return sendBigJson(req, res, await getEibi(), 3600);
     if (url.pathname === "/api/update") return sendJson(res, 200, await getUpdate());
