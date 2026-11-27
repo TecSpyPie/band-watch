@@ -30,6 +30,8 @@ cp clearrx/build/ClearRX.exe clearrx/winres/clearrx.ico clearrx/README-ClearRX.t
 rm -f dist/ClearRX-Windows.zip
 (cd "$T" && zip -qr -9 ClearRX-Windows.zip ClearRX)
 mv "$T/ClearRX-Windows.zip" dist/
+# ClearRX checks this to see if there is a newer ClearRX (its in-app update)
+tr -d '\r\n' < clearrx/VERSION > dist/clearrx-version.txt
 cp "desktop/build/BandWatch-Setup-$VERSION.exe" dist/
 cp "desktop/build/BandWatch-Setup-$VERSION.exe" dist/BandWatch-Setup.exe
 rm -rf "$T"
@@ -40,5 +42,5 @@ if ! curl -fsSL --retry 3 -o "dist/$RTL_SRC" "https://github.com/rtlsdrblog/rtl-
   if [ "${CI:-}" = true ]; then echo "Couldn't fetch the rtl-sdr source"; exit 1; fi
   echo "(rtl-sdr source not fetched: only needed for a release)"
 fi
-(cd dist && sha256sum BandWatch-Setup.exe "BandWatch-Setup-$VERSION.exe" BandWatch-Windows.zip ClearRX-Windows.zip > SHA256SUMS.txt)
+(cd dist && sha256sum BandWatch-Setup.exe "BandWatch-Setup-$VERSION.exe" BandWatch-Windows.zip ClearRX-Windows.zip clearrx-version.txt > SHA256SUMS.txt)
 ls -l dist

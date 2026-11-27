@@ -1,5 +1,8 @@
 # What's new
 
+## 1.44.2 (27 Nov 2026)
+- **ClearRX 1.6.1 updates itself.** When a newer ClearRX is out, a green **Update to …** button shows on ClearRX's toolbar. Press it and ClearRX downloads the new version from HamShack's release, checks it against the release's check numbers, puts it in place and restarts. The open window reloads by itself and your settings stay. Each release now also carries `clearrx-version.txt` so ClearRX can tell what's new. You install 1.6.1 by hand once; after that it updates itself. HamShack already updates itself in Settings > Updates.
+
 ## 1.44.1 (27 Nov 2026)
 - **ClearRX 1.6.0: PC sound.** A new **PC sound** button under My radio cleans up sound that's already playing on the PC: an internet radio, a WebSDR or KiwiSDR in the browser, or a recording. Windows can't hand a program "what the PC is playing" on its own, so it uses the free VB-CABLE (vb-audio.com): set your browser's output to "CABLE Input" in Windows' Volume mixer, and ClearRX finds "CABLE Output" for you and plays the cleaned-up sound to your speakers. It explains each step, says plainly if there's no cable yet, and won't start if "Play to" is the cable it's listening to (that would howl). It warns about Stereo Mix, which hears ClearRX too.
 - **ClearRX download:** the release notes and ClearRX's read-me now say to unzip into `C:\BandWatch`. The zip has its own ClearRX folder, so unzipping into `C:\BandWatch\ClearRX` made a folder inside a folder.

@@ -39,3 +39,16 @@ func messageBox(title, text string) {
 	const mbIconWarning = 0x30
 	proc.Call(0, uintptr(unsafe.Pointer(m)), uintptr(unsafe.Pointer(t)), mbIconWarning)
 }
+
+// updateDir: ClearRX can update itself where it runs (a real build, not "go run").
+func updateDir(exeDir string) string {
+	if version == "dev" {
+		return ""
+	}
+	return exeDir
+}
+
+// startDetached starts the new ClearRX after an update. It asks this one to quit and takes over.
+func startDetached(exe string) error {
+	return hidden(exec.Command(exe, "-updated")).Start()
+}

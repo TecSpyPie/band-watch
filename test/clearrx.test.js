@@ -205,6 +205,7 @@ test("PC sound: says how to set up a virtual cable, and says so plainly when the
   await page.waitForSelector('#radios button:has-text("PC sound")');
   await page.click('#radios button:has-text("PC sound")');
   assert.match(await page.textContent("#radioTip"), /VB-CABLE.*Volume mixer.*CABLE Input/s);
+  assert.equal(await page.isVisible("#updateBtn"), false, "no Update button when there's nothing to install");
   // Start once so the device names show; the test machine has no virtual cable
   await page.click("#power");
   await page.waitForFunction(() => document.querySelector("#power").getAttribute("aria-pressed") === "true");

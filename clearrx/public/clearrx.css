@@ -40,6 +40,9 @@ h1 { margin: 0; font-size: 17px; display: flex; align-items: center; gap: 8px; }
 .tool.power[aria-pressed="true"] { background: rgba(61,220,110,.12); border-color: rgba(61,220,110,.5); }
 .tool.power[aria-pressed="true"] svg { stroke: var(--on); filter: drop-shadow(0 0 6px var(--onglow)); }
 .tool.power:not([aria-pressed="true"]) svg { stroke: var(--on); opacity: .85; }
+.tool[hidden] { display: none; }
+.tool.upd { background: rgba(61,220,110,.12); border-color: rgba(61,220,110,.5); }
+.tool.upd svg { stroke: var(--on); }
 .tsep { width: 1px; margin: 4px 6px; background: rgba(255,255,255,.12); box-shadow: 1px 0 0 rgba(0,0,0,.4); }
 /* Compare: a toolbar toggle; its little LED is the real checkbox */
 .tcheck input { appearance: none; -webkit-appearance: none; position: absolute; top: 5px; right: 8px; width: 10px; height: 10px; margin: 0;
