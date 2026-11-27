@@ -248,6 +248,7 @@ type App struct {
 	quit       func()
 	static     http.Handler
 	now        func() time.Time
+	updater    *Updater // nil: no update checks (tests)
 }
 
 func NewApp(file string, quit func()) *App {
@@ -305,6 +306,9 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case "/api/settings":
 		a.settingsAPI(w, r)
+		return
+	case "/api/update":
+		a.updateAPI(w, r)
 		return
 	case "/api/quit":
 		// Only ClearRX's own page or ClearRX.exe --stop (which send this header; another site's page can't)
@@ -388,6 +392,7 @@ func env(k, def string) string {
 func main() {
 	serve := flag.Bool("serve", false, "run the server only (for tests)")
 	stop := flag.Bool("stop", false, "stop a running ClearRX")
+	updated := flag.Bool("updated", false, "started by an update: the open window reloads itself, so don't open another")
 	showVersion := flag.Bool("version", false, "print the version")
 	flag.Parse()
 	if *showVersion {
@@ -411,6 +416,7 @@ func main() {
 		exeDir = filepath.Dir(exe)
 	}
 	setupLog(exeDir)
+	cleanOld(exeDir)
 
 	if *stop {
 		askToQuit(base)
@@ -426,12 +432,18 @@ func main() {
 		time.Sleep(time.Second)
 	}
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	for try := 0; err != nil && try < 8; try++ { // the old ClearRX may still be closing (after an update)
+		time.Sleep(500 * time.Millisecond)
+		ln, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	}
 	if err != nil {
 		messageBox("ClearRX by M3VRV & King Coder", fmt.Sprintf("ClearRX couldn't start because another program is using port %d.", port))
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	app := NewApp(filepath.Join(exeDir, "clearrx-settings.json"), cancel)
+	app.updater = &Updater{base: releaseLatest, dir: updateDir(exeDir), current: version, client: &http.Client{Timeout: 2 * time.Minute},
+		restart: startDetached, quit: cancel}
 	srv := &http.Server{Handler: app, ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		<-ctx.Done()
@@ -440,7 +452,9 @@ func main() {
 		srv.Shutdown(done)
 	}()
 	log.Printf("ClearRX by M3VRV & King Coder %s (built %s) running at %s", version, buildDate, pageURL)
-	go func() { time.Sleep(300 * time.Millisecond); openWindow(pageURL) }()
+	if !*updated {
+		go func() { time.Sleep(300 * time.Millisecond); openWindow(pageURL) }()
+	}
 	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("serve: %v", err)
 	}

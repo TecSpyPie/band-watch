@@ -673,6 +673,46 @@ function setupGraph() {
   cv.addEventListener("pointerleave", () => { if (G.drag < 0) G.hover = -1; });
 }
 
+/* ---------- Updates: a newer ClearRX in HamShack's latest release ---------- */
+async function checkUpdate() {
+  try {
+    const r = await fetch("/api/update", { cache: "no-store" });
+    const d = await r.json();
+    const b = $("updateBtn");
+    if (d.newer && d.canInstall) {
+      b.hidden = false;
+      b.querySelector(".lbl").textContent = `Update to ${d.latest}`;
+      b.title = `ClearRX ${d.latest} is out (you have ${d.current}). It downloads, checks and restarts by itself; your settings stay.`;
+    } else b.hidden = true;
+  } catch { /* fine: no update check (offline) */ }
+}
+async function installUpdate() {
+  const b = $("updateBtn");
+  b.disabled = true;
+  setStatus("Downloading the new ClearRX and checking it…");
+  try {
+    const r = await fetch("/api/update", { method: "POST", headers: { "X-ClearRX": "update" } });
+    const d = await r.json();
+    if (!d.ok) { setStatus(`The update wasn't installed: ${d.error}.`); b.disabled = false; return; }
+    if (app.running) stop();
+    setStatus(`ClearRX ${d.version} is installed. Restarting…`);
+    // The new ClearRX takes over the same address; reload when it answers with the new version
+    const t0 = Date.now();
+    const wait = async () => {
+      try {
+        const h = await (await fetch("/healthz", { cache: "no-store" })).json();
+        if (h.version === d.version) { location.reload(); return; }
+      } catch { /* still restarting */ }
+      if (Date.now() - t0 < 30000) setTimeout(wait, 1000);
+      else setStatus(`ClearRX ${d.version} is installed. Close ClearRX and open it again to use it.`);
+    };
+    setTimeout(wait, 1500);
+  } catch {
+    setStatus("The update wasn't installed: couldn't reach ClearRX. Try again.");
+    b.disabled = false;
+  }
+}
+
 /* ---------- Folding the effect panels ---------- */
 function setFolded(id, folded) {
   if (folded) app.folded.add(id); else app.folded.delete(id);
@@ -732,6 +772,8 @@ async function setup() {
   });
   setupRack();
   setupFolding();
+  $("updateBtn").addEventListener("click", installUpdate);
+  checkUpdate();
   setupScope();
   setupGraph();
   $("bypass").addEventListener("change", (e) => { app.bypass = e.target.checked; applySettings(); });
