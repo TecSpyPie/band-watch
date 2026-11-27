@@ -70,6 +70,46 @@ const RSS = `<?xml version="1.0"?><rss><channel>
 <item><title><![CDATA[Odd times]]></title><link>https://www.contestcalendar.com/contestdetails.php?ref=4</link><description>See rules</description></item>
 </channel></rss>`;
 
+test("chat: three people reporting a message removes it for everyone", async () => {
+  let t = 4_000_000; chat._reset(() => t);
+  const bad = (await call(chat.handle, { method: "POST", body: { room: "40", call: "G4BAD", text: "rude words" }, ip: "10.9.0.1" })).json.message;
+  t += 5000;
+  const ok = (await call(chat.handle, { method: "POST", body: { room: "40", call: "G4ABC", text: "73" }, ip: "10.9.0.2" })).json.message;
+  const report = (id, ip, room = "40") => call(chat.handle, { method: "POST", body: { room, report: id }, ip });
+
+  const r1 = await report(bad.id, "10.8.0.1");
+  assert.equal(r1.code, 200); assert.equal(r1.json.removed, false);
+  assert.equal((await report(bad.id, "10.8.0.1")).json.removed, false, "the same person twice counts once");
+  let read = (await call(chat.handle, { url: "/api/chat?room=40" })).json;
+  assert.equal(read.messages.length, 2);
+  assert.ok(read.messages.every((m) => !("r" in m) && Object.keys(m).sort().join() === "call,id,t,text"), "who reported is never sent out");
+
+  await report(bad.id, "10.8.0.2");
+  const r3 = await report(bad.id, "10.8.0.3");
+  assert.equal(r3.json.removed, true);
+  read = (await call(chat.handle, { url: `/api/chat?room=40&since=${ok.id}` })).json;
+  assert.deepEqual(read.removed, [bad.id], "people already showing it are told to take it down");
+  read = (await call(chat.handle, { url: "/api/chat?room=40" })).json;
+  assert.deepEqual(read.messages.map((m) => m.id), [ok.id]);
+  assert.equal(read.last, ok.id);
+
+  assert.equal((await report(9999, "10.8.0.4")).code, 404, "unknown message");
+  assert.equal((await report(ok.id, "10.8.0.4", "20")).code, 404, "wrong room");
+  assert.equal((await report("x", "10.8.0.4")).code, 400);
+});
+
+test("chat: reports are rate limited per address", async () => {
+  let t = 5_000_000; chat._reset(() => t);
+  const ids = [];
+  for (let i = 0; i < 12; i++) { ids.push((await call(chat.handle, { method: "POST", body: { room: "20", call: "G4ABC", text: `m${i}` }, ip: `10.7.0.${i}` })).json.message.id); }
+  const codes = [];
+  for (const id of ids) codes.push((await call(chat.handle, { method: "POST", body: { room: "20", report: id }, ip: "10.6.0.1" })).code);
+  assert.deepEqual(codes.slice(0, 10), Array(10).fill(200));
+  assert.equal(codes[10], 429);
+  t += 61_000;
+  assert.equal((await call(chat.handle, { method: "POST", body: { room: "20", report: ids[11] }, ip: "10.6.0.1" })).code, 200);
+});
+
 test("contests: reads the WA7BNM feed, works out UTC times and the year, keeps only its own links", () => {
   const ref = Date.UTC(2026, 10, 26, 12);
   const c = parseFeed(RSS, ref);

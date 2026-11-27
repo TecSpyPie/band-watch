@@ -69,6 +69,8 @@ async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node")
     BW_UPDATE_URL: `${upstreamBase}/update/releases/latest`,
     BW_EIBI_URL: `${upstreamBase}/eibi/dx/`,
     BW_CONTEST_URL: `${upstreamBase}/contest/calendar.rss`,
+    // A fresh chat for every test server, never the real one or one left over from an earlier run.
+    BW_CHAT_FILE: path.join(require("os").tmpdir(), `bw-chat-test-${process.pid}-${port}.json`),
   };
   const child = kind === "go"
     ? spawn(buildGo(), ["--serve"], { env, stdio: ["ignore", "inherit", "inherit"] })

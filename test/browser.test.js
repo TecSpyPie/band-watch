@@ -3238,6 +3238,20 @@ test("chat: the website has the chat; the Windows app links to it instead", { sk
     await page.waitForFunction(() => /No messages in General yet/.test(document.getElementById("bwcList").textContent));
     assert.equal(await page.isVisible("#secChat .bwc-form"), true);
     assert.equal(await page.$$eval("#bwcRooms button", (b) => b.length), 14);
+    // Someone else posts; you report it (two taps); two more people report it and it comes down for everyone.
+    const post = (body, ip) => page.evaluate(([b, a]) => fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "X-Forwarded-For": a }, body: JSON.stringify(b) }).then((r) => r.json()), [body, ip]);
+    const { message } = await post({ room: "general", call: "G4BAD", text: "spam spam spam" }, "10.50.0.1");
+    await page.evaluate(() => window.BWChat.poll());
+    await page.waitForSelector("#bwcList .bwc-acts button:has-text('Report')");
+    await page.click("#bwcList .bwc-acts button:has-text('Report')");
+    assert.match(await page.textContent("#bwcList .bwc-acts"), /Sure\? Tap again/);
+    await page.click("#bwcList .bwc-acts button:has-text('Sure')");
+    await page.waitForSelector("#bwcList .bwc-acts button:has-text('Reported')");
+    assert.match(await page.textContent("#bwcNote"), /three people report it/);
+    await post({ room: "general", report: message.id }, "10.50.0.2");
+    assert.equal((await post({ room: "general", report: message.id }, "10.50.0.3")).removed, true);
+    await page.evaluate(() => window.BWChat.poll());
+    await page.waitForFunction(() => !/spam spam spam/.test(document.getElementById("bwcList").textContent));
   }
   // Feeds the page fetches from other sites (NOAA, CelesTrak) and the contest calendar aren't part of this test.
   assert.deepEqual(errors.filter((e) => !/api\/contests|swpc\.noaa|celestrak|ERR_TUNNEL|ERR_NAME|status of 502/.test(e)), []);

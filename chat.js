@@ -6,6 +6,7 @@
 // messages per room are kept for 48 hours, in memory and in a small JSON file so a restart keeps them.
 "use strict";
 
+const crypto = require("crypto");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -16,6 +17,8 @@ const MAX_AGE_MS = 48 * 3600e3;
 const MAX_TEXT = 300;
 const GAP_MS = 3000;
 const PER_MIN = 12;
+const REPORTS_TO_REMOVE = 3; // different people who must report a message before it comes down
+const REPORTS_PER_MIN = 10;
 const CALL_RE = /^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(\/[A-Z0-9]{1,4})?$|^[A-Z0-9]{1,4}\/[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(\/[A-Z0-9]{1,4})?$/;
 const FILE = process.env.BW_CHAT_FILE || path.join(os.tmpdir(), "bandwatch-chat.json");
 const HEADERS = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin", "Content-Type": "application/json", "Cache-Control": "no-store" };
@@ -24,6 +27,11 @@ let now = () => Date.now();
 const rooms = new Map(ROOMS.map((r) => [r, []]));
 let nextId = 1;
 const posts = new Map(); // ip -> [times]
+const reportsBy = new Map(); // ip -> [times]
+const removed = new Map(ROOMS.map((r) => [r, []])); // room -> [{ id, t }]: messages taken down after reports
+// Reporters are kept as salted hashes, never as addresses; the salt is new each start, so nothing links back.
+const SALT = crypto.randomBytes(16).toString("hex");
+const who = (ip) => crypto.createHash("sha256").update(SALT + ip).digest("hex").slice(0, 16);
 
 function load() {
   try {
@@ -51,6 +59,9 @@ function prune(list) {
   const cut = now() - MAX_AGE_MS;
   while (list.length && (list.length > KEEP || list[0].t < cut)) list.shift();
 }
+
+/** What goes out to people reading: never who reported it. */
+const pub = (m) => ({ id: m.id, call: m.call, text: m.text, t: m.t });
 
 function send(res, code, body) { res.writeHead(code, HEADERS); res.end(JSON.stringify(body)); }
 
@@ -93,13 +104,15 @@ async function handle(req, res, url) {
       if (!rooms.has(room)) return send(res, 400, { error: "Unknown room." });
       const list = rooms.get(room); prune(list);
       const since = Number(url.searchParams.get("since")) || 0;
-      const messages = list.filter((m) => m.id > since).slice(-100);
-      return send(res, 200, { room, rooms: ROOMS, messages, last: list.length ? list[list.length - 1].id : 0 });
+      const messages = list.filter((m) => m.id > since).slice(-100).map(pub);
+      const gone = removed.get(room).filter((x) => now() - x.t < MAX_AGE_MS).map((x) => x.id);
+      return send(res, 200, { room, rooms: ROOMS, messages, removed: gone, last: list.length ? list[list.length - 1].id : 0 });
     }
     if (req.method !== "POST") return send(res, 405, { error: "method not allowed" });
     const body = await readBody(req);
     const r = String(body.room || "general").toLowerCase();
     if (!rooms.has(r)) return send(res, 400, { error: "Unknown room." });
+    if (body.report != null) return report(res, r, body.report, ipOf(req));
     const call = String(body.call || "").trim().toUpperCase();
     if (!CALL_RE.test(call)) return send(res, 400, { error: "Enter your callsign at the top of the page first (like M3VRV)." });
     const text = cleanText(body.text);
@@ -111,12 +124,39 @@ async function handle(req, res, url) {
     if (limit) return send(res, 429, { error: limit });
     const message = { id: nextId++, call, text, t: now() };
     list.push(message); prune(list); save();
-    return send(res, 200, { ok: true, message });
+    return send(res, 200, { ok: true, message: pub(message) });
   } catch (err) {
     return send(res, err && err.code >= 400 && err.code < 500 ? err.code : 500, { error: err && err.code ? err.message : "Chat is unavailable right now." });
   }
 }
 
-function _reset(clockFn) { for (const r of ROOMS) rooms.set(r, []); posts.clear(); nextId = 1; if (clockFn) now = clockFn; }
+/** Someone reports a message. Enough different people and it comes down for everyone. */
+function report(res, room, idIn, ip) {
+  const id = Number(idIn);
+  if (!Number.isInteger(id) || id < 1) return send(res, 400, { error: "Which message?" });
+  const list = rooms.get(room);
+  const i = list.findIndex((m) => m.id === id);
+  if (i < 0) return send(res, 404, { error: "That message has gone already." });
+  const t = now();
+  const mine = (reportsBy.get(ip) || []).filter((x) => t - x < 60e3);
+  if (mine.length >= REPORTS_PER_MIN) return send(res, 429, { error: "That's a lot of reports. Wait a minute." });
+  mine.push(t); reportsBy.set(ip, mine);
+  if (reportsBy.size > 5000) reportsBy.delete(reportsBy.keys().next().value);
+  const m = list[i], h = who(ip);
+  m.r = Array.isArray(m.r) ? m.r : [];
+  if (!m.r.includes(h)) m.r.push(h);
+  const gone = m.r.length >= REPORTS_TO_REMOVE;
+  if (gone) {
+    list.splice(i, 1);
+    const rm = removed.get(room); rm.push({ id, t }); while (rm.length > 100) rm.shift();
+  }
+  save();
+  return send(res, 200, { ok: true, removed: gone });
+}
+
+function _reset(clockFn) {
+  for (const r of ROOMS) { rooms.set(r, []); removed.set(r, []); }
+  posts.clear(); reportsBy.clear(); nextId = 1; if (clockFn) now = clockFn;
+}
 
 module.exports = { handle, cleanText, ROOMS, CALL_RE, _reset };
