@@ -907,6 +907,35 @@ test("GET /api/update: the newest release on GitHub, and whether this copy can i
   assert.equal((await get("/api/update")).status, 502);
 });
 
+test("GET /api/update?fresh=1: Check now asks GitHub again, but at most once every 2 minutes", async () => {
+  const updCalls = () => upstream.calls.filter((u) => u.includes("/update/")).length;
+  const first = JSON.parse((await get("/api/update")).body);
+  assert.equal(first.latest, "99.1.0");
+  assert.match(first.checked, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/, "says when it last looked");
+  assert.equal(first.stale, false);
+  assert.equal(updCalls(), 1);
+  // A plain check within the hour, and Check now straight away, both use the answer just fetched.
+  up.latestTag = "v99.2.0";
+  assert.equal(JSON.parse((await get("/api/update")).body).latest, "99.1.0");
+  assert.equal(JSON.parse((await get("/api/update?fresh=1")).body).latest, "99.1.0");
+  assert.equal(updCalls(), 1, "no second GitHub call inside 2 minutes");
+  // After 2 minutes, Check now looks again (a plain check would still wait for the hour).
+  await srv.advance(3 * 60e3);
+  assert.equal(JSON.parse((await get("/api/update")).body).latest, "99.1.0");
+  assert.equal(updCalls(), 1);
+  const fresh = JSON.parse((await get("/api/update?fresh=1")).body);
+  assert.equal(fresh.latest, "99.2.0");
+  assert.notEqual(fresh.checked, first.checked);
+  assert.equal(updCalls(), 2);
+  // GitHub down: Check now keeps the last answer and says it's old.
+  await srv.advance(3 * 60e3);
+  up.updateDown = true;
+  const down = JSON.parse((await get("/api/update?fresh=1")).body);
+  assert.equal(down.latest, "99.2.0");
+  assert.equal(down.stale, true);
+  assert.equal(down.checked, fresh.checked);
+});
+
 test("POST /api/update/install: not available outside the Windows app", async () => {
   const r = await get("/api/update/install", { method: "POST", headers: { "X-Band-Watch": "update" } });
   assert.ok([404, 405].includes(r.status), `status ${r.status}`);

@@ -413,10 +413,13 @@ function renderAbout() {
 
 const updateState = { info: null, installing: false };
 
-/** Ask the server whether there's a newer Band Watch. */
-async function checkForUpdate() {
+/**
+ * Ask the server whether there's a newer Band Watch. fresh (the Check now button) makes the server ask GitHub
+ * again rather than use its answer from the last hour (it still asks at most once every 2 minutes).
+ */
+async function checkForUpdate(fresh = false) {
   try {
-    const r = await fetch("/api/update", { cache: "no-store" });
+    const r = await fetch(fresh ? "/api/update?fresh=1" : "/api/update", { cache: "no-store" });
     if (!r.ok) throw new Error(String(r.status));
     updateState.info = await r.json();
   } catch {
@@ -426,27 +429,57 @@ async function checkForUpdate() {
   return updateState.info;
 }
 
+/** "Last checked just now" / "Last checked 5 minutes ago (14:02)", from the server's ISO time. */
+function updateCheckedText(iso, now = Date.now()) {
+  const t = Date.parse(iso || "");
+  if (!Number.isFinite(t)) return "";
+  const mins = Math.max(0, Math.floor((now - t) / 60000));
+  const at = new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (mins < 1) return "Last checked just now.";
+  if (mins < 60) return `Last checked ${mins} minute${mins === 1 ? "" : "s"} ago (${at}).`;
+  return `Last checked at ${at}.`;
+}
+
 function renderUpdate() {
   const el = $("abUpdate");
   if (!el) return;
   const u = updateState.info;
+  const btn = $("updCheckNow");
+  if (btn) btn.hidden = !!updateState.installing;
   if (updateState.installing) {
     el.innerHTML = `Installing Band Watch ${esc(updateState.installing)}… Band Watch closes and opens again by itself in a minute or so.`;
     return;
   }
   if (!u) { el.textContent = "Checking for updates…"; return; }
-  if (u.error) { el.innerHTML = `Couldn't check for updates just now. <button type="button" class="linkbtn" id="abCheck">Try again</button>`; }
-  else if (!u.newer) { el.innerHTML = `You have the newest version. <button type="button" class="linkbtn" id="abCheck">Check again</button>`; }
+  if (u.error) { el.innerHTML = `Couldn't check for updates just now. Try <b>Check now</b> in a minute or two.`; return; }
+  let when = esc(updateCheckedText(u.checked));
+  if (u.stale && when) when = `GitHub didn't answer just now, so this is from the last check. ${when}`;
+  const note = when ? ` <span class="small muted updwhen">${when}</span>` : "";
+  if (!u.newer) { el.innerHTML = `You have the newest version.${note}`; }
   else if (u.canInstall) {
     el.innerHTML = `<b>Band Watch ${esc(u.latest)} is available.</b> <button type="button" class="tune" id="abInstall">Install update</button>
-      <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">What's new</a>`;
+      <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">What's new</a>${note}`;
   } else {
     el.innerHTML = `<b>Band Watch ${esc(u.latest)} is available.</b> <a href="${esc(u.page)}" target="_blank" rel="noopener noreferrer">Download it</a>
-      <span class="small muted">(The web version updates itself: just reload the page.)</span>`;
+      <span class="small muted">(The web version updates itself: just reload the page.)</span>${note}`;
   }
-  if ($("abCheck")) $("abCheck").onclick = () => { updateState.info = null; renderUpdate(); checkForUpdate(); };
   if ($("abInstall")) $("abInstall").onclick = installUpdate;
 }
+
+/** The Check now button in Settings > Updates. */
+async function checkNowClicked() {
+  const btn = $("updCheckNow");
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = "Checking…";
+  updateState.info = null;
+  renderUpdate();
+  try { await checkForUpdate(true); } finally {
+    btn.disabled = false;
+    btn.textContent = "Check now";
+  }
+}
+if ($("updCheckNow")) $("updCheckNow").addEventListener("click", checkNowClicked);
 
 /** The Windows app downloads the new installer from GitHub, checks it, and installs it over this copy. */
 async function installUpdate() {

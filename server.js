@@ -54,6 +54,7 @@ const EIBI_TTL = 12 * 60 * 60 * 1000;
 const Eibi = require("./public/js/eibi-data.js");
 const UPDATE_URL = process.env.BW_UPDATE_URL || "https://api.github.com/repos/TecSpyPie/band-watch/releases/latest";
 const UPDATE_TTL = 60 * 60 * 1000;
+const UPDATE_FRESH_TTL = 2 * 60 * 1000; // "Check now" asks GitHub again, but at most once every 2 minutes (shared)
 const TEST_HOOKS = process.env.BW_TEST === "1";
 // The RTL-SDR bridge connects to rtl_tcp on this PC or the local network, so it is only switched
 // on where Band Watch runs on the user's own PC (start-bandwatch.bat sets BW_SDR=1), never online.
@@ -177,15 +178,21 @@ function newerVersion(a, b) {
   return false;
 }
 
-/** The newest release on GitHub. This server only reports it: installing is done by the Windows app. */
-async function getUpdate() {
-  const rel = await cached("update", UPDATE_TTL, async () => {
+/**
+ * The newest release on GitHub. This server only reports it: installing is done by the Windows app.
+ * fresh ("Check now") asks GitHub again if the last answer is over 2 minutes old; otherwise it's kept for an hour.
+ */
+async function getUpdate(fresh = false) {
+  const rel = await cached("update", fresh ? UPDATE_FRESH_TTL : UPDATE_TTL, async () => {
     const r = await (await fetchOk(UPDATE_URL, 20000)).json();
     const latest = String(r.tag_name || "").replace(/^v/, "");
     if (!/^\d+\.\d+\.\d+$/.test(latest)) throw new Error("no version number");
-    return { latest, page: String(r.html_url || "") };
+    return { latest, page: String(r.html_url || ""), checked: new Date(clock.now()).toISOString() };
   });
-  return { current: VERSION, latest: rel.latest, newer: newerVersion(rel.latest, VERSION), page: rel.page, canInstall: false };
+  return {
+    current: VERSION, latest: rel.latest, newer: newerVersion(rel.latest, VERSION), page: rel.page, canInstall: false,
+    checked: rel.checked, stale: !!rel.stale,
+  };
 }
 
 /* ---------- Helpers ---------- */
@@ -708,7 +715,7 @@ async function handle(req, res) {
     if (url.pathname === "/api/solar") return sendJson(res, 200, await getSolar());
     if (url.pathname === "/api/xota") return sendJson(res, 200, await getXota());
     if (url.pathname === "/api/eibi") return sendBigJson(req, res, await getEibi(), 3600);
-    if (url.pathname === "/api/update") return sendJson(res, 200, await getUpdate());
+    if (url.pathname === "/api/update") return sendJson(res, 200, await getUpdate(url.searchParams.get("fresh") === "1"));
     if (url.pathname === "/api/spots") {
       const grid = String(url.searchParams.get("grid") || "").toUpperCase().slice(0, 4);
       if (!/^[A-R]{2}\d{2}$/.test(grid)) return sendJson(res, 400, { error: "grid must look like IO93" });

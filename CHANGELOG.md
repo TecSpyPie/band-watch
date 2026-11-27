@@ -13,6 +13,15 @@
   was, **Stop** keeps what was read so far, and **Save as CSV file** keeps the readings for a spreadsheet. It uses only
   the radio's tuning command and its own signal readings (about half a second a step, or a second with **Careful**);
   memory slots and the live screen wait while it scans, and tuning the radio from elsewhere stops it. Receive only.
+- **Check now for updates:** Settings > Updates has a **Check now** button that asks GitHub straight away instead of
+  using the answer from the last hour, and the Updates line now says when it last looked ("Last checked 5 minutes
+  ago"). If GitHub can't be reached it says so and keeps the last answer. To be fair to GitHub, it asks at most once
+  every 2 minutes. `GET /api/update?fresh=1` (in both the Node and the Windows server), and `/api/update` now answers
+  with `checked` and `stale` too.
+- **Space weather forecast: no more error when NOAA's Kp file is empty.** It now says "NOAA's Kp forecast is empty or
+  out of date just now" and tries again later.
+- **Tests:** browser tests no longer reach the real NOAA forecast files or the real contest calendar (pretend ones
+  instead), which removes about 50 failures in cloud test sessions.
 
 ## 1.42.0 (26 Nov 2026)
 - **Chat.** A new Chat panel to talk to other Band Watch users: a General room plus one room per band (160 m to 70 cm). Enter your callsign at the top of the page first. Messages are plain text, up to 300 characters; one message every 3 seconds and 12 a minute per address, and the newest 200 per room are kept for 48 hours. Anyone using Band Watch can read them, so don't post anything private. **Hide** next to a callsign hides their messages on your screen only. Chat is on the website, where everyone meets: in the Windows app the panel links to it (a chat on one PC would only ever have you in it). New server route `GET/POST /api/chat` (web version).

@@ -284,7 +284,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case p == "/api/solar":
 		data, err = s.getSolar()
 	case p == "/api/update":
-		s.handleUpdateCheck(w)
+		s.handleUpdateCheck(w, r)
 		return
 	case p == "/api/xota":
 		data, err = s.getXota()

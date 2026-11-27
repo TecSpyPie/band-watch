@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNewerVersion(t *testing.T) {
@@ -138,5 +139,35 @@ func TestUpdateRefusesBadChecksumsAndOldVersions(t *testing.T) {
 	}
 	if _, body := call(s4, "GET", "/api/update", nil); body["canInstall"] != false || body["newer"] != true {
 		t.Fatalf("check outside desktop: %v", body)
+	}
+}
+
+// "Check now" (?fresh=1) asks GitHub again once the last answer is over 2 minutes old; a plain check waits an hour.
+func TestUpdateCheckNow(t *testing.T) {
+	tag := "v1.12.2"
+	hits := 0
+	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		json.NewEncoder(w).Encode(map[string]any{"tag_name": tag, "html_url": "https://example.invalid/page"})
+	}))
+	t.Cleanup(gh.Close)
+	s, _ := updateServer(t, gh)
+	s.cfg.UpdateURL = gh.URL + "/api/latest"
+
+	_, first := call(s, "GET", "/api/update", nil)
+	if first["latest"] != "1.12.2" || first["checked"] == "" || first["stale"] != false || hits != 1 {
+		t.Fatalf("first: %v hits=%d", first, hits)
+	}
+	tag = "v1.13.0"
+	if _, b := call(s, "GET", "/api/update?fresh=1", nil); b["latest"] != "1.12.2" || hits != 1 {
+		t.Fatalf("within 2 minutes it should use the last answer: %v hits=%d", b, hits)
+	}
+	s.clock.Advance(3 * time.Minute)
+	if _, b := call(s, "GET", "/api/update", nil); b["latest"] != "1.12.2" || hits != 1 {
+		t.Fatalf("a plain check waits the hour: %v hits=%d", b, hits)
+	}
+	_, b := call(s, "GET", "/api/update?fresh=1", nil)
+	if b["latest"] != "1.13.0" || b["checked"] == first["checked"] || hits != 2 {
+		t.Fatalf("check now: %v hits=%d", b, hits)
 	}
 }

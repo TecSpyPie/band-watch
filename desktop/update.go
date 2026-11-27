@@ -24,6 +24,7 @@ import (
 
 const (
 	updateTTL      = time.Hour
+	updateFreshTTL = 2 * time.Minute // "Check now" asks GitHub again, but at most once every 2 minutes
 	releasesAPI    = "https://api.github.com/repos/TecSpyPie/band-watch/releases/latest"
 	releaseAssets  = "https://github.com/TecSpyPie/band-watch/releases/download/"
 	maxSetupBytes  = 80 << 20
@@ -49,8 +50,13 @@ func newerVersion(a, b string) bool {
 }
 
 // latestRelease: the newest release's version and the addresses of its installer and checksums.
-func (s *Server) latestRelease() (map[string]any, error) {
-	return s.cache.Get("update", updateTTL, func() (map[string]any, error) {
+// fresh ("Check now") asks GitHub again if the last answer is over 2 minutes old; otherwise it's kept an hour.
+func (s *Server) latestRelease(fresh bool) (map[string]any, error) {
+	ttl := updateTTL
+	if fresh {
+		ttl = updateFreshTTL
+	}
+	return s.cache.Get("update", ttl, func() (map[string]any, error) {
 		var rel struct {
 			Tag    string `json:"tag_name"`
 			Page   string `json:"html_url"`
@@ -66,7 +72,8 @@ func (s *Server) latestRelease() (map[string]any, error) {
 		if !semverRe.MatchString(v) {
 			return nil, errors.New("the latest release has no version number")
 		}
-		out := map[string]any{"latest": v, "page": rel.Page, "setup": "", "sums": ""}
+		out := map[string]any{"latest": v, "page": rel.Page, "setup": "", "sums": "",
+			"checked": s.clock.Now().UTC().Format("2006-01-02T15:04:05.000Z")}
 		for _, a := range rel.Assets {
 			switch a.Name {
 			case setupAssetName:
@@ -81,8 +88,8 @@ func (s *Server) latestRelease() (map[string]any, error) {
 
 func (s *Server) canInstallUpdates() bool { return s.updatesAllowed }
 
-func (s *Server) handleUpdateCheck(w http.ResponseWriter) {
-	rel, err := s.latestRelease()
+func (s *Server) handleUpdateCheck(w http.ResponseWriter, r *http.Request) {
+	rel, err := s.latestRelease(r.URL.Query().Get("fresh") == "1")
 	if err != nil {
 		sendJSON(w, 502, errJSON("Couldn't check for updates just now."), nil)
 		return
@@ -92,6 +99,7 @@ func (s *Server) handleUpdateCheck(w http.ResponseWriter) {
 	sendJSON(w, 200, map[string]any{
 		"current": version, "latest": latest, "newer": newerVersion(latest, version), "page": rel["page"],
 		"canInstall": s.canInstallUpdates() && setup != "",
+		"checked": rel["checked"], "stale": rel["stale"] == true,
 	}, nil)
 }
 
@@ -115,7 +123,7 @@ func (s *Server) handleUpdateInstall(w http.ResponseWriter, r *http.Request) {
 		sendJSON(w, 403, errJSON("Missing the X-Band-Watch header."), nil)
 		return
 	}
-	rel, err := s.latestRelease()
+	rel, err := s.latestRelease(false)
 	if err != nil {
 		sendJSON(w, 502, errJSON("Couldn't reach GitHub to check for updates."), nil)
 		return

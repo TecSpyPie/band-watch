@@ -175,6 +175,8 @@
     if (!fc.rows) { box.append(mk("p", { class: "bwx-note", text: fc.err ? "NOAA's forecast couldn't be reached. Band Watch will try again in 30 minutes." : "Loading NOAA's forecast…" })); return; }
     const now = Date.now();
     const rows = fc.rows.filter((r) => r.t > now - 24 * 3600e3).slice(0, 40);
+    // NOAA sometimes sends an empty or out-of-date file: say so rather than draw nothing (or fail).
+    if (!rows.length) { box.append(mk("p", { class: "bwx-note", text: "NOAA's Kp forecast is empty or out of date just now. Band Watch will try again in 30 minutes." })); return; }
     const future = rows.filter((r) => r.t + 3 * 3600e3 > now);
     const peak = future.reduce((m, r) => (r.kp > m.kp ? r : m), { kp: -1 });
     const need = kpForLat(homeLat());

@@ -58,6 +58,8 @@ function upstreamHandler(kind, url, body) {
   }
   if (kind === "update") return { tag_name: feed.latestTag || "v99.1.0", html_url: "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0", assets: [] };
   if (kind === "eibi") return eibiFile(url);
+  // The WA7BNM contest calendar: one pretend contest, so the Contests panel has something calm to show.
+  if (kind === "contest") return feed.contestRss || `<rss><channel><item><title>Pretend Sprint</title><link>https://www.contestcalendar.com/contestdetails.php?ref=1</link><description>0000Z-0100Z, Jan 1</description></item></channel></rss>`;
   if (kind === "pota") return feed.potaDown ? { status: 503 } : (feed.pota ? feed.pota() : XOTA.potaRows());
   if (kind === "qrz") {
     const q = url.searchParams;
@@ -107,6 +109,8 @@ async function openPage(t, setup) {
   // Tests never ask the real CelesTrak (it allows one fetch every 2 hours, and cloud test machines can't reach it):
   // an empty answer, which the Satellites panel takes calmly. Satellite tests put their own orbits in first.
   await page.context().route("https://celestrak.org/NORAD/**", (r) => r.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
+  // Nor NOAA's forecast files, which the space weather forecast fetches straight from the page: empty answers.
+  await page.context().route("https://services.swpc.noaa.gov/**", (r) => r.fulfill({ status: 200, contentType: r.request().url().endsWith(".json") ? "application/json" : "text/plain", body: r.request().url().endsWith(".json") ? "[]" : "" }));
   await page.goto(base + "/");
   await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
   return { page, errors };
@@ -2864,6 +2868,35 @@ test("updates: Settings says when a newer Band Watch is out, with a download lin
   await page.waitForFunction(() => /You have the newest version/.test(document.getElementById("abUpdate").textContent));
   feed.latestTag = null;
   assert.deepEqual(errors, []);
+});
+
+test("updates: Check now asks GitHub again and says when it last looked", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  await page.click("#optBtn");
+  await page.waitForFunction(() => /Band Watch 99\.1\.0 is available/.test(document.getElementById("abUpdate").textContent));
+  assert.match(await page.textContent("#abUpdate"), /Last checked just now\./);
+  assert.equal(await page.isVisible("#updCheckNow"), true);
+  assert.equal(await page.textContent("#updCheckNow"), "Check now");
+  // A new release comes out; Check now (after the 2-minute wait between real checks) finds it.
+  feed.latestTag = "v99.2.0";
+  await srv.advance(3 * 60e3);
+  const asked = page.waitForRequest((r) => r.url().endsWith("/api/update?fresh=1"));
+  await page.click("#updCheckNow");
+  await asked;
+  await page.waitForFunction(() => /Band Watch 99\.2\.0 is available/.test(document.getElementById("abUpdate").textContent));
+  assert.equal(await page.textContent("#updCheckNow"), "Check now");
+  assert.equal(await page.isDisabled("#updCheckNow"), false);
+  // GitHub can't be reached: a plain message, and the button stays for another try.
+  await page.route("**/api/update?fresh=1", (r) => r.fulfill({ status: 502, contentType: "application/json", body: "{}" }));
+  await page.click("#updCheckNow");
+  await page.waitForFunction(() => /Couldn't check for updates just now/.test(document.getElementById("abUpdate").textContent));
+  assert.equal(await page.isDisabled("#updCheckNow"), false);
+  // The wording for older checks
+  assert.match(await page.evaluate(() => updateCheckedText("2026-11-27T10:00:00Z", Date.parse("2026-11-27T10:05:30Z"))), /^Last checked 5 minutes ago \(.+\)\.$/);
+  assert.match(await page.evaluate(() => updateCheckedText("2026-11-27T10:00:00Z", Date.parse("2026-11-27T10:01:10Z"))), /^Last checked 1 minute ago /);
+  assert.equal(await page.evaluate(() => updateCheckedText("")), "");
+  feed.latestTag = null;
+  assert.deepEqual(errors.filter((e) => !/502/.test(e)), []);
 });
 
 test("updates: the Windows app installs an update and reloads into the new version", { skip }, async (t) => {

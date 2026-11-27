@@ -5,6 +5,14 @@ Each night (every other night) one idea is built on the `ideas` branch. Nothing 
 
 ## Done
 
+- **27 Nov 2026: "Check now" for updates.** Next on the list. The old "Check again" link only showed after a check
+  and got the server's answer from the last hour, so it never really looked again. Now Settings > Updates has a
+  **Check now** button that is always there, asks the server with `?fresh=1` (both servers then ask GitHub again if
+  their answer is over 2 minutes old, so lots of people pressing it can't run into GitHub's limit), and the Updates
+  line says "Last checked …". Tests: `test/api.test.js` (both servers), `desktop/update_test.go`, browser test
+  "updates: Check now…". **Also fixed while testing:** the space weather forecast crashed when NOAA's Kp file came
+  back empty (now a plain message), and the browser tests now get a pretend NOAA forecast and a pretend contest
+  calendar. On main, 62 of 75 browser tests fail in a cloud session because of those two; on `ideas` now 11 do.
 - **25 Nov 2026: ATS Mini band scan graph.** Next on the list. The ATS Mini has no scan command over USB, so Band
   Watch steps it with its `F` (set frequency) command and takes the signal level (RSSI) and SNR from the status line
   it already sends every half second, waiting for a line that is on the new frequency. Ready-made ranges, a graph with
@@ -27,11 +35,11 @@ Each night (every other night) one idea is built on the `ideas` branch. Nothing 
 
 ## Next in line
 
-1. A "Check now" button in Settings > Updates.
-2. Propagation forecast chart for the next 12 hours.
-3. DX cluster spots (only from a source whose terms allow it).
-4. Club Log / LoTW ADIF upload helper (no passwords stored).
-5. Small fixes and polish. Found on 25 Nov: about 11 browser tests fail on main itself in a cloud session, besides
-   the known ones (for example "large text on a phone" scrolls sideways by 81px, "RTL-SDR settings" and "FT4 decoder"
-   expect settings saved before newer options such as the attenuator and RTTY were added, and "decoder: sound-card
-   input" reads `sampleRate` of nothing). Worth a night of its own.
+1. Propagation forecast chart for the next 12 hours.
+2. DX cluster spots (only from a source whose terms allow it).
+3. Club Log / LoTW ADIF upload helper (no passwords stored).
+4. Small fixes and polish. Browser tests still failing in a cloud session on `ideas` (27 Nov), besides the three
+   known ones: "band selection drives the map" (0 spots instead of 41), "display options" (theme not saved as
+   night), "large text on a phone" (scrolls sideways by 81px), "UK band plan chart", "RTL-SDR settings" and
+   "FT4 decoder" (expect settings saved before newer options such as the attenuator were added), "parks on the
+   air" (times out), and "Digital voice add-on" (checks commands sent). Worth a night of its own.
