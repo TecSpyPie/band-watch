@@ -5,19 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClearRX by M3VRV &amp; King Coder</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/clearrx.css?v=1.4.0">
+<link rel="stylesheet" href="/clearrx.css?v=1.5.0">
 </head>
 <body>
-<main class="rack" aria-labelledby="title">
-  <span class="screw tl" aria-hidden="true"></span><span class="screw tr" aria-hidden="true"></span>
-  <span class="screw bl" aria-hidden="true"></span><span class="screw br" aria-hidden="true"></span>
-
-  <header class="top">
-    <h1 id="title"><span class="logo">ClearRX</span> <span class="by">by M3VRV &amp; King Coder</span></h1>
+<main class="win" aria-labelledby="title">
+  <header class="titlebar">
+    <h1 id="title"><svg class="tlogo" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5" /></svg>
+      <span class="logo">ClearRX</span> <span class="by">by M3VRV &amp; King Coder</span></h1>
     <span class="tag">radio audio processor</span>
     <span class="link" id="bwLink" hidden>Band Watch is using these settings</span>
-    <button type="button" class="key power" id="power" aria-pressed="false">Start</button>
   </header>
+
+  <!-- The toolbar: big buttons with a label underneath -->
+  <nav class="ribbon" aria-label="ClearRX toolbar">
+    <button type="button" class="tool power" id="power" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8" /><path d="M6.3 6.8a8 8 0 1 0 11.4 0" /></svg><span class="lbl">Start</span></button>
+    <span class="tsep" aria-hidden="true"></span>
+    <label class="tool tcheck" title="Hear the radio without ClearRX, to compare"><input type="checkbox" id="bypass"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h12l-3-3" /><path d="M20 16H8l3 3" /></svg><span class="lbl">Compare</span></label>
+    <button type="button" class="tool" id="resetOrder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6" /><path d="M17 15l3 3-3 3" /></svg><span class="lbl">Default order</span></button>
+    <button type="button" class="tool" id="foldAll" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg><span class="lbl">Fold all</span></button>
+    <span class="tsep" aria-hidden="true"></span>
+    <a class="tool" href="#" id="quit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg><span class="lbl">Close ClearRX</span></a>
+  </nav>
 
   <section class="radios" aria-labelledby="radiosLabel">
     <span id="radiosLabel" class="rlabel">My radio</span>
@@ -31,44 +39,62 @@
     <label class="vol">Volume <input type="range" id="vol" min="0" max="200" value="100" aria-describedby="volVal"> <span id="volVal">100%</span></label>
   </section>
 
-  <section class="screens" aria-label="Spectrum and level">
-    <div class="screen">
-      <canvas id="spec" aria-label="The sound's spectrum: grey before ClearRX, blue after"></canvas>
-      <span class="key-before">before</span><span class="key-after">after</span>
-    </div>
-    <div class="meters">
+  <!-- The big graph, with its choices down the left -->
+  <section class="graphrow" aria-label="Spectrum and EQ">
+    <div class="side">
+      <fieldset class="opts">
+        <legend>Show</legend>
+        <label><input type="checkbox" id="showSpec" checked> Spectrum</label>
+        <label><input type="checkbox" id="showEq" checked> EQ curve</label>
+      </fieldset>
+      <fieldset class="opts">
+        <legend>Freq. scale</legend>
+        <label><input type="radio" name="fscale" value="log" checked> Log</label>
+        <label><input type="radio" name="fscale" value="linear"> Linear</label>
+      </fieldset>
       <div class="meter"><span>In</span><div class="bar"><i id="inBar"></i></div><b id="inDb"></b></div>
       <p class="warn" id="clip" role="status"></p>
+    </div>
+    <div class="screen">
+      <canvas id="spec" aria-label="The sound's spectrum (grey before ClearRX, blue after) and the EQ curve. Drag a yellow point up or down to set that band; the EQ sliders below do the same with the keyboard."></canvas>
+      <span class="key-before">before</span><span class="key-after">after</span><span class="key-eq">EQ</span>
     </div>
   </section>
 
   <section class="controls" aria-label="Effects rack">
-    <div class="presets" id="presets" role="group" aria-label="Preset"></div>
-    <div class="rackbar">
-      <label class="sw bypass"><input type="checkbox" id="bypass"> Hear it without ClearRX (to compare)</label>
-      <button type="button" class="key mini" id="resetOrder">Default order</button>
-    </div>
-    <p class="rackhelp">The sound goes through the modules from the top to the bottom. Switch a module on or off, and use its arrows to move it:
-      the order changes how the sound comes out (for example, a compressor after the EQ works on the EQ's louder sound).</p>
+    <div class="presetrow"><span class="rlabel" id="presetsLabel">Presets</span>
+      <div class="presets" id="presets" role="group" aria-labelledby="presetsLabel"></div></div>
+    <p class="rackhelp">The sound goes through the effects from the top to the bottom. Switch an effect on or off with its green button,
+      fold it with the arrow, and use the up and down arrows to move it: the order changes how the sound comes out
+      (for example, a compressor after the EQ works on the EQ's louder sound).</p>
     <p class="rackhelp" id="rackNote" role="status"></p>
     <ol class="mods" id="mods"></ol>
   </section>
 
-  <section class="outmeter" aria-label="Output level">
-    <span class="olabel">Output</span>
-    <div class="bar"><i id="outBar"></i></div>
-    <b id="outDb"></b>
-    <span class="lamp" id="outLamp">CLIP</span>
-    <span class="orms" id="outRms"></span>
-    <p class="warn" id="outWarn" role="status"></p>
-  </section>
-
-  <p class="status" id="status" role="status">Pick where the sound comes from (your radio's USB sound card, or the PC's line-in), then press Start.</p>
-  <footer class="small">Settings are kept on this PC. While ClearRX is open, Band Watch can send its RTL-SDR sound through it
-    (Listen &gt; "Send my RTL-SDR sound through ClearRX"). <a href="#" id="quit">Close ClearRX</a></footer>
+  <!-- The status bar: what ClearRX is doing, and the output level -->
+  <footer class="statusbar">
+    <div class="srow">
+      <span class="slamp" id="sLamp" aria-hidden="true"></span>
+      <p class="status" id="status" role="status">Pick where the sound comes from (your radio's USB sound card, or the PC's line-in), then press Start.</p>
+      <section class="outmeter" aria-label="Output level">
+        <span class="olabel">Output</span>
+        <div class="mwrap">
+          <div class="bar seg"><i id="outBar"></i></div>
+          <div class="scale" aria-hidden="true"><span>-48</span><span>-36</span><span>-24</span><span>-12</span><span>-6</span><span>0</span></div>
+        </div>
+        <b id="outDb"></b>
+        <span class="lamp" id="outLamp">CLIP</span>
+        <span class="orms" id="outRms"></span>
+        <p class="warn" id="outWarn" role="status"></p>
+      </section>
+    </div>
+    <p class="small">Settings are kept on this PC. While ClearRX is open, Band Watch can send its RTL-SDR sound through it
+      (Listen &gt; "Send my RTL-SDR sound through ClearRX").</p>
+  </footer>
 </main>
-<script src="/js/rxfx.js?v=1.4.0"></script>
-<script src="/js/scope3d.js?v=1.4.0"></script>
-<script src="/js/app.js?v=1.4.0"></script>
+<script src="/js/rxfx.js?v=1.5.0"></script>
+<script src="/js/scope3d.js?v=1.5.0"></script>
+<script src="/js/eqgraph.js?v=1.5.0"></script>
+<script src="/js/app.js?v=1.5.0"></script>
 </body>
 </html>
