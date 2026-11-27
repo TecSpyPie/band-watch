@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// The installer ends only an rtl_tcp running from the Band Watch folder, before copying files.
+// The installer ends only an rtl_tcp running from the HamShack folder, before copying files.
 func TestRtlStopScript(t *testing.T) {
 	s := rtlStopScript(`C:\BandWatch`)
 	for _, want := range []string{"Get-Process rtl_tcp", `StartsWith('C:\BandWatch\'`, "OrdinalIgnoreCase", "Stop-Process -Force"} {

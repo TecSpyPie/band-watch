@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: antenna rotator maths and the controllers' command languages. Plain JavaScript, used by the
+/* HamShack by M0GLP & M3VRV: antenna rotator maths and the controllers' command languages. Plain JavaScript, used by the
  * page (window.RotMath) and the tests (require).
  *   bearing()  great-circle beam heading from you to a place (short path, or long path: the other way round)
  *   PROTOCOLS  Yaesu GS-232A, GS-232B (azimuth and elevation), EasyComm II (K3NG and many home-built controllers),

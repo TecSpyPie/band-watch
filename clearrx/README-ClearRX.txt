@@ -47,11 +47,11 @@ Use
     compressor / limiter.
   - Your own changes make the preset "Custom". Everything, including the order, is
     kept for next time.
-  - While ClearRX is open, Band Watch's Listen shows "Send my RTL-SDR sound
+  - While ClearRX is open, HamShack's Listen shows "Send my RTL-SDR sound
     through ClearRX".
   - Settings are kept in clearrx-settings.json next to ClearRX.exe.
   - Close it with "Close ClearRX" at the bottom of its window.
 
 If Windows or your virus checker blocks ClearRX.exe: it isn't signed yet, and
-new unsigned programs are sometimes flagged by mistake. Band Watch works
+new unsigned programs are sometimes flagged by mistake. HamShack works
 without it. Source code: https://github.com/TecSpyPie/band-watch (clearrx folder).

@@ -213,7 +213,7 @@ function parseLogbookReply(text) {
   return {
     ok: result === "OK" || result === "REPLACE",
     result: result || "FAIL",
-    reason: reason || (result ? "" : "QRZ gave an answer Band Watch didn’t understand."),
+    reason: reason || (result ? "" : "QRZ gave an answer HamShack didn’t understand."),
     duplicate: /duplicate/i.test(reason),
     auth: result === "AUTH" || /invalid api key|access key|not authorized|no such key/i.test(reason),
     logid: p.get("LOGID") || p.get("LOGIDS") || null,

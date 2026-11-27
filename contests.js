@@ -1,4 +1,4 @@
-// Band Watch: upcoming contests from the WA7BNM Contest Calendar RSS feed.
+// HamShack: upcoming contests from the WA7BNM Contest Calendar RSS feed.
 //   GET /api/contests -> { source, link, contests[{ name, link, when, start, end }], at, stale? }
 // The feed's terms allow showing it on a non-profit site when it is labelled "WA7BNM Contest Calendar" and links
 // back to the site; the page does both. Fetched at most once every 6 hours and shared by everyone.

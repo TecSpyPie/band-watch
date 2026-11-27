@@ -725,7 +725,7 @@ test("RTL-SDR: starts rtl_tcp for the user, only the real program name, and stop
   const post = (p, body) => get(p, { method: "POST", headers: { ...SDR, "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const port = await new Promise((resolve) => { const s = net.createServer().listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 
-  assert.equal((await get("/api/sdr/launch")).status, 403, "needs the Band Watch header");
+  assert.equal((await get("/api/sdr/launch")).status, 403, "needs the HamShack header");
   assert.equal((await post("/api/sdr/launch", { path: "/bin/sh", port, device: 0 })).status, 404, "only rtl_tcp");
   assert.match(JSON.parse((await post("/api/sdr/launch", { path: "/bin/sh", port, device: 0 })).body).error, /isn't rtl_tcp/);
   assert.equal((await post("/api/sdr/launch", { path: "/nowhere/rtl_tcp.exe", port, device: 0 })).status, 404);
@@ -780,7 +780,7 @@ test("RTL-SDR: a stuck rtl_tcp (header, then silence) reaches the page as just t
 
 // What the page does to restart the rtl_tcp it started: stop it, wait until it has gone, start it again.
 // (The fixture is a shell script, so this can't run on Windows.)
-test("RTL-SDR: stop, wait, launch again gives a fresh rtl_tcp that Band Watch started (stall restart)", { skip: process.platform === "win32" }, async () => {
+test("RTL-SDR: stop, wait, launch again gives a fresh rtl_tcp that HamShack started (stall restart)", { skip: process.platform === "win32" }, async () => {
   const path = require("path");
   const net = require("net");
   const exe = path.join(__dirname, "fixtures", "rtl_tcp");

@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: plays the RTL-SDR audio. The page posts 48 kHz blocks; this keeps a short
+/* HamShack by M0GLP & M3VRV: plays the RTL-SDR audio. The page posts 48 kHz blocks; this keeps a short
  * buffer so the sound stays smooth, and trims it if it grows (the dongle's clock and the sound
  * card's never quite agree). */
 "use strict";

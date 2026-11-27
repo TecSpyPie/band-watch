@@ -31,7 +31,7 @@ func TestHealthz(t *testing.T) {
 		t.Fatalf("healthz = %v", h)
 	}
 	if w.Header().Get("Access-Control-Allow-Origin") != "http://localhost:8073" {
-		t.Fatal("Band Watch should be allowed to read healthz")
+		t.Fatal("HamShack should be allowed to read healthz")
 	}
 }
 
@@ -47,7 +47,7 @@ func TestOtherSitesCantReadSettings(t *testing.T) {
 	}
 	w = do(t, a, "POST", "/api/settings", `{"preset":"cw"}`, map[string]string{"Origin": "http://localhost:8073"})
 	if w.Code != 403 {
-		t.Fatalf("POST from Band Watch = %d (it only reads them)", w.Code)
+		t.Fatalf("POST from HamShack = %d (it only reads them)", w.Code)
 	}
 }
 
@@ -73,7 +73,7 @@ func TestSettingsSavedCheckedAndLinked(t *testing.T) {
 	if b := NewApp(file, nil).settings; b.Preset != "custom" || b.Lo != 50 {
 		t.Fatalf("not loaded: %+v", b)
 	}
-	// Band Watch reading the settings shows as "linked" for a few seconds
+	// HamShack reading the settings shows as "linked" for a few seconds
 	now := time.Now()
 	a.now = func() time.Time { return now }
 	do(t, a, "GET", "/api/settings", "", map[string]string{"Origin": "http://127.0.0.1:8073"})

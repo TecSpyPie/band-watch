@@ -1,5 +1,5 @@
 "use strict";
-// Draws Band Watch's app icons (the favicon's teal tile and white wave) as PNG files, with no
+// Draws HamShack's app icons (the favicon's teal tile and white wave) as PNG files, with no
 // dependencies: node tools/make-icons.js public/icons
 const fs = require("fs");
 const path = require("path");

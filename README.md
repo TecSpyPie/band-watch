@@ -1,4 +1,4 @@
-# Band Watch by M3VRV & King Coder
+# HamShack by M0GLP & M3VRV
 
 Live HF band conditions for radio amateurs: which bands are open from where you are, from
 PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence).
@@ -10,7 +10,7 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - **Updating:** Settings > Updates > **Install update**, or run a newer BandWatch-Setup.exe: it
   updates your copy in place. No need to uninstall first.
 
-![Band Watch: your best band right now, world clock, map and band table](docs/images/overview.png)
+![HamShack: your best band right now, world clock, map and band table](docs/images/overview.png)
 
 ## What it does
 
@@ -18,14 +18,14 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 - Band scope: live spectrum and waterfall from your RTL-SDR, or drawn from spots
 - **ClearRX by M3VRV & King Coder** (Windows): a radio audio processor of its own (a separate download, ClearRX-Windows.zip): voice and CW filters,
   auto notch, noise reduction and steady volume for the sound from your radio, a mixer or any sound card. While it's
-  open, Band Watch can send its RTL-SDR sound through it
+  open, HamShack can send its RTL-SDR sound through it
 - Listen: public WebSDR/KiwiSDR receivers, or your own RTL-SDR (Blog V4, V3 or others) through rtl_tcp,
   which comes with the Windows app
 - **Radio control:** tunes your Yaesu (FT-991A, FT-710, FTDX10, FTDX101), Icom (IC-7300, IC-705, IC-7610,
   IC-9700 and other CI-V radios) or Kenwood (TS-590, TS-890, TS-990, TS-480, TS-2000) over USB when you click
   a spot, the scope or a decoder, and follows the radio's dial (Chrome or Edge on the PC the radio is plugged into)
 - **ATS Mini:** the SI4732 pocket receiver (firmware 2.34 or later, Settings > USB Port > Ad hoc) works the same way:
-  Band Watch changes its band and mode and tunes it, shows its signal strength and SNR, and has a panel with a
+  HamShack changes its band and mode and tunes it, shows its signal strength and SNR, and has a panel with a
   live picture of the radio's screen and its buttons
 - **Malahit DSP2:** tuned over its Malahit CAT USB port (Kenwood TS-480 commands), 10 kHz to 2 GHz
 - Decoders for FT8, FT4, WSPR and CW (Morse), with a results window
@@ -71,19 +71,19 @@ PSK Reporter spots and NOAA solar data. Free to use, free to share (MIT licence)
 
 | RTL-SDR settings | On a phone (dark mode) |
 |---|---|
-| ![Settings: dongle type, sample rate, filter widths, squelch](docs/images/settings-rtl-sdr.png) | <img src="docs/images/phone.png" alt="Band Watch on a phone in dark mode" width="300"> |
+| ![Settings: dongle type, sample rate, filter widths, squelch](docs/images/settings-rtl-sdr.png) | <img src="docs/images/phone.png" alt="HamShack on a phone in dark mode" width="300"> |
 
 *Screenshots use demo spots, test signals and a pretend radio.*
 
 ## Connect your radio
 
-Band Watch tunes your radio over its USB cable (CAT), in Chrome or Edge. Install the maker's USB driver first.
+HamShack tunes your radio over its USB cable (CAT), in Chrome or Edge. Install the maker's USB driver first.
 
 - **Yaesu FT-991A** (FT-710, FTDX10, FTDX101): Silicon Labs CP210x driver. **Settings > Radio control**: Yaesu,
   4800 baud (menu 031 CAT RATE). **Connect radio**, then pick the **Enhanced COM Port**.
 - **Icom IC-7300** (IC-705, IC-7610, IC-9700…): CP210x driver from icomjapan.com. On the radio,
   **MENU > SET > Connectors > CI-V**: CI-V USB Port *Unlink from [REMOTE]*, CI-V USB Baud Rate *Auto*,
-  CI-V Transceive *ON*. In Band Watch: Icom, model IC-7300, 115200 baud, **Connect radio**, pick the CP210x port.
+  CI-V Transceive *ON*. In HamShack: Icom, model IC-7300, 115200 baud, **Connect radio**, pick the CP210x port.
 - **Kenwood** (TS-590, TS-890, TS-990, TS-480, TS-2000): Kenwood's COM port driver; match the radio's baud rate.
 - **ATS Mini**: no driver; on the radio **Settings > USB Port > Ad hoc**.
 - **Malahit DSP2**: pick its **Malahit CAT** port (Windows may need the driver from malahiteam.com).
@@ -95,7 +95,7 @@ Band Watch tunes your radio over its USB cable (CAT), in Chrome or Edge. Install
 Until the Windows files are code-signed (see [CODE_SIGNING.md](CODE_SIGNING.md)), Windows may say
 "Windows protected your PC": click **More info**, then **Run anyway**. If Smart App Control is on,
 Windows blocks unsigned programs outright: use `install.bat` from **BandWatch-Windows.zip** instead,
-which runs Band Watch with Node.js. See [windows/README-Windows.txt](windows/README-Windows.txt).
+which runs HamShack with Node.js. See [windows/README-Windows.txt](windows/README-Windows.txt).
 
 ## Run from source
 
@@ -127,13 +127,13 @@ both exes, `/healthz` reports it under `build`, and Settings > About this build 
 
 ## About SOTA
 
-Band Watch doesn't show SOTA spots. SOTA's API terms say software written with AI may not connect to the SOTA
-API without their approval, and Band Watch is written with Claude. You can still log summit contacts and
+HamShack doesn't show SOTA spots. SOTA's API terms say software written with AI may not connect to the SOTA
+API without their approval, and HamShack is written with Claude. You can still log summit contacts and
 export them with their SOTA reference in ADIF.
 
 ## Support
 
-Band Watch and ClearRX are free and open source, and always will be.
+HamShack and ClearRX are free and open source, and always will be.
 <!-- SUPPORT_URL: the owner can add a line here, e.g. "If you'd like to say thanks: https://ko-fi.com/yourname" (also set SUPPORT_URL in public/js/support.js) -->
 
 ## Licence

@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: spots an rtl_tcp that is connected but sends no signal (a "stall"), and decides what to do.
+/* HamShack by M0GLP & M3VRV: spots an rtl_tcp that is connected but sends no signal (a "stall"), and decides what to do.
  * Pure functions, so they can be tested in Node. Receive only: nothing here touches a transmitter. */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -12,10 +12,10 @@
   const WINDOW_MS = 10 * 60 * 1000; // ... per this long
 
   const MSG_FOREIGN = "rtl_tcp is connected but not sending any signal. It may be stuck: close and restart it.";
-  const MSG_LIMIT = "rtl_tcp stopped sending signal again after Band Watch restarted it twice in 10 minutes, so Band Watch has stopped trying. "
+  const MSG_LIMIT = "rtl_tcp stopped sending signal again after HamShack restarted it twice in 10 minutes, so HamShack has stopped trying. "
     + "Unplug and replug the dongle, then press Listen.";
-  const msgPortHeld = (port) => `Another program (most likely another rtl_tcp) is holding port ${port}, so Band Watch couldn't start its own. `
-    + "Band Watch won't close a program it didn't start: close that rtl_tcp yourself, then press Listen.";
+  const msgPortHeld = (port) => `Another program (most likely another rtl_tcp) is holding port ${port}, so HamShack couldn't start its own. `
+    + "HamShack won't close a program it didn't start: close that rtl_tcp yourself, then press Listen.";
 
   /** True when the header arrived (headerAt, a ms clock reading) but no I/Q bytes since (lastIqAt, 0/null = none yet). */
   function isStalled({ headerAt, lastIqAt, now, timeoutMs = STALL_MS }) {
@@ -32,7 +32,7 @@
     return { recent, allowed: recent.length < max };
   }
 
-  /** Did Band Watch start the rtl_tcp that answers on this port? (status is GET /api/sdr/launch) */
+  /** Did HamShack start the rtl_tcp that answers on this port? (status is GET /api/sdr/launch) */
   function isOurs(status, port) {
     if (!status || status.running !== true || !Array.isArray(status.args)) return false;
     const i = status.args.indexOf("-p");

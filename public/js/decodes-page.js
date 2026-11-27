@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: the decodes window. Band Watch's main window sends each cycle's decodes here. */
+/* HamShack by M0GLP & M3VRV: the decodes window. HamShack's main window sends each cycle's decodes here. */
 "use strict";
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -41,18 +41,18 @@
       const cls = (mine ? "dcmine" : /^CQ /.test(r.text) ? "dccq" : "") + (last !== null && r.cycle !== last ? " dcnew" : "");
       last = r.cycle;
       return `<tr class="${cls}">${DcCols.cells(s, h.shown, r, r.text.split(" ").map(word).join(" "))}</tr>`;
-    }).join("") || `<tr><td colspan="${h.shown.length}" class="muted small">No decodes yet. Start decoding in Band Watch.</td></tr>`;
+    }).join("") || `<tr><td colspan="${h.shown.length}" class="muted small">No decodes yet. Start decoding in HamShack.</td></tr>`;
   }
   const tick = () => { $("dwClock").textContent = DcCols.clock(DcCols.get()); };
   DcCols.menu($("dwColsBox"), COLS, () => { render(); tick(); });
   DcCols.resizable($("dwTab"), (id, w) => { DcCols.saveWidth(id, w); render(); });
-  // Changed in Band Watch's main window: follow it here.
+  // Changed in HamShack's main window: follow it here.
   window.addEventListener("storage", (e) => { if (e.key === DcCols.KEY) { DcCols.menu($("dwColsBox"), COLS, () => { render(); tick(); }); render(); tick(); } });
   tick();
   setInterval(tick, 1000);
 
   if (!("BroadcastChannel" in window)) {
-    $("dwStatus").textContent = "This browser can't link windows; use the decoder in Band Watch itself.";
+    $("dwStatus").textContent = "This browser can't link windows; use the decoder in HamShack itself.";
     return;
   }
   const ch = new BroadcastChannel("bw-decodes");

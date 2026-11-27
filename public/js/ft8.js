@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: FT8 and FT4 decoder (and encoder, for testing), in plain JavaScript.
+/* HamShack by M0GLP & M3VRV: FT8 and FT4 decoder (and encoder, for testing), in plain JavaScript.
  * Implements the published WSJT-X protocols: 77-bit messages, CRC-14, LDPC(174,91) error
  * correction, 8-FSK (FT8) / 4-FSK (FT4) with Costas sync. The approach follows ft8_lib
  * (Karlis Goba, MIT licence): a spectrogram, a Costas-array sync search, soft bits, then

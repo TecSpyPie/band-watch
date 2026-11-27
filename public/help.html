@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Help · Band Watch by M3VRV &amp; King Coder</title>
+<title>Help · HamShack by M0GLP &amp; M3VRV</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css?v=1.43.1">
 <script>
-  // The same colours as Band Watch itself (Settings > Display)
+  // The same colours as HamShack itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
 </script>
 <style>
@@ -34,8 +34,8 @@
 <body>
 <div class="help wrap">
   <header>
-    <h1>Band Watch help</h1>
-    <a class="lbtn" href="/">Back to Band Watch</a>
+    <h1>HamShack help</h1>
+    <a class="lbtn" href="/">Back to HamShack</a>
   </header>
 
   <section class="panel" id="contents" aria-labelledby="hContents">
@@ -66,26 +66,26 @@
 
   <section class="panel" id="start" aria-labelledby="hStart">
     <h2 id="hStart">Getting started</h2>
-    <p>Band Watch shows which bands are open from where you are, using live reports of who is hearing whom
+    <p>HamShack shows which bands are open from where you are, using live reports of who is hearing whom
       (PSK Reporter). It can tune your radio, let you listen, decode FT8 and more, and keep your log.</p>
     <ol>
       <li>At the top, type your <b>locator</b> (grid square, like IO93) in <b>Your locator</b>.</li>
-      <li>Type your <b>callsign</b> in <b>Your callsign</b>, so Band Watch can find reports of your own signal.</li>
+      <li>Type your <b>callsign</b> in <b>Your callsign</b>, so HamShack can find reports of your own signal.</li>
       <li>The big line near the top tells you the <b>best band right now</b>. It updates every minute.</li>
     </ol>
-    <figure><img src="/help/overview.webp" alt="Band Watch's main page: the best band now, the world clock, and the spot map" loading="lazy"
-      <figcaption>The top of Band Watch: your best band now, the world clock and the spot map.</figcaption></figure>
+    <figure><img src="/help/overview.webp" alt="HamShack's main page: the best band now, the world clock, and the spot map" loading="lazy"
+      <figcaption>The top of HamShack: your best band now, the world clock and the spot map.</figcaption></figure>
   </section>
 
   <section class="panel" id="radio" aria-labelledby="hRadio">
     <h2 id="hRadio">Connect your radio</h2>
-    <p>Band Watch tunes your radio over its USB cable when you click a spot, the band scope, a shortwave station or the
+    <p>HamShack tunes your radio over its USB cable when you click a spot, the band scope, a shortwave station or the
       Radio panel, and follows your radio when you turn its dial. Close other programs that use the radio (WSJT-X, a
       logger) first.</p>
     <h3>Yaesu FT-991A (also FT-710, FTDX10, FTDX101)</h3>
     <ol>
       <li>Install the <b>Silicon Labs CP210x</b> USB driver (on yaesu.com, on the radio's page), and plug the radio in.</li>
-      <li>In Band Watch, <b class="btn">Settings → Radio control</b>: Radio make <b>Yaesu</b>, Baud rate <b>4800</b>
+      <li>In HamShack, <b class="btn">Settings → Radio control</b>: Radio make <b>Yaesu</b>, Baud rate <b>4800</b>
         (the FT-991A's menu 031 CAT RATE).</li>
       <li>Click <b class="btn">Connect radio</b> at the top and pick the <b>Enhanced COM Port</b>.</li>
     </ol>
@@ -96,9 +96,9 @@
         <ul>
           <li><b>CI-V USB Port:</b> Unlink from [REMOTE]</li>
           <li><b>CI-V USB Baud Rate:</b> Auto</li>
-          <li><b>CI-V Transceive:</b> ON (so Band Watch follows the radio's dial)</li>
+          <li><b>CI-V Transceive:</b> ON (so HamShack follows the radio's dial)</li>
         </ul></li>
-      <li>In Band Watch, <b class="btn">Settings → Radio control</b>: Radio make <b>Icom</b>, Icom model <b>IC-7300</b>,
+      <li>In HamShack, <b class="btn">Settings → Radio control</b>: Radio make <b>Icom</b>, Icom model <b>IC-7300</b>,
         Baud rate <b>115200</b>.</li>
       <li>Click <b class="btn">Connect radio</b> and pick the <b>Silicon Labs CP210x</b> (or "USB to UART") port.</li>
     </ol>
@@ -119,7 +119,7 @@
 
   <section class="panel" id="panel" aria-labelledby="hPanel">
     <h2 id="hPanel">The Radio panel</h2>
-    <p>The front of a radio on your screen. It moves the same dial as the rest of Band Watch, so your radio and Listen follow it.</p>
+    <p>The front of a radio on your screen. It moves the same dial as the rest of HamShack, so your radio and Listen follow it.</p>
     <figure><img src="/help/radio-panel.webp" alt="The Radio panel: S-meter, big frequency display, spectrum, waterfall, band and mode keys, and the tuning knob" loading="lazy">
       <figcaption>The Radio panel with an FT-991A connected.</figcaption></figure>
     <ul>
@@ -140,10 +140,10 @@
         on an Icom P.AMP), <b>ATT</b>, <b>NB</b> (noise blanker), <b>DNR</b> (noise reduction) and <b>Auto notch</b>.
         They follow the radio's own knobs within a few seconds.</li>
       <li><b>Pop out ⧉:</b> puts the radio, with Listen underneath, in its own window. Drag it onto another screen.
-        <b>Back in Band Watch</b> brings it home.</li>
+        <b>Back in HamShack</b> brings it home.</li>
     </ul>
-    <p class="warn">The Radio panel only tunes and listens. Band Watch transmits only FT8 and FT4, only from the Decoder's
-      <b>Transmit</b> box, and only while you have <b>Enable TX</b> switched on (it's off every time Band Watch starts).</p>
+    <p class="warn">The Radio panel only tunes and listens. HamShack transmits only FT8 and FT4, only from the Decoder's
+      <b>Transmit</b> box, and only while you have <b>Enable TX</b> switched on (it's off every time HamShack starts).</p>
   </section>
 
   <section class="panel" id="listen" aria-labelledby="hListen">
@@ -160,17 +160,17 @@
 
   <section class="panel" id="rtlsdr" aria-labelledby="hRtl">
     <h2 id="hRtl">Your RTL-SDR</h2>
-    <p>Band Watch comes with rtl_tcp and starts it for you. Windows needs the dongle's driver changed once first, or no
+    <p>HamShack comes with rtl_tcp and starts it for you. Windows needs the dongle's driver changed once first, or no
       program can use it (even though Windows shows it's plugged in).</p>
     <p>If the page says <b>rtl_tcp is connected but not sending any signal</b>, rtl_tcp has got stuck (it can after many hours
-      running). If Band Watch started it, Band Watch restarts it for you (at most twice in 10 minutes). If you started it yourself,
-      Band Watch leaves it alone: close it and start it again, or press <b class="btn">Restart receiver</b> to use Band Watch's own copy.</p>
+      running). If HamShack started it, HamShack restarts it for you (at most twice in 10 minutes). If you started it yourself,
+      HamShack leaves it alone: close it and start it again, or press <b class="btn">Restart receiver</b> to use HamShack's own copy.</p>
     <ol>
       <li>Download <b>Zadig</b> from zadig.akeo.ie and run it.</li>
       <li>Click <b class="btn">Options → List All Devices</b>.</li>
       <li>Pick <b>Bulk-In, Interface (Interface 0)</b> (or RTL2838UHIDIR / RTL2832U). Not your keyboard, mouse or radio.</li>
       <li>Make sure the right-hand box says <b>WinUSB</b>, then click <b class="btn">Replace Driver</b>.</li>
-      <li>Unplug the dongle, plug it back in, and restart Band Watch.</li>
+      <li>Unplug the dongle, plug it back in, and restart HamShack.</li>
       <li>In Listen, pick <b>Receiver: My RTL-SDR</b> and click <b class="btn">Listen</b>.</li>
     </ol>
     <figure><img src="/help/listen-rtl-sdr.webp" alt="The Listen panel playing through an RTL-SDR, with its spectrum and waterfall" loading="lazy">
@@ -179,16 +179,16 @@
 
   <section class="panel" id="clearrx" aria-labelledby="hCrx">
     <h2 id="hCrx">ClearRX: cleaner radio sound</h2>
-    <p><b>ClearRX by M3VRV &amp; King Coder</b> is a radio audio processor for Windows that works with Band Watch. It's a program of its own,
+    <p><b>ClearRX by M3VRV &amp; King Coder</b> is a radio audio processor for Windows that works with HamShack. It's a program of its own,
       a separate download. It takes the sound from your radio and plays it back cleaned up: less hiss, no
       whistles, and a steady volume.</p>
     <ol>
       <li>Download <b>ClearRX-Windows.zip</b> from the latest release on GitHub
         (github.com/TecSpyPie/band-watch/releases/latest) and unzip it into <b>C:\BandWatch\ClearRX</b>.
-        Double-click <b>ClearRX.exe</b>. (The next Band Watch update adds a desktop icon for it.)</li>
+        Double-click <b>ClearRX.exe</b>. (The next HamShack update adds a desktop icon for it.)</li>
       <li>Under <b>My radio</b>, pick yours: <b>RTL-SDR</b>, <b>Yaesu</b>, <b>Icom</b>, <b>ATS Mini</b>, <b>Malahit</b> or
         <b>Other / mixer</b>. ClearRX finds its sound input, sets a good starting preset and shows a tip for that radio
-        (for the RTL-SDR, the sound comes through Band Watch's Listen instead).</li>
+        (for the RTL-SDR, the sound comes through HamShack's Listen instead).</li>
       <li>Or, in <b>Sound from</b>, pick where your radio's sound comes in yourself: for the IC-7300 or FT-991A it's the radio's
         <b>USB Audio CODEC</b>; otherwise the PC's line-in, or your mixer or sound card.</li>
       <li>In <b>Play to</b>, pick your speakers or headphones (not the radio's USB sound, or you'd send it back to the radio).</li>
@@ -205,12 +205,12 @@
       such as electric fences and ignition (Strong catches more); <b>Notch at</b> removes a whistle at the frequency you
       choose; <b>Squelch</b> keeps quiet between signals (-70 dB opens easily, -30 dB only for strong ones);
       <b>Bass</b> and <b>Treble</b> lift or cut the low and high ends. Picking <b>Off</b> switches these off too.</p>
-    <p><b>With Band Watch:</b> while ClearRX is open, Listen shows <b>Send my RTL-SDR sound through ClearRX</b>. Tick it
-      and your RTL-SDR's sound is cleaned up with ClearRX's settings; change them in the ClearRX window. Band Watch
+    <p><b>With HamShack:</b> while ClearRX is open, Listen shows <b>Send my RTL-SDR sound through ClearRX</b>. Tick it
+      and your RTL-SDR's sound is cleaned up with ClearRX's settings; change them in the ClearRX window. HamShack
       works just the same when ClearRX is closed.</p>
     <p>If the sound coming in is too loud, ClearRX says so: turn down the radio's USB audio level (on the IC-7300,
       MENU &gt; SET &gt; Connectors &gt; ACC/USB AF Output Level) or the Volume in ClearRX. If Windows says it blocked
-      ClearRX.exe, that's Smart App Control: ClearRX isn't signed yet. Band Watch works without it.</p>
+      ClearRX.exe, that's Smart App Control: ClearRX isn't signed yet. HamShack works without it.</p>
   </section>
 
   <section class="panel" id="bands" aria-labelledby="hBands">
@@ -227,7 +227,7 @@
         buttons (or pinch) to zoom, drag to move the map, double-click or press <b class="btn">&#8962;</b> to see the whole
         world again. Satellites, POTA activators and APRS stations show here too when you switch them on. <b class="btn">Bowl</b>
         is the older, simpler chart without coastlines; your choice is remembered. It works in the map's own window (⧉) too.
-        The map uses the spots Band Watch already has, so it asks PSK Reporter for nothing extra.</li>
+        The map uses the spots HamShack already has, so it asks PSK Reporter for nothing extra.</li>
       <li><b>2 m and 70 cm:</b> the band lists, activity table, spots map and band scope include <b>2 m</b> and <b>70 cm</b>, with
         spots from PSK Reporter (FT8 is on 144.174 and 432.174 MHz). They use the same spots already fetched every 5 minutes, so nothing
         extra is asked of PSK Reporter. The <b>UK band plan</b> has both bands too: CW and beacons, narrow band and FT8, satellites, FM
@@ -255,7 +255,7 @@
 
   <section class="panel" id="decoders" aria-labelledby="hDec">
     <h2 id="hDec">Decoders: FT8, FT4, WSPR, CW</h2>
-    <p>Band Watch can decode what your receiver hears, like WSJT-X. Your PC's clock must be right to within a second.</p>
+    <p>HamShack can decode what your receiver hears, like WSJT-X. Your PC's clock must be right to within a second.</p>
     <ol>
       <li>Pick the <b>Mode</b>: FT8, FT4, WSPR, CW or RTTY (see <a href="#rtty">RTTY</a>).</li>
       <li>Pick <b>Audio from</b>: <b>My RTL-SDR</b>, or <b>This computer's sound input</b> for a radio's audio
@@ -308,11 +308,11 @@
         On FT8, look at the waterfall and pick a clear spot.</li>
       <li><b>Say who you are.</b> Give your callsign at the start and end of each contact and regularly in between,
         as your licence requires. Don't transmit without identifying.</li>
-      <li><b>Keep to the band plan.</b> CW in the CW parts, data in the data parts, phone where phone belongs. Band Watch
+      <li><b>Keep to the band plan.</b> CW in the CW parts, data in the data parts, phone where phone belongs. HamShack
         shows the UK band plan and won't transmit data in the wrong segments.</li>
       <li><b>Use only the power you need.</b> Less power, less interference, and more fun when it works. Never go above
         your licence's limit.</li>
-      <li><b>Keep your signal clean.</b> Set your audio level so the ALC only just moves (FT8, SSTV, CW from Band Watch),
+      <li><b>Keep your signal clean.</b> Set your audio level so the ALC only just moves (FT8, SSTV, CW from HamShack),
         don't overdrive SSB, and check your signal isn't splattering.</li>
       <li><b>Be patient and polite.</b> Wait your turn in a pile-up, don't call over a station working someone else, and
         answer "QRZ?" only when it's for you. Everyone was new once: help newcomers.</li>
@@ -339,7 +339,7 @@
     <ul>
       <li><b>Practice</b> (how it starts) plays to your speakers only. Choose a <b>Speed</b>, and <b>Farnsworth</b>
         spacing to learn: the letters at full speed, the gaps between them longer.</li>
-      <li><b>On the air</b> sends real CW: connect your radio, put it in DATA-USB on a CW frequency (Band Watch sends a
+      <li><b>On the air</b> sends real CW: connect your radio, put it in DATA-USB on a CW frequency (HamShack sends a
         clean keyed tone into its USB sound), set the level with <b class="btn">Tune</b>, and switch
         <b class="btn">Enable TX</b> on. The radio goes back to receive 0.8 s after your last letter.
         <b class="btn">Stop</b> or <b>Esc</b> stops at once.</li>
@@ -357,9 +357,9 @@
     <ul>
       <li>A picture starts by itself when its <b>VIS code</b> is heard, and builds line by line. Modes: Martin M1/M2,
         Scottie S1/S2/DX, Robot 36/72, PD 50/90/120/160/180/240/290, Wraase SC2-180 and Pasokon P3/P5/P7.</li>
-      <li>Band Watch follows each line's sync pulse, so a picture comes out <b>straight</b> even when a sound card runs a
+      <li>HamShack follows each line's sync pulse, so a picture comes out <b>straight</b> even when a sound card runs a
         little fast or slow.</li>
-      <li><b>Missed the start?</b> Pick the mode and click <b class="btn">Start now</b>: Band Watch finds the lines from their sync pulses.
+      <li><b>Missed the start?</b> Pick the mode and click <b class="btn">Start now</b>: HamShack finds the lines from their sync pulses.
         <b class="btn">Stop picture</b> keeps what has arrived.</li>
       <li>The <b>Gallery</b> keeps your last 16 pictures in this browser. Click one to see it big; <b>Save</b> downloads it as a PNG.</li>
     </ul>
@@ -376,7 +376,7 @@
 
   <section class="panel" id="transmit" aria-labelledby="hTx">
     <h2 id="hTx">Transmitting FT8 and FT4</h2>
-    <p>With FT8 or FT4 as the decoder's mode, a <b>Transmit</b> box appears. Band Watch keys your radio over its USB
+    <p>With FT8 or FT4 as the decoder's mode, a <b>Transmit</b> box appears. HamShack keys your radio over its USB
       cable (Yaesu, Icom or Kenwood) and plays the signal into the radio's USB sound, like WSJT-X.</p>
     <ol>
       <li><b>Set up once:</b> connect your radio (<b class="btn">Connect radio</b>), and set your callsign and locator.
@@ -387,19 +387,19 @@
         <b>Level</b> until the radio's ALC meter only just moves, then back it off a little. Too much level makes a
         dirty, wide signal.</li>
       <li><b>Make a QSO:</b> click <b class="btn">Reply</b> on a CQ (or <b class="btn">Call CQ</b>), then
-        <b class="btn">Enable TX</b>. Band Watch sends your grid, the report, RR73 and 73 as the other station
-        answers, and stops when the QSO is done. <b class="btn">Log QSO</b> fills in the logbook; Band Watch also
+        <b class="btn">Enable TX</b>. HamShack sends your grid, the report, RR73 and 73 as the other station
+        answers, and stops when the QSO is done. <b class="btn">Log QSO</b> fills in the logbook; HamShack also
         fills it in by itself when the QSO completes.</li>
     </ol>
-    <p class="warn"><b>Safety:</b> nothing is sent unless <b>Enable TX</b> is on, and it's off every time Band Watch
-      starts. <b class="btn">Stop TX</b> or the <b>Esc</b> key stops at once. Band Watch won't transmit outside the amateur
+    <p class="warn"><b>Safety:</b> nothing is sent unless <b>Enable TX</b> is on, and it's off every time HamShack
+      starts. <b class="btn">Stop TX</b> or the <b>Esc</b> key stops at once. HamShack won't transmit outside the amateur
       bands, stops after 6 overs with no answer (10 CQs) and unkeys the radio at the end of every over. Your power, and
       where in each band your licence allows you to transmit, are for you to set on the radio.</p>
   </section>
 
   <section class="panel" id="rtty" aria-labelledby="hRtty">
     <h2 id="hRtty">RTTY (radioteletype)</h2>
-    <p>RTTY is typing sent as two audio tones, one for each of the two states (<b>mark</b> and <b>space</b>). Band Watch
+    <p>RTTY is typing sent as two audio tones, one for each of the two states (<b>mark</b> and <b>space</b>). HamShack
       only <b>receives</b> it: it never transmits RTTY. The usual amateur RTTY is <b>45.45 baud</b> with a <b>170 Hz</b>
       shift, 5-bit Baudot (ITA2) letters and figures. Contests and DX use it a lot.</p>
     <ol>
@@ -436,18 +436,18 @@
       <li><b>Swap often: every 10 to 20 minutes</b>, A then B then A then B, for a few hours. Band and ionosphere conditions
         change all the time, so one long run on A and then one on B proves little.</li>
       <li>Pick where the reports come from: <b>WSPR</b> (the default), <b>FT8 and FT4</b>, or <b>Both</b>. Press
-        <b class="btn">Compare</b>. For WSPR, Band Watch asks wspr.live (a free public WSPR database) for the reports of your
-        callsign: one request per click, 7 days at most. For FT8 and FT4 it asks PSK Reporter through Band Watch's own server,
+        <b class="btn">Compare</b>. For WSPR, HamShack asks wspr.live (a free public WSPR database) for the reports of your
+        callsign: one request per click, 7 days at most. For FT8 and FT4 it asks PSK Reporter through HamShack's own server,
         which asks PSK Reporter at most once every 5 minutes per callsign and only covers the last 24 hours. Send FT8 or FT4
         with your usual software (an FT8 over is 15 seconds, FT4 7.5 seconds) and swap antennas as above.
-        <b>For FT8 and FT4, keep Band Watch open while you alternate antennas.</b> PSK Reporter only gives the latest report
-        from each station, so Band Watch collects them for you: while a period is being logged, FT8 or FT4 is chosen and the
+        <b>For FT8 and FT4, keep HamShack open while you alternate antennas.</b> PSK Reporter only gives the latest report
+        from each station, so HamShack collects them for you: while a period is being logged, FT8 or FT4 is chosen and the
         page is showing, it asks every 5 minutes (and once when you press the antenna button) and saves what it gets in this
         browser (7 days at most). Compare uses everything collected, so matches build up as stations hear you on each antenna.
         <b class="btn">Clear FT8 history</b> empties it. A tab that is hidden or closed collects nothing.</li>
     </ol>
     <p><b>How it is made fair.</b> Only a receiving station that heard you on <b>both</b> antennas, on the same band, is
-      compared. For each, Band Watch takes its average signal-to-noise ratio (SNR) on A and on B, then averages the
+      compared. For each, HamShack takes its average signal-to-noise ratio (SNR) on A and on B, then averages the
       differences. A report counts only if its whole slot (2 minutes for WSPR, 15 seconds for FT8, 7.5 seconds for FT4) is inside one period,
       so a swap in the middle never muddies it. Stations that heard only one antenna are counted but left out. WSPR and
       FT8/FT4 reports are never mixed: with <b>Both</b>, each band has a row for each source, and the Source column says which.</p>
@@ -456,7 +456,7 @@
         difference, for example <b>Vertical better by 2.3 dB</b>. About 6 dB is one S-unit; under 1 dB is hard to tell from chance.</li>
       <li><b>By direction</b> (8 compass sectors from your locator) and <b>by distance</b> show where one antenna does better,
         for example a vertical often wins far away and a low dipole nearby. Bars to the right favour B, to the left favour A.</li>
-      <li>With <b>fewer than 10</b> receivers matched, Band Watch warns you that the result is shaky. Keep going and compare again.</li>
+      <li>With <b>fewer than 10</b> receivers matched, HamShack warns you that the result is shaky. Keep going and compare again.</li>
     </ul>
     <p class="small muted">Use the same power, mode and time of day on both antennas. WSPR reports come from
       <a href="https://wspr.live" target="_blank" rel="noopener noreferrer">wspr.live</a>, FT8 and FT4 reports from
@@ -479,7 +479,7 @@
     <ol>
       <li>Type the callsigns or prefixes you want (like <b>VK*</b> for all of Australia, or a full callsign).</li>
       <li>Type grid squares you want (like <b>PM95</b>, or <b>QF</b> for a whole field).</li>
-      <li>Band Watch tells you when one is heard in the spots, your decodes or POTA. Tick <b>Play a sound</b> for a beep.</li>
+      <li>HamShack tells you when one is heard in the spots, your decodes or POTA. Tick <b>Play a sound</b> for a beep.</li>
     </ol>
     <figure><img src="/help/wanted.webp" alt="Wanted alerts with callsigns, grid squares and recently heard stations" loading="lazy"></figure>
   </section>
@@ -501,16 +501,16 @@
     <ul>
       <li><b>Your own list.</b> Type in the repeaters you use: callsign, output frequency (what the repeater sends, which you listen to),
         shift, CTCSS tone or DCS/colour code, mode (FM, DMR, C4FM or D-STAR), a locator or town and notes. Only 2 m (144–146 MHz) and
-        70 cm (430–440 MHz) are accepted. The list is kept in this browser. Band Watch comes with no repeater list and doesn't fetch one.</li>
-      <li><b>Nearest first.</b> Give a repeater a locator and Band Watch shows the distance and beam heading from your locator
+        70 cm (430–440 MHz) are accepted. The list is kept in this browser. HamShack comes with no repeater list and doesn't fetch one.</li>
+      <li><b>Nearest first.</b> Give a repeater a locator and HamShack shows the distance and beam heading from your locator
         (the one at the top of the page) and sorts the nearest to the top.</li>
-      <li><b>Tune</b> sets your connected radio (with the radio following Band Watch) or your RTL-SDR to the repeater's <b>output</b> in
-        FM, so you can listen. It is listening only: Band Watch never sets the shift or tone on your radio, and never transmits.
-        For a DMR, C4FM or D-STAR repeater, Band Watch can't decode the voice: set the mode on your radio (the Digital voice add-on can put a Yaesu on C4FM).</li>
-      <li><b>Import a CSV you downloaded.</b> Choose a file and Band Watch shows how many repeaters it found before adding them. It reads
+      <li><b>Tune</b> sets your connected radio (with the radio following HamShack) or your RTL-SDR to the repeater's <b>output</b> in
+        FM, so you can listen. It is listening only: HamShack never sets the shift or tone on your radio, and never transmits.
+        For a DMR, C4FM or D-STAR repeater, HamShack can't decode the voice: set the mode on your radio (the Digital voice add-on can put a Yaesu on C4FM).</li>
+      <li><b>Import a CSV you downloaded.</b> Choose a file and HamShack shows how many repeaters it found before adding them. It reads
         columns called Callsign, Output or TX (the repeater's transmitter), Input or RX, Offset or Shift, CTCSS or Tone, Mode,
         Locator and Town. The file is read in your browser and never uploaded. Only import lists you're allowed to use for your own station.</li>
-      <li><b>Find repeaters:</b> buttons open ukrepeater.net, Hearham and RepeaterBook in a new tab. Band Watch sends them nothing.</li>
+      <li><b>Find repeaters:</b> buttons open ukrepeater.net, Hearham and RepeaterBook in a new tab. HamShack sends them nothing.</li>
     </ul>
   </section>
 
@@ -535,7 +535,7 @@
   <section class="panel" id="windows" aria-labelledby="hWin">
     <h2 id="hWin">Own windows and a second screen</h2>
     <p>Most parts have a <b>⧉</b> button by their name. It moves that part into a window of its own, which you can drag
-      onto another screen and resize. Band Watch remembers where you put it. Close the window, or click
+      onto another screen and resize. HamShack remembers where you put it. Close the window, or click
       <b class="btn">Back to the main window</b>, to put it back.</p>
   </section>
 
@@ -544,7 +544,7 @@
     <ul>
       <li><b class="btn">Settings</b> at the top has the display (colours, text size, layout and which parts to show),
         radio control, the RTL-SDR receiver, and profiles.</li>
-      <li><b>Updates:</b> <b class="btn">Settings → Updates → Install update</b> gets the newest Band Watch and
+      <li><b>Updates:</b> <b class="btn">Settings → Updates → Install update</b> gets the newest HamShack and
         installs it over the old one. Your settings and log are kept.</li>
       <li><b>Colours:</b> Light, Dark or "Match my device" have the 3D look; High contrast and Night stay plain for easy reading.</li>
       <li><b>Look:</b> <b class="btn">Settings → Look</b> changes the style. <b>Glass and depth</b> puts frosted-glass panels over a soft background (your own background picture shows through, blurred), with the title bar, section menu, buttons and pop-up windows raised above them. It follows your device's "reduce transparency" and "reduce motion" settings.</li>
@@ -560,7 +560,7 @@
 
   <section class="panel" id="support" data-support-section hidden aria-labelledby="hSupport">
     <h2 id="hSupport">Support the project</h2>
-    <p>Band Watch and ClearRX are free and open source, and always will be. Nothing is locked and nothing nags you.
+    <p>HamShack and ClearRX are free and open source, and always will be. Nothing is locked and nothing nags you.
       If you'd like to say thanks, you can <a data-support href="#" hidden>support the project here</a>. It is entirely optional.</p>
     <div id="supporters" hidden>
       <h3>Supporters</h3>
@@ -571,16 +571,16 @@
   <section class="panel" id="problems" aria-labelledby="hProb">
     <h2 id="hProb">If something doesn't work</h2>
     <ul>
-      <li><b>"Windows protected your PC":</b> click <b>More info</b>, then <b>Run anyway</b>. Band Watch isn't signed with a paid certificate yet.</li>
+      <li><b>"Windows protected your PC":</b> click <b>More info</b>, then <b>Run anyway</b>. HamShack isn't signed with a paid certificate yet.</li>
       <li><b>The radio won't connect:</b> check its USB driver is installed, close other programs that use it, and look
         at what <b class="btn">Settings → Radio control</b> says. Only Chrome and Edge can talk to radios.</li>
       <li><b>The RTL-SDR isn't found:</b> do the <a href="#rtlsdr">Zadig</a> step.</li>
       <li><b>No sound:</b> click inside the web receiver once; check the volume; in the Radio panel's own window, press
         Listen there.</li>
       <li><b>The website version is blank at first:</b> it sleeps when nobody is using it. Wait a few seconds and reload.</li>
-      <li><b>Nothing new on the bands:</b> Band Watch only shows what stations report. Quiet bands, or a wrong locator, show less.</li>
+      <li><b>Nothing new on the bands:</b> HamShack only shows what stations report. Quiet bands, or a wrong locator, show less.</li>
     </ul>
-    <p>Band Watch by M3VRV &amp; King Coder is free (MIT licence). Ideas and problems are welcome on
+    <p>HamShack by M0GLP &amp; M3VRV is free (MIT licence). Ideas and problems are welcome on
       <a href="https://github.com/TecSpyPie/band-watch" target="_blank" rel="noopener">github.com/TecSpyPie/band-watch</a>.</p>
   </section>
 </div>

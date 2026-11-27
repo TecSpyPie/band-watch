@@ -1,4 +1,4 @@
-/* Own windows: move a part of Band Watch (the scope, the map, Listen, the ATS Mini…) into a window of its own, to
+/* Own windows: move a part of HamShack (the scope, the map, Listen, the ATS Mini…) into a window of its own, to
    put on another screen. The part itself moves, so it keeps working as before: the same radio connection, sound and
    decoders. Closing its window, or "Back", puts it back in its place. */
 
@@ -45,10 +45,10 @@ function popOut(id, label) {
   const w = place.w || Math.max(420, Math.round(r.width) + 40), h = place.h || Math.max(320, Math.round(r.height) + 60);
   const at = place.x != null ? `,left=${place.x},top=${place.y}` : "";
   const win = window.open("", `bw-${id}`, `popup,width=${w},height=${h}${at}`);
-  if (!win) { showToast("Window blocked", "Your browser blocked the new window. Allow pop-ups for Band Watch and try again."); return; }
+  if (!win) { showToast("Window blocked", "Your browser blocked the new window. Allow pop-ups for HamShack and try again."); return; }
   const doc = win.document;
   doc.open();
-  doc.write(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(label)} · Band Watch</title>
+  doc.write(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(label)} · HamShack</title>
 <link rel="icon" href="${location.origin}/favicon.svg" type="image/svg+xml">
 ${popStyles()}
 <style>body{margin:0;padding:10px 12px;min-height:100vh;box-sizing:border-box}

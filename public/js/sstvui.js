@@ -130,7 +130,7 @@ const sstvTxSave = () => store("bw-sstvtx", { mode: sstvtx.mode, fit: sstvtx.fit
 
 /** Your callsign, so the default text names you. */
 const sstvDefaultTop = () => `CQ ${app.myCall || "MY CALL"}`;
-const sstvDefaultBottom = () => `${(typeof grid4 === "function" && grid4()) || ""} · Band Watch`.replace(/^ · /, "");
+const sstvDefaultBottom = () => `${(typeof grid4 === "function" && grid4()) || ""} · HamShack`.replace(/^ · /, "");
 
 /** Draw what will be sent: the picture fitted to the mode's size, and the text on it. */
 function sstvRenderOut() {
@@ -201,7 +201,7 @@ function setupSstvSend() {
     const url = URL.createObjectURL(f);
     const img = new Image();
     img.onload = () => { sstvtx.img = img; sstvRenderOut(); };
-    img.onerror = () => { $("sstvSendInfo").textContent = "That file isn't a picture Band Watch can open."; };
+    img.onerror = () => { $("sstvSendInfo").textContent = "That file isn't a picture HamShack can open."; };
     img.src = url;
   });
   $("sstvUseRx").addEventListener("click", () => {

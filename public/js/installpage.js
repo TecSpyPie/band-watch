@@ -1,4 +1,4 @@
-// Band Watch by M3vrv: the install page. Shows the steps for the chosen device, starting with this one.
+// HamShack by M0GLP & M3VRV: the install page. Shows the steps for the chosen device, starting with this one.
 "use strict";
 (function () {
   const bw = window.bwInstall;
@@ -32,7 +32,7 @@
   if (mine) {
     $("here").hidden = false;
     $("here").textContent = bw.standalone()
-      ? "Band Watch is already installed as an app on this device."
+      ? "HamShack is already installed as an app on this device."
       : `You're on ${NAMES[mine]}.`;
   }
 

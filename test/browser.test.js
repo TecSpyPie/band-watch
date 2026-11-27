@@ -129,8 +129,8 @@ const tooWide = (page) => page.evaluate(() => [...document.querySelectorAll("bod
 
 test("loads live data with no errors", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
-  assert.equal(await page.title(), "Band Watch by M3VRV & King Coder");
-  assert.equal((await page.textContent("h1")).replace(/\s+/g, " "), "Band Watch by M3VRV & King Coder");
+  assert.equal(await page.title(), "HamShack by M0GLP & M3VRV");
+  assert.equal((await page.textContent("h1")).replace(/\s+/g, " "), "HamShack by M0GLP & M3VRV");
   assert.match(await page.textContent("#banner"), /^Live spots for grid IO93, updated just now\.$/);
   assert.match(await page.textContent("#hero"), /40 m is your best band/);
   assert.equal(await page.textContent("#mapTitle"), "40 m spots", "map follows the best band");
@@ -740,7 +740,7 @@ const WEBSDR_STUB = `<!doctype html><title>WebSDR</title><body>stub receiver<scr
   addEventListener("message", (e) => window.msgs.push(String(e.data)));
 </script>`;
 
-/** Pretend receivers. The receiver is set to "another WebSDR" (a stub), which can play inside Band Watch;
+/** Pretend receivers. The receiver is set to "another WebSDR" (a stub), which can play inside HamShack;
     the real Twente WebSDR always opens in its own window (it won't run inside another page). */
 async function routeReceivers(page) {
   await page.context().route("http://websdr.ewi.utwente.nl:8901/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: WEBSDR_STUB }));
@@ -829,7 +829,7 @@ test("hovering a callsign shows a card with QRZ details, cached", { skip }, asyn
   assert.deepEqual(errors.filter((e) => !/unpkg|tile\.openstreetmap/.test(e)), []);
 });
 
-test("listen panel: tunes, plays inside Band Watch, retunes from the scope, and checks receiver range", { skip }, async (t) => {
+test("listen panel: tunes, plays inside HamShack, retunes from the scope, and checks receiver range", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await routeReceivers(page);
   assert.equal(await page.inputValue("#lsFreq"), "14200");
@@ -1096,7 +1096,7 @@ test("settings: profiles save, load, export and import everything", { skip }, as
 
   await page.click("#optBtn");
   await page.setInputFiles("#profImport", { name: "bad.json", mimeType: "application/json", buffer: Buffer.from("{oops") });
-  await page.waitForFunction(() => document.getElementById("profMsg").textContent === "That file isn't a Band Watch profile.");
+  await page.waitForFunction(() => document.getElementById("profMsg").textContent === "That file isn't a HamShack profile.");
   await page.click('#profList [data-del="Night shift"]');
   assert.match(await page.textContent("#profList"), /No saved profiles yet/);
   assert.deepEqual(errors, []);
@@ -1268,7 +1268,7 @@ test("app: installable (manifest and service worker), works offline, and setting
   });
   assert.match(reg, /\/sw\.js$/);
   const man = await page.evaluate(async () => (await fetch(document.querySelector('link[rel=manifest]').href)).json());
-  assert.equal(man.short_name, "Band Watch");
+  assert.equal(man.short_name, "HamShack");
   // Settings: install section with a link to the install page; the install button appears with the browser's prompt.
   await page.click("#optBtn");
   assert.ok(await page.isHidden("#optInstall"));
@@ -1289,7 +1289,7 @@ test("app: installable (manifest and service worker), works offline, and setting
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
   await page.context().setOffline(true);
   await page.reload();
-  assert.equal(await page.title(), "Band Watch by M3VRV & King Coder");
+  assert.equal(await page.title(), "HamShack by M0GLP & M3VRV");
   await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
   assert.ok(await page.evaluate(() => document.getElementById("banner").classList.contains("err") || /couldn|offline|not|fail/i.test(document.getElementById("banner").textContent)));
   await page.context().setOffline(false);
@@ -1493,8 +1493,8 @@ test("RTL-SDR: clear messages when rtl_tcp isn't running, or the address is wron
   await page.click("#lsGo");
   await page.waitForFunction(() => /Is rtl_tcp running\?/.test(document.getElementById("rtlStatus").textContent));
   assert.equal(await page.textContent("#lsGo"), "Listen", "not left looking connected");
-  // On this PC Band Watch tries to start rtl_tcp itself, and says why it couldn't, right under the Listen button
-  assert.match(await page.textContent("#lsErr"), /Is rtl_tcp running\? Band Watch tried to start it for you, but: Band Watch couldn't find rtl_tcp/);
+  // On this PC HamShack tries to start rtl_tcp itself, and says why it couldn't, right under the Listen button
+  assert.match(await page.textContent("#lsErr"), /Is rtl_tcp running\? HamShack tried to start it for you, but: HamShack couldn't find rtl_tcp/);
   assert.match(await page.textContent("#toast"), /RTL-SDR/);
   await page.fill("#rtlAddr", "8.8.8.8:1234");
   await page.press("#rtlAddr", "Enter");
@@ -1849,7 +1849,7 @@ test("decoder: sound-card input starts (with a test microphone) and the panel ca
   assert.deepEqual(errors, []);
 });
 
-test("RTL-SDR connection settings: Band Watch starts rtl_tcp itself, and reconnects when it drops", { skip, timeout: 60000 }, async (t) => {
+test("RTL-SDR connection settings: HamShack starts rtl_tcp itself, and reconnects when it drops", { skip, timeout: 60000 }, async (t) => {
   const path = require("path");
   const net = require("net");
   const exe = path.join(__dirname, "fixtures", "rtl_tcp");
@@ -1871,12 +1871,12 @@ test("RTL-SDR connection settings: Band Watch starts rtl_tcp itself, and reconne
   assert.equal(saved.device, 0);
   await page.keyboard.press("Escape");
 
-  // Press Listen: Band Watch starts rtl_tcp, waits for it, connects
+  // Press Listen: HamShack starts rtl_tcp, waits for it, connects
   await page.selectOption("#lsRx", "rtl");
   await page.click("#lsGo");
   await page.waitForFunction(() => /Connected: R828D/.test(document.getElementById("rtlStatus").textContent), null, { timeout: 15000 });
   await new Promise((r) => setTimeout(r, 500)); // let the start-up settings reach it
-  // ...then rtl_tcp goes away (as if it crashed): Band Watch starts it again and reconnects by itself
+  // ...then rtl_tcp goes away (as if it crashed): HamShack starts it again and reconnects by itself
   await page.evaluate(() => fetch("/api/sdr/launch/stop", { method: "POST", headers: { "Content-Type": "application/json", "X-Band-Watch": "sdr" }, body: "{}" }));
   await page.waitForFunction(() => /reconnecting \(1 of 5\)/.test(document.getElementById("rtlStatus").textContent), null, { timeout: 10000 });
   await page.waitForFunction(() => /Connected: R828D/.test(document.getElementById("rtlStatus").textContent), null, { timeout: 15000 });
@@ -2038,11 +2038,11 @@ test("radio panel: the waterfall fills under the spectrum, and Pop out puts the 
   await win.waitForSelector("#secPanel #pnKnob");
   assert.equal(await page.$("#secPanel"), null, "moved out of the main window");
   assert.match(await page.textContent(".pophold"), /Radio panel is in its own window/);
-  // It still works in its window: a band key tunes Band Watch
+  // It still works in its window: a band key tunes HamShack
   await win.click('#pnBands button[data-band="40"]');
   await page.waitForFunction(() => listen.kHz === 7100);
   assert.equal(await win.textContent("#pnFreq"), "7.100.00");
-  assert.equal(await win.textContent("#pnPop"), "Back in Band Watch");
+  assert.equal(await win.textContent("#pnPop"), "Back in HamShack");
   // And comes back
   await win.click("#pnPop");
   await page.waitForSelector("#secPanel #pnKnob");
@@ -2088,7 +2088,7 @@ test("radio panel with an FT-991A: its mode name, a live S-meter, and the knob t
   assert.deepEqual(errors, []);
 });
 
-test("radio panel receive controls with an FT-991A: read back, changed from Band Watch and from the radio", { skip }, async (t) => {
+test("radio panel receive controls with an FT-991A: read back, changed from HamShack and from the radio", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "true"));
   await page.reload();
@@ -2111,7 +2111,7 @@ test("radio panel receive controls with an FT-991A: read back, changed from Band
   await page.waitForFunction(() => { const r = window.__radio.rx; return r.GT0 === "4" && r.PA0 === "2" && r.NB0 === "1" && r.BC0 === "1" && r.NR0 === "0" && r.AG0 === "180"; });
   assert.equal(await page.textContent("#pnRx_agc"), "AGC · AUTO");
   assert.equal(await page.textContent("#pnRx_afv"), "180");
-  // Changed on the radio (its knobs): Band Watch follows within a few seconds; AUTO-MID still shows AUTO
+  // Changed on the radio (its knobs): HamShack follows within a few seconds; AUTO-MID still shows AUTO
   await page.evaluate(() => { Object.assign(window.__radio.rx, { RG0: "120", RA0: "1", GT0: "5" }); });
   await page.waitForFunction(() => document.getElementById("pnRx_rfv").textContent === "120", null, { timeout: 9000 });
   assert.equal(await page.getAttribute("#pnRx_att", "aria-pressed"), "true");
@@ -2198,7 +2198,7 @@ test("Help: the button opens the guide; it follows the colours and fits a phone"
   const { page, errors } = await openPage(t);
   const [help] = await Promise.all([page.waitForEvent("popup"), page.click("#helpBtn")]);
   await help.waitForLoadState("load");
-  assert.equal(await help.title(), "Help · Band Watch by M3VRV & King Coder");
+  assert.equal(await help.title(), "Help · HamShack by M0GLP & M3VRV");
   assert.ok((await help.$$("section.panel")).length >= 15);
   // The pictures load
   const broken = await help.evaluate(async () => {
@@ -2280,7 +2280,7 @@ test("radio panel: band and mode keys, the knob, typing a frequency, the band st
   assert.deepEqual(errors, []);
 });
 
-test("radio control: Band Watch tunes a Yaesu FT-991A over USB, and follows its dial", { skip }, async (t) => {
+test("radio control: HamShack tunes a Yaesu FT-991A over USB, and follows its dial", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.addInitScript(FAKE_FT991A.replace("__GRANTED__", "false"));
   await page.reload();
@@ -2291,10 +2291,10 @@ test("radio control: Band Watch tunes a Yaesu FT-991A over USB, and follows its 
   // 4800 baud, 8 data bits, 2 stop bits, no parity: the FT-991A's factory settings
   assert.deepEqual(await page.evaluate(() => window.__radio.opened), { baudRate: 4800, dataBits: 8, stopBits: 2, parity: "none", flowControl: "none" });
   await page.waitForFunction(() => /Radio: 7\.074\.000 DATA-USB/.test(document.getElementById("rigBtn").textContent));
-  // Band Watch followed the radio's frequency
+  // HamShack followed the radio's frequency
   await page.waitForFunction(() => listen.kHz === 7074 && listen.mode === "usb");
 
-  // Clicking in Band Watch tunes the radio: SSB on 20 m...
+  // Clicking in HamShack tunes the radio: SSB on 20 m...
   await page.evaluate(() => tuneTo(14200, "usb", { quiet: true }));
   await page.waitForFunction(() => window.__radio.hz === 14200000 && window.__radio.mode === "2");
   assert.ok(await page.evaluate(() => window.__radio.sent.includes("FA014200000") && window.__radio.sent.includes("MD02")));
@@ -2306,7 +2306,7 @@ test("radio control: Band Watch tunes a Yaesu FT-991A over USB, and follows its 
   await page.evaluate(() => tuneTo(3730.5, "lsb", { quiet: true }));
   await page.waitForFunction(() => window.__radio.hz === 3730500 && window.__radio.mode === "1");
 
-  // Turning the radio's dial moves Band Watch (after a moment, so our own tuning isn't undone)
+  // Turning the radio's dial moves HamShack (after a moment, so our own tuning isn't undone)
   await new Promise((r) => setTimeout(r, 1600));
   await page.evaluate(() => { window.__radio.hz = 28074000; window.__radio.mode = "C"; });
   await page.waitForFunction(() => listen.kHz === 28074 && listen.band === "10", null, { timeout: 5000 });
@@ -2847,17 +2847,17 @@ test("WSPR and CW decoders: in the decoder panel, through the background worker"
   assert.deepEqual(errors, []);
 });
 
-test("updates: Settings says when a newer Band Watch is out, with a download link on the web", { skip }, async (t) => {
+test("updates: Settings says when a newer HamShack is out, with a download link on the web", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   await page.click("#optBtn");
-  await page.waitForFunction(() => /Band Watch 99\.1\.0 is available/.test(document.getElementById("abUpdate").textContent));
+  await page.waitForFunction(() => /HamShack 99\.1\.0 is available/.test(document.getElementById("abUpdate").textContent));
   assert.equal(await page.locator("#abInstall").count(), 0, "no install button outside the Windows app");
   assert.equal(await page.getAttribute("#abUpdate a", "href"), "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0");
   // The Updates section is the first thing in Settings, with the GitHub links
   assert.equal(await page.evaluate(() => document.querySelector("#optForm h3").textContent), "Updates");
   assert.ok(await page.evaluate(() => document.getElementById("optUpdates").contains(document.getElementById("abUpdate"))));
   assert.deepEqual(await page.$$eval("#optUpdates .updlinks a", (as) => as.map((a) => [a.textContent, a.href])), [
-    ["Band Watch on GitHub", "https://github.com/TecSpyPie/band-watch"],
+    ["HamShack on GitHub", "https://github.com/TecSpyPie/band-watch"],
     ["All versions", "https://github.com/TecSpyPie/band-watch/releases"],
     ["Download the Windows installer", "https://github.com/TecSpyPie/band-watch/releases/latest/download/BandWatch-Setup.exe"],
   ]);
@@ -2883,7 +2883,7 @@ test("updates: the Windows app installs an update and reloads into the new versi
   await page.click("#optBtn");
   await page.waitForSelector("#abInstall");
   await page.click("#abInstall");
-  await page.waitForFunction(() => /Installing Band Watch 1\.0\.1/.test(document.getElementById("abUpdate").textContent));
+  await page.waitForFunction(() => /Installing HamShack 1\.0\.1/.test(document.getElementById("abUpdate").textContent));
   assert.equal(installed, true);
   // When the new version answers, the page reloads into it
   await page.route("**/healthz", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ ok: true, version: "1.0.1" }) }));
@@ -2984,7 +2984,7 @@ test("radio control: ATS Mini: switches its status line on, changes band and mod
   assert.match(await page.textContent("#optRigBaudHint"), /Ad hoc/);
   assert.equal(await page.isVisible("#optRigData"), false, "no data mode on an ATS Mini");
   await page.click("#optRigConnect");
-  // Band Watch turns on the status line with "t", then reads the radio: VHF FM broadcast
+  // HamShack turns on the status line with "t", then reads the radio: VHF FM broadcast
   await page.waitForFunction(() => rig.connected && rig.hz === 103900000 && rig.modeName === "FM", null, { timeout: 8000 });
   assert.deepEqual(await page.evaluate(() => window.__radio.opened), { baudRate: 115200, dataBits: 8, stopBits: 1, parity: "none", flowControl: "none" });
   await page.waitForFunction(() => /Connected to the ATS Mini \(firmware 2\.45\).*band VHF\. Signal 28 dBµV, SNR 9 dB/.test(document.getElementById("optRigMsg").textContent));
@@ -3110,7 +3110,7 @@ test("own windows: the band scope and the ATS Mini panel move into their own win
   await scopeWin.waitForSelector("#secScope #scope");
   assert.equal(await page.$("#secScope"), null, "moved out of the main window");
   assert.match(await page.textContent(".pophold"), /Band scope is in its own window/);
-  assert.equal(await scopeWin.title(), "Band scope · Band Watch");
+  assert.equal(await scopeWin.title(), "Band scope · HamShack");
   assert.notEqual(await scopeWin.evaluate(() => getComputedStyle(document.querySelector("#scopeBands button")).borderRadius), "0px", "styled like the main window");
   // Still driven by the main window: clicking a band chip changes the band
   await scopeWin.click("#scopeBands button:nth-child(2)");
@@ -3208,7 +3208,7 @@ test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991
   assert.ok(await page.evaluate((n) => !window.__radio.sent.slice(n).some((c) => /^(FA\d|MD0\w)/.test(c)), before));
   // Only frequency and mode were ever set: no transmit, MOX or power commands
   assert.deepEqual(await page.evaluate(() => window.__radio.sent.filter((c) => /^(TX|MX|PC|AC)/.test(c))), []);
-  // The radio's C4FM shows up in Band Watch (FM listen mode)
+  // The radio's C4FM shows up in HamShack (FM listen mode)
   await page.waitForFunction(() => rig.modeName === "C4FM" && listen.kHz === 430400, null, { timeout: 6000 });
   // Links to BrandMeister and ukrepeater.net open in a new tab
   assert.equal(await page.getAttribute('#secDv a[href="https://hose.brandmeister.network/"]', "target"), "_blank");
@@ -3233,7 +3233,7 @@ test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991
   assert.deepEqual(errors, []);
 });
 
-test("space weather forecast comes from the Band Watch server, not from NOAA in each browser", { skip }, async (t) => {
+test("space weather forecast comes from the HamShack server, not from NOAA in each browser", { skip }, async (t) => {
   const noaa = [];
   const { page, errors } = await openPage(t);
   page.on("request", (r) => { if (/swpc\.noaa\.gov/.test(r.url())) noaa.push(r.url()); });
@@ -3253,11 +3253,11 @@ test("chat: the website has the chat; the Windows app links to it instead", { sk
   await page.waitForSelector("#secChat");
   if ((process.env.BW_SERVER || "node") === "go") {
     await page.waitForSelector("#bwcList a[href='https://band-watch.ample.run/']");
-    assert.match(await page.textContent("#bwcList"), /The chat is on the Band Watch website/);
+    assert.match(await page.textContent("#bwcList"), /The chat is on the HamShack website/);
     assert.equal(await page.isVisible("#secChat .bwc-form"), false, "nothing to type into on the PC app");
     assert.equal(await page.isVisible("#bwcRooms"), false);
     await page.waitForTimeout(6000); // past the 5 second poll: the link stays and no more requests go out
-    assert.match(await page.textContent("#bwcList"), /The chat is on the Band Watch website/);
+    assert.match(await page.textContent("#bwcList"), /The chat is on the HamShack website/);
   } else {
     await page.waitForFunction(() => /No messages in General yet/.test(document.getElementById("bwcList").textContent));
     assert.equal(await page.isVisible("#secChat .bwc-form"), true);

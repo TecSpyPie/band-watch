@@ -1,4 +1,4 @@
-// Band Watch chat: a small public chat for Band Watch users, one General room plus one room per band.
+// HamShack chat: a small public chat for HamShack users, one General room plus one room per band.
 //   GET  /api/chat?room=general&since=<id>  -> { room, rooms[], messages[{ id, call, text, t }], last }
 //   POST /api/chat  <- { room, call, text } -> { ok, message }
 // Messages are plain text (the page shows them as text, never HTML), at most 300 characters, from a
@@ -68,7 +68,7 @@ function send(res, code, body) { res.writeHead(code, HEADERS); res.end(JSON.stri
 function ipOf(req) { return String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || (req.socket && req.socket.remoteAddress) || "?"; }
 /** Who is reporting. Anyone can put a made-up address at the front of X-Forwarded-For, so for reports (where one
  * person could otherwise pose as three and take any message down) only the last address counts: the one the
- * proxy in front of Band Watch added itself. The worst a shared proxy address can do is make removal slower. */
+ * proxy in front of HamShack added itself. The worst a shared proxy address can do is make removal slower. */
 function reporterOf(req) {
   const list = String(req.headers["x-forwarded-for"] || "").split(",").map((s) => s.trim()).filter(Boolean);
   return list[list.length - 1] || (req.socket && req.socket.remoteAddress) || "?";

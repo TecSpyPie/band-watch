@@ -1,7 +1,7 @@
 /* Radio control (CAT) over the radio's USB cable, for Yaesu (FT-991A, FT-710, FTDX10, FTDX101),
    Kenwood (TS-590, TS-890, TS-990, TS-480, TS-2000) and Icom (IC-7300, IC-705, IC-7610, IC-9700 and
    other CI-V radios). Uses the browser's Web Serial (Chrome or Edge on the PC the radio is plugged into).
-   Band Watch tunes the radio when you click a spot, the band scope, the band plan or a decoder button,
+   HamShack tunes the radio when you click a spot, the band scope, the band plan or a decoder button,
    and shows the radio's own frequency and mode as you turn the dial. */
 
 const RIG_KINDS = {
@@ -16,7 +16,7 @@ const RIG_DEFAULTS = { kind: "yaesu", baud: 4800, civ: "94", follow: true, read:
 const RIG_MIN_HZ = 30000;
 const RIG_MAX_HZ = 470000000;
 
-// Yaesu operating modes (MD0x;): code -> name, and Band Watch's listen modes -> code.
+// Yaesu operating modes (MD0x;): code -> name, and HamShack's listen modes -> code.
 const RIG_MODES = {
   1: "LSB", 2: "USB", 3: "CW-U", 4: "FM", 5: "AM", 6: "RTTY-LSB", 7: "CW-L", 8: "DATA-LSB",
   9: "RTTY-USB", A: "DATA-FM", B: "FM-N", C: "DATA-USB", D: "AM-N", E: "C4FM",
@@ -36,7 +36,7 @@ const ICOM_MODES = { 0: "LSB", 1: "USB", 2: "AM", 3: "CW", 4: "RTTY", 5: "FM", 6
 const ICOM_MODE_FOR = { usb: 1, lsb: 0, cw: 3, am: 2, fm: 5, wfm: 5 };
 const ICOM_LISTEN_MODE = { 0: "lsb", 1: "usb", 2: "am", 3: "cw", 4: "lsb", 5: "fm", 6: "wfm", 7: "cw", 8: "usb", 0x17: "fm" };
 const ICOM_RADIOS = { "94": "IC-7300", A4: "IC-705", "98": "IC-7610", A2: "IC-9700", "88": "IC-7100", "8E": "IC-7851", AC: "IC-905", "70": "IC-7000", "7C": "IC-9100" };
-const CIV_ME = 0xe0; // Band Watch's own CI-V address (the usual one for a computer)
+const CIV_ME = 0xe0; // HamShack's own CI-V address (the usual one for a computer)
 
 /* ATS Mini (the SI4732 pocket receiver, firmware 2.34 or later with Settings > USB Port > Ad hoc).
    Its "ad hoc" commands are single letters: B/b next/previous band, M/m next/previous mode, t turns its
@@ -248,7 +248,7 @@ function atsLine(line) {
   a.snr = Number(f[11]);
   a.seq = f[14];
   rig.model = "ATS Mini";
-  // The ATS Mini has no CW mode: listening to CW on USB, Band Watch stays on CW.
+  // The ATS Mini has no CW mode: listening to CW on USB, HamShack stays on CW.
   const listenMode = ssb && typeof listen !== "undefined" && listen.mode === "cw" ? "cw" : ATS_LISTEN_MODE[mode] || "";
   rigSetState(hz, mode, listenMode);
   atsStep();
@@ -268,7 +268,7 @@ function atsWatch() {
   atsStep();
 }
 
-/** Tune the radio, called whenever Band Watch tunes (tuneTo). */
+/** Tune the radio, called whenever HamShack tunes (tuneTo). */
 function rigTune(kHz, mode) {
   if (!rig.connected || !rig.follow) return;
   if (rig.kind === "atsmini") { atsTune(kHz * 1000, mode); return; }
@@ -300,7 +300,7 @@ function rigMeterCommand() {
   if (rig.kind === "icom") return civFrame(0x15, 0x02);
   return ""; // the ATS Mini sends its signal level by itself; Kenwood-style and Malahit: not read
 }
-/** Can Band Watch show this radio's S-meter? */
+/** Can HamShack show this radio's S-meter? */
 function rigHasMeter() {
   return rig.connected && (rig.kind === "yaesu" || rig.kind === "icom" || rig.kind === "atsmini");
 }
@@ -346,7 +346,7 @@ function rigKenwoodMode() {
   rigSetState(null, rig.data && (m === "1" || m === "2") ? `DATA-${name}` : name, KW_LISTEN_MODE[m] || "");
 }
 
-/** Icom answers: frames to Band Watch (E0) or to everyone (00, the radio's transceive messages). */
+/** Icom answers: frames to HamShack (E0) or to everyone (00, the radio's transceive messages). */
 function rigIcomFrame(f) {
   const [, , to, from, cmd] = f;
   if (from === CIV_ME || (to !== CIV_ME && to !== 0x00)) return; // our own commands echoed back
@@ -400,7 +400,7 @@ function rigFeed(value) {
   renderRig();
 }
 
-/** The radio's dial moved: Band Watch follows it (the Listen panel, scope and band plan). */
+/** The radio's dial moved: HamShack follows it (the Listen panel, scope and band plan). */
 function rigFromRadio() {
   if (!rig.read || !rig.hz || Date.now() - rig.lastSet < 1500 || (rig.ats && rig.ats.want)) return;
   const kHz = rig.hz / 1000;
@@ -437,7 +437,7 @@ async function rigReadLoop() {
 /* ---------- Connecting ---------- */
 
 const ESPRESSIF_VID = 0x303a; // the ATS Mini's ESP32-S3 USB port
-// Makers of the USB chips radios use, to say which port Band Watch is on (browsers don't tell a page the COM number).
+// Makers of the USB chips radios use, to say which port HamShack is on (browsers don't tell a page the COM number).
 const USB_MAKERS = { 0x303a: "Espressif (ATS Mini)", 0x10c4: "Silicon Labs CP210x", 0x0403: "FTDI", 0x1a86: "CH340", 0x067b: "Prolific", 0x0483: "STM32", 0x0c26: "Icom", 0x0b28: "Kenwood" };
 
 /** "Silicon Labs CP210x (USB 10C4:EA60)" for the port in use, or "" if the browser doesn't say. */
@@ -495,7 +495,7 @@ async function rigConnect(pick = true) {
     if (typeof rxPollTick === "function") rxPollTick(true);
     clearInterval(rig.poll);
     rig.poll = setInterval(() => { if (!rig.connected) return; if (rig.kind === "atsmini") atsWatch(); else { rigWrite(rigPollCommands()); if (typeof rxPollTick === "function") rxPollTick(); } }, 1000);
-    if (typeof showToast === "function") showToast(rig.kind === "atsmini" ? "ATS Mini connected" : "Radio connected", "Band Watch will tune your radio when you click a spot or the scope.");
+    if (typeof showToast === "function") showToast(rig.kind === "atsmini" ? "ATS Mini connected" : "Radio connected", "HamShack will tune your radio when you click a spot or the scope.");
     return true;
   } catch (e) {
     if (e && e.name === "NotFoundError") rig.error = ""; // the person closed the port chooser
@@ -898,7 +898,7 @@ function renderAts() {
   for (const b of sec.querySelectorAll("[data-ats]")) b.disabled = !rig.connected;
   $("atsScreenMsg").textContent = !rig.connected
     ? (rig.error || "Connect the ATS Mini to see its screen here. On the radio, set Settings > USB Port to Ad hoc first.")
-    : a.screenNote || (atsShot.live ? (a.shots ? "Live picture of the radio's screen." : "Getting the radio's screen…") : "Band Watch's own view, from the radio's status. Tick Live screen for the real picture.");
+    : a.screenNote || (atsShot.live ? (a.shots ? "Live picture of the radio's screen." : "Getting the radio's screen…") : "HamShack's own view, from the radio's status. Tick Live screen for the real picture.");
 }
 
 function setupAts() {

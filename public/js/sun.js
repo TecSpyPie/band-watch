@@ -89,7 +89,7 @@ function sunAdvice(d) {
 function renderSun() {
   const d = sun.data;
   if (!d) {
-    $("sunDisc").innerHTML = `<p class="muted small">${sun.error ? "Sunspot data couldn’t be loaded from NOAA. Band Watch will try again." : "Loading sunspot data…"}</p>`;
+    $("sunDisc").innerHTML = `<p class="muted small">${sun.error ? "Sunspot data couldn’t be loaded from NOAA. HamShack will try again." : "Loading sunspot data…"}</p>`;
     $("sunFacts").innerHTML = "";
     $("sunRows").innerHTML = "";
     return;

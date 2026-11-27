@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: the decode table's columns, shared by the Decoder panel and the Results window.
+/* HamShack by M0GLP & M3VRV: the decode table's columns, shared by the Decoder panel and the Results window.
  * Which columns show, how wide they are (drag a heading's edge), and which time zone the Time column and the
  * little clock use (UTC, this computer's local time, or any zone). Saved in this browser as "bw-dccols", so both
  * windows follow the same choices. */

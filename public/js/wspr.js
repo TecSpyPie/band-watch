@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: WSPR-2 decoder (and encoder, for testing), in plain JavaScript.
+/* HamShack by M0GLP & M3VRV: WSPR-2 decoder (and encoder, for testing), in plain JavaScript.
  * The protocol as published by K1JT: a 50-bit message (callsign, 4-character locator, power in dBm),
  * a K=32 rate-1/2 convolutional code, bit-reversal interleaving, and 4-FSK at 1.4648 baud where each
  * tone carries one data bit (MSB) and one bit of a fixed 162-bit sync vector (LSB). Decoding: shift the

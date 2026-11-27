@@ -1,4 +1,4 @@
-// Band Watch + ClearRX: one installer for both programs.
+// HamShack + ClearRX: one installer for both programs.
 // It carries the normal BandWatch-Setup.exe and the ClearRX zip inside it, runs the setup,
 // puts ClearRX in <install folder>\ClearRX and makes the shortcuts for both.
 // "/S" installs with no questions. A log is written to %TEMP%\BandWatch-ClearRX-Setup.log.
@@ -14,9 +14,9 @@ using Microsoft.Win32;
 
 static class BundleSetup
 {
-    const string Title = "Band Watch and ClearRX - Setup";
+    const string Title = "HamShack and ClearRX - Setup";
     const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\BandWatchM3vrv";
-    const string StartupLinkName = "Band Watch by M3vrv.lnk";
+    const string StartupLinkName = "HamShack by M0GLP & M3VRV.lnk";
 
     static string logPath;
 
@@ -33,7 +33,7 @@ static class BundleSetup
         Application.EnableVisualStyles();
         string existing = ExistingInstall();
         string dest = existing ?? DefaultDest();
-        bool startup = File.Exists(StartupLink());
+        bool startup = File.Exists(StartupLink()) || File.Exists(OldStartupLink());
 
         if (!silent)
         {
@@ -41,7 +41,7 @@ static class BundleSetup
             if (dest == null) return 0;
             if (existing == null)
             {
-                startup = MessageBox.Show("Start Band Watch automatically when Windows starts?", Title,
+                startup = MessageBox.Show("Start HamShack automatically when Windows starts?", Title,
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
             }
         }
@@ -66,9 +66,9 @@ static class BundleSetup
         Log("Finished.");
         if (!silent)
         {
-            MessageBox.Show("Band Watch " + BundleVersion.BandWatch + " and ClearRX " + BundleVersion.ClearRX + " are installed in:\n" + dest +
+            MessageBox.Show("HamShack " + BundleVersion.BandWatch + " and ClearRX " + BundleVersion.ClearRX + " are installed in:\n" + dest +
                 "\n\nBoth have an icon on your desktop and in the Start menu, and open in their own app windows.", Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            try { Process.Start(Path.Combine(dest, "App", "BandWatchApp.exe")); } catch (Exception e) { Log("Opening Band Watch: " + e.Message); }
+            try { Process.Start(Path.Combine(dest, "App", "BandWatchApp.exe")); } catch (Exception e) { Log("Opening HamShack: " + e.Message); }
         }
         return 0;
     }
@@ -79,7 +79,7 @@ static class BundleSetup
     {
         while (true)
         {
-            string what = "Band Watch " + BundleVersion.BandWatch + " and ClearRX " + BundleVersion.ClearRX;
+            string what = "HamShack " + BundleVersion.BandWatch + " and ClearRX " + BundleVersion.ClearRX;
             string question = (update ? "Update to " + what + " in this folder?" : "Install " + what + " in this folder?") +
                 "\n\n" + dest + "\n\nYes: install there\nNo: choose another drive or folder\nCancel: don't install";
             DialogResult answer = MessageBox.Show(question, Title, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
@@ -154,13 +154,13 @@ static class BundleSetup
             StopAppWindows();
             ExtractZip("AppWindowsZip", appDir, "");
 
-            Say(status, "Installing Band Watch " + BundleVersion.BandWatch + "...");
+            Say(status, "Installing HamShack " + BundleVersion.BandWatch + "...");
             string setup = Path.Combine(temp, "BandWatch-Setup.exe");
             SaveResource("BandWatchSetup", setup);
-            // The setup opens Band Watch in Edge when it finishes. The empty shim program stops that.
+            // The setup opens HamShack in Edge when it finishes. The empty shim program stops that.
             int code = Run(setup, "-S -dest \"" + dest + "\"", 180000, Path.Combine(appDir, "shim"));
             Log("BandWatch-Setup exit code " + code);
-            if (code != 0) return "The Band Watch setup stopped with error " + code + ".";
+            if (code != 0) return "The HamShack setup stopped with error " + code + ".";
             if (!File.Exists(Path.Combine(dest, "BandWatch.exe"))) return "BandWatch.exe was not found in " + dest + " after the setup.";
             try { Run(Path.Combine(dest, "BandWatch.exe"), "--stop", 10000); } catch (Exception e) { Log("BandWatch --stop: " + e.Message); }
 
@@ -214,7 +214,7 @@ static class BundleSetup
         }
     }
 
-    // Closes the app windows too when Band Watch is uninstalled, so its folder can be removed.
+    // Closes the app windows too when HamShack is uninstalled, so its folder can be removed.
     static void PatchUninstall(string dest)
     {
         string path = Path.Combine(dest, "uninstall.bat");
@@ -230,7 +230,7 @@ static class BundleSetup
     {
         using (RegistryKey key = Registry.CurrentUser.CreateSubKey(UninstallKey))
         {
-            key.SetValue("DisplayName", "Band Watch by M3vrv");
+            key.SetValue("DisplayName", "HamShack by M0GLP & M3VRV");
             key.SetValue("DisplayVersion", BundleVersion.BandWatch);
             key.SetValue("Publisher", "M3vrv");
             key.SetValue("DisplayIcon", Path.Combine(dest, "bandwatch.ico"));
@@ -373,6 +373,12 @@ static class BundleSetup
     static string StartupLink()
     {
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), StartupLinkName);
+    }
+
+    // Before 1.44 the app was called "Band Watch by M3vrv"; make-shortcuts.ps1 removes the old shortcuts.
+    static string OldStartupLink()
+    {
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Band Watch by M3vrv.lnk");
     }
 
     static void Say(Action<string> status, string text)

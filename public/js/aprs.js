@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: APRS on 2 m. Plain JavaScript for the decoder worker and the tests (window.Aprs / require).
+/* HamShack by M0GLP & M3VRV: APRS on 2 m. Plain JavaScript for the decoder worker and the tests (window.Aprs / require).
  *   Demod      FM audio -> bits: Bell 202 AFSK (mark 1200 Hz, space 2200 Hz, 1200 baud), a clock that locks to the
  *              bit edges, NRZI, HDLC (flags, bit stuffing) and the frame check (CRC-16, X.25).
  *   parse()    an AX.25 frame -> from, to, path and the APRS report: position (plain or compressed, and Mic-E as

@@ -1,6 +1,6 @@
-/* Band Watch by M3vrv: reads the EiBi shortwave schedule (eibispace.de, by Eike Bierwirth).
+/* HamShack by M0GLP & M3VRV: reads the EiBi shortwave schedule (eibispace.de, by Eike Bierwirth).
  * EiBi's conditions of use: "any person is absolutely free to download, use, copy, or distribute these
- * files or to use them within third-party software." Band Watch's server fetches the season's CSV
+ * files or to use them within third-party software." HamShack's server fetches the season's CSV
  * (sked-B26.csv and so on) and README.TXT and passes them on unchanged; this file reads them.
  * Works in the browser and in Node (tests). */
 (function (root, factory) {

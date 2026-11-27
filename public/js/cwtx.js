@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: sending Morse (CW). Plain JavaScript; the page uses it as window.CwTx, the tests in Node.
+/* HamShack by M0GLP & M3VRV: sending Morse (CW). Plain JavaScript; the page uses it as window.CwTx, the tests in Node.
  *
  *  - Timing by the PARIS standard: a dot is one unit (1.2 / WPM seconds), a dash three, one unit between the parts of
  *    a letter, three between letters, seven between words. Farnsworth spacing (for learning) keeps the letters at

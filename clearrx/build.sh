@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds ClearRX by M3VRV. It shares its sound engine (rxfx.js) with Band Watch, so that's copied in first.
+# Builds ClearRX by M3VRV. It shares its sound engine (rxfx.js) with HamShack, so that's copied in first.
 #   sh clearrx/build.sh        -> clearrx/build/ClearRX.exe (Windows, with icon and version info)
 #   sh clearrx/build.sh test   -> clearrx/build/clearrx-test (this machine, for the tests)
 set -eu

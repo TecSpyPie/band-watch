@@ -1,5 +1,5 @@
 /* Digital voice add-on: DMR, BrandMeister and Yaesu System Fusion (C4FM).
- * Band Watch can't make or send DMR or C4FM voice itself: both use the AMBE voice codec, which is patented and only
+ * HamShack can't make or send DMR or C4FM voice itself: both use the AMBE voice codec, which is patented and only
  * built into radios and hotspots. What this add-on does:
  *   - puts a Yaesu radio (FT-991A and others) on a C4FM frequency in one click (FA...; then MD0E;). That is all it
  *     sends: never a transmit or power command. You talk on your own microphone, as normal.
@@ -12,7 +12,7 @@
   else root.DvMath = factory();
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
-  // Where C4FM is allowed from Band Watch's button: the UK 2 m and 70 cm amateur bands (MHz).
+  // Where C4FM is allowed from HamShack's button: the UK 2 m and 70 cm amateur bands (MHz).
   const BANDS = [["2 m", 144, 146], ["70 cm", 430, 440]];
   // UK digital voice calling frequencies (RSGB band plan), simplex.
   const CHANNELS = [

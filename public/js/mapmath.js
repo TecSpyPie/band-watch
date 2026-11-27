@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: the maths behind the spots map (the "Map" view of the <band> spots panel). Plain JavaScript,
+/* HamShack by M0GLP & M3VRV: the maths behind the spots map (the "Map" view of the <band> spots panel). Plain JavaScript,
  * used by the page (window.MapMath) and the tests (require). No drawing here, only numbers:
  *   project / unproject  equirectangular map (longitude across, latitude down) with zoom and pan
  *   zoomAt / panBy       change the view, keeping what is under the pointer where it is, and never leaving the world

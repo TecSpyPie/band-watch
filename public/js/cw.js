@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: CW (Morse) decoder, and a keyer for testing, in plain JavaScript.
+/* HamShack by M0GLP & M3VRV: CW (Morse) decoder, and a keyer for testing, in plain JavaScript.
  * Finds the strongest tone between 300 and 1200 Hz, follows its level every 5 ms with a Goertzel
  * filter, decides key-down/key-up with an adaptive threshold, learns the speed from the marks it
  * hears, and turns marks and gaps into letters and words. Works in a Web Worker and in Node (tests). */

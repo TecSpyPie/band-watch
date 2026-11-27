@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: world land outline for the spots map, so it needs no map tiles and no network.
+/* HamShack by M0GLP & M3VRV: world land outline for the spots map, so it needs no map tiles and no network.
  * Source: Natural Earth 110m physical vectors, "Land" (ne_110m_land), https://www.naturalearthdata.com/
  * Natural Earth data is in the PUBLIC DOMAIN (no permission needed, no attribution required; credited here anyway).
  * Changes: all rings (filled with the even-odd rule so lakes like the Caspian stay empty), coordinates rounded to 0.1 degree and stored as whole numbers in tenths of a degree,

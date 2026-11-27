@@ -2,8 +2,8 @@
 // line-in) and plays it back cleaned up: a voice filter, a CW peak filter, an auto notch, noise reduction and steady
 // volume. It runs on this PC only (http://localhost:8074) and shows in a window of its own.
 //
-// It's a program of its own, but it works with Band Watch: while ClearRX is open, Band Watch can send its RTL-SDR
-// sound through ClearRX's settings (Band Watch reads them from /api/settings).
+// It's a program of its own, but it works with HamShack: while ClearRX is open, HamShack can send its RTL-SDR
+// sound through ClearRX's settings (HamShack reads them from /api/settings).
 package main
 
 import (
@@ -38,7 +38,7 @@ var (
 
 const defaultPort = 8074
 
-// Band Watch's own addresses: the only pages, besides ClearRX itself, that may read ClearRX's settings.
+// HamShack's own addresses: the only pages, besides ClearRX itself, that may read ClearRX's settings.
 var bandWatchOrigins = map[string]bool{"http://localhost:8073": true, "http://127.0.0.1:8073": true}
 
 // Settings are ClearRX's switches, as the page sends them. Every field is checked before it's kept.
@@ -283,7 +283,7 @@ func sendJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-// allowBandWatch lets Band Watch's page read ClearRX's answers (and nobody else's page).
+// allowBandWatch lets HamShack's page read ClearRX's answers (and nobody else's page).
 func allowBandWatch(w http.ResponseWriter, r *http.Request) bool {
 	o := r.Header.Get("Origin")
 	if !bandWatchOrigins[o] {

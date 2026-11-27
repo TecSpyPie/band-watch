@@ -1,6 +1,6 @@
 {
-  "name": "Band Watch by M3VRV & King Coder",
-  "short_name": "Band Watch",
+  "name": "HamShack by M0GLP & M3VRV",
+  "short_name": "HamShack",
   "description": "Live HF band conditions for radio amateurs, from PSK Reporter spots and NOAA solar data.",
   "id": "/",
   "start_url": "/?app=1",

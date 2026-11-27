@@ -1,16 +1,16 @@
 name: Report a problem
-description: Something in Band Watch isn't working as it should.
+description: Something in HamShack isn't working as it should.
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for testing Band Watch! Please don't put passwords, QRZ keys or your home address here: this page is public.
+        Thanks for testing HamShack! Please don't put passwords, QRZ keys or your home address here: this page is public.
   - type: textarea
     id: what
     attributes:
       label: What happened?
-      description: What you did, and what Band Watch did. A screenshot helps a lot (paste it in here).
+      description: What you did, and what HamShack did. A screenshot helps a lot (paste it in here).
       placeholder: "I clicked Reply on a CQ in the FT8 decoder and…"
     validations:
       required: true
@@ -23,7 +23,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Band Watch version
+      label: HamShack version
       description: Settings > About this build > Version (e.g. 1.37.0).
     validations:
       required: true
@@ -47,7 +47,7 @@ body:
   - type: dropdown
     id: part
     attributes:
-      label: Which part of Band Watch?
+      label: Which part of HamShack?
       options:
         - Band conditions, spots or map
         - Decoder (FT8, FT4, WSPR, CW, SSTV, APRS)

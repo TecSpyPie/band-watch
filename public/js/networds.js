@@ -1,4 +1,4 @@
-/* Band Watch by M3vrv: plain words for "it didn't work" when Band Watch talks to its server or a service.
+/* HamShack by M0GLP & M3VRV: plain words for "it didn't work" when HamShack talks to its server or a service.
  * Browsers say things like "Failed to fetch" or "NetworkError when attempting to fetch resource", and servers
  * answer with numbers like 502. Radio amateurs should see what happened and what to do next instead. */
 (function (root, factory) {
@@ -20,18 +20,18 @@
   /** Words for an answer with an HTTP status that isn't OK. `what` is the service, like "POTA" or "chat". */
   function fromStatus(status, what) {
     const s = Number(status) || 0;
-    const name = what || "Band Watch's server";
+    const name = what || "HamShack's server";
     if (s === 429) return `${name} is busy. Wait a minute, then try again.`;
-    if (s === 404) return `${name} isn't available on this copy of Band Watch.`;
-    if (s >= 500) return `Couldn't reach ${name} just now. Band Watch will try again; you don't need to do anything.`;
+    if (s === 404) return `${name} isn't available on this copy of HamShack.`;
+    if (s >= 500) return `Couldn't reach ${name} just now. HamShack will try again; you don't need to do anything.`;
     if (s >= 400) return `${name} didn't accept that. Check what you entered and try again.`;
     return `Couldn't reach ${name} just now. Try again in a minute.`;
   }
 
   /** Words for an error thrown by fetch or by our own code. Our own messages are already plain, so they pass. */
   function friendly(err, what) {
-    const name = what || "Band Watch's server";
-    if (isNoAnswer(err)) return `Couldn't reach ${name}. Check your internet connection; Band Watch will try again.`;
+    const name = what || "HamShack's server";
+    if (isNoAnswer(err)) return `Couldn't reach ${name}. Check your internet connection; HamShack will try again.`;
     const msg = String(err && typeof err === "object" ? err.message || "" : err || "").trim();
     if (!msg || /^(Error|TypeError|SyntaxError|ReferenceError)\b|unexpected token|is not defined|is undefined|json/i.test(msg)) return `Couldn't reach ${name} just now. Try again in a minute.`;
     return msg;

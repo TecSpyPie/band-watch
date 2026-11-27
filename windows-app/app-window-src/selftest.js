@@ -1,4 +1,4 @@
-// Checks the browser features Band Watch and ClearRX depend on, inside the app window.
+// Checks the browser features HamShack and ClearRX depend on, inside the app window.
 (async () => {
   const r = { href: location.href, title: document.title, engine: navigator.userAgent };
   const check = async (name, fn) => {

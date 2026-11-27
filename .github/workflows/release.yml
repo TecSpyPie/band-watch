@@ -172,7 +172,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" --target "$GITHUB_SHA" --title "Band Watch ${TAG#v}" --notes-file notes.md \
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "HamShack ${TAG#v}" --notes-file notes.md \
             dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/ClearRX-Windows.zip dist/SHA256SUMS.txt \
             dist/rtl-sdr-blog-*-source.tar.gz \
           || gh release upload "$TAG" --clobber \

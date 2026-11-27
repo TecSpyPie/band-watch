@@ -93,7 +93,7 @@ function checkWanted() {
   showToast("Wanted station heard", msg);
   if (wanted.sound) wantedBeep();
   if (typeof monitor !== "undefined" && monitor.notify && "Notification" in window && Notification.permission === "granted") {
-    try { new Notification("Band Watch: wanted station", { body: msg, tag: `bw-wanted-${f.call}` }); } catch { /* not allowed */ }
+    try { new Notification("HamShack: wanted station", { body: msg, tag: `bw-wanted-${f.call}` }); } catch { /* not allowed */ }
   }
   renderWanted();
 }

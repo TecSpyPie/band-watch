@@ -33,7 +33,7 @@ test("stall: at most 2 automatic restarts per 10 minutes", () => {
   assert.equal(S.restartBudget(undefined, 5).allowed, true);
 });
 
-test("stall: only an rtl_tcp Band Watch started on that port is ours", () => {
+test("stall: only an rtl_tcp HamShack started on that port is ours", () => {
   const ours = { running: true, path: "C:\rtl_tcp.exe", args: ["-a", "127.0.0.1", "-p", "1234", "-d", "0"] };
   assert.equal(S.isOurs(ours, 1234), true);
   assert.equal(S.isOurs(ours, 8000), false, "ours is on another port, so the one at this address is someone else's");

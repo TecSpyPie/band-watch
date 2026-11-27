@@ -1,5 +1,5 @@
-/* Band Watch's link to ClearRX by M3VRV, the radio audio processor (a separate program on this PC).
-   ClearRX isn't built into Band Watch. While it's open, Band Watch (the Windows app) shows a tick box in Listen:
+/* HamShack's link to ClearRX by M3VRV, the radio audio processor (a separate program on this PC).
+   ClearRX isn't built into HamShack. While it's open, HamShack (the Windows app) shows a tick box in Listen:
    "Send my RTL-SDR sound through ClearRX". When that's ticked, the RTL-SDR sound is cleaned up here with ClearRX's own
    settings (its sound engine, rxfx.js, is the same one), read from ClearRX every few seconds. */
 "use strict";

@@ -136,7 +136,7 @@ function announceOpen(band) {
     } catch { /* audio blocked */ }
   }
   if (monitor.notify && "Notification" in window && Notification.permission === "granted") {
-    try { new Notification(`Band Watch: ${bandName(band.b)} is open`, { body: msg, tag: `bw-${band.b}` }); } catch { /* not allowed */ }
+    try { new Notification(`HamShack: ${bandName(band.b)} is open`, { body: msg, tag: `bw-${band.b}` }); } catch { /* not allowed */ }
   }
 }
 

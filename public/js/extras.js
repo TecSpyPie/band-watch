@@ -1,4 +1,4 @@
-/* Band Watch extras, round 1: shack screen, space weather forecast with aurora alert, Morse trainer.
+/* HamShack extras, round 1: shack screen, space weather forecast with aurora alert, Morse trainer.
  * Plain JavaScript, loaded after app.js. Reads the page's shared state (app, BANDS, bandName, status) but
  * never changes it, and never touches the radio or the server. */
 (function () {
@@ -159,7 +159,7 @@
   }
   async function loadForecast() {
     try {
-      // One shared copy from the Band Watch server (cached 30 min there), not a request to NOAA from every browser.
+      // One shared copy from the HamShack server (cached 30 min there), not a request to NOAA from every browser.
       const r = await fetch("/api/forecast", { cache: "no-store" });
       if (!r.ok) throw new Error(r.status);
       const d = await r.json();
@@ -171,7 +171,7 @@
   function renderForecast() {
     const box = byId("bwxFcBody"); if (!box) return;
     box.replaceChildren();
-    if (!fc.rows) { box.append(mk("p", { class: "bwx-note", text: fc.err ? "NOAA's forecast couldn't be reached. Band Watch will try again in 30 minutes." : "Loading NOAA's forecast…" })); return; }
+    if (!fc.rows) { box.append(mk("p", { class: "bwx-note", text: fc.err ? "NOAA's forecast couldn't be reached. HamShack will try again in 30 minutes." : "Loading NOAA's forecast…" })); return; }
     const now = Date.now();
     const rows = fc.rows.filter((r) => r.t > now - 24 * 3600e3).slice(0, 40);
     const future = rows.filter((r) => r.t + 3 * 3600e3 > now);
@@ -205,7 +205,7 @@
     if (!msg || auroraCfg.lastAlert === key) return;
     auroraCfg.lastAlert = key; put(FC_KEY, auroraCfg);
     say("Aurora alert: " + msg);
-    try { if ("Notification" in window && Notification.permission === "granted") new Notification("Band Watch aurora alert", { body: msg, tag: "bw-aurora" }); } catch { /* ignore */ }
+    try { if ("Notification" in window && Notification.permission === "granted") new Notification("HamShack aurora alert", { body: msg, tag: "bw-aurora" }); } catch { /* ignore */ }
   }
   function forecastPanel() {
     const on = mk("input", { type: "checkbox", id: "bwxAuOn", checked: auroraCfg.on || null });
@@ -222,7 +222,7 @@
       mk("p", { class: "bwx-note", text: "NOAA's 3-day Kp forecast, what it means for aurora where you are, and an alert for when it gets lively." }),
       mk("div", { id: "bwxFcBody" }),
       mk("div", { class: "bwx-ctl" }, mk("label", {}, on, " Aurora alert when Kp reaches "), kp, sug),
-      mk("p", { class: "bwx-note", text: "Alerts show on this page and, if you allow it, as a notification while Band Watch is open in a tab or installed app." }));
+      mk("p", { class: "bwx-note", text: "Alerts show on this page and, if you allow it, as a notification while HamShack is open in a tab or installed app." }));
   }
 
   /* ============================== 3. Morse trainer ============================== */
