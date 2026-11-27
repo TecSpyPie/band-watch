@@ -1,13 +1,14 @@
-ClearRX by M3VRV & King Coder - radio audio processor (version 1.4.0)
+ClearRX by M3VRV & King Coder - radio audio processor (version 1.6.0)
 
 Install
-  1. Unzip this folder somewhere to keep it, for example C:\BandWatch\ClearRX
+  1. Unzip it into C:\BandWatch (the zip has its own ClearRX folder, so you get
+     C:\BandWatch\ClearRX\ClearRX.exe). When updating, choose "Replace the files".
   2. Double-click ClearRX.exe. It opens in a window of its own.
   3. For a desktop icon: right-click ClearRX.exe > Show more options >
      Send to > Desktop (create shortcut).
 
 Use
-  - My radio: pick RTL-SDR, Yaesu, Icom, ATS Mini, Malahit or Other / mixer.
+  - My radio: pick RTL-SDR, Yaesu, Icom, ATS Mini, Malahit, PC sound or Other / mixer.
     ClearRX finds that radio's sound input, sets a good starting preset and
     shows a tip for it.
   - Sound from: your radio's USB Audio CODEC, the PC's line-in, a mixer or a sound card.
@@ -50,7 +51,14 @@ Use
   - While ClearRX is open, HamShack's Listen shows "Send my RTL-SDR sound
     through ClearRX".
   - Settings are kept in clearrx-settings.json next to ClearRX.exe.
-  - Close it with "Close ClearRX" at the bottom of its window.
+  - PC sound: clean up an internet radio, WebSDR or KiwiSDR playing on this PC.
+    Once: install the free VB-CABLE from vb-audio.com and restart the PC.
+    Then in Windows: Settings > System > Sound > Volume mixer, set your
+    browser's Output device to "CABLE Input". In ClearRX: press PC sound (it
+    picks "CABLE Output" in Sound from), Play to your speakers or headphones,
+    and press Start. Don't use Stereo Mix: it hears ClearRX too and howls.
+    ClearRX won't start if "Play to" is the cable it's listening to.
+  - Close it with "Close ClearRX" on the toolbar at the top.
 
 If Windows or your virus checker blocks ClearRX.exe: it isn't signed yet, and
 new unsigned programs are sometimes flagged by mistake. HamShack works

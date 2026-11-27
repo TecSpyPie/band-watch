@@ -323,6 +323,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.44.1", "ClearRX 1.6.0: PC sound, to clean up an internet radio, WebSDR or KiwiSDR playing on this PC"],
   ["1.44.0", "Band Watch is now HamShack by M0GLP & M3VRV; ClearRX 1.5.0 with a new look and an EQ graph you can drag"],
   ["1.43.1", "Plain-English messages when POTA, QRZ or the chat can't be reached; Send to QRZ stops when the connection drops; chat reports can't be faked"],
   ["1.43.0", "Report button in the chat (three reports take a message down for everyone); the space weather forecast now comes from HamShack, one shared copy instead of every browser asking NOAA"],
