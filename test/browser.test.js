@@ -58,6 +58,7 @@ function upstreamHandler(kind, url, body) {
   }
   if (kind === "update") return { tag_name: feed.latestTag || "v99.1.0", html_url: "https://github.com/TecSpyPie/band-watch/releases/tag/v99.1.0", assets: [] };
   if (kind === "eibi") return eibiFile(url);
+  if (kind === "contest") return `<rss><channel><item><title>CQ WW DX Contest, CW</title><link>https://www.contestcalendar.com/contestdetails.php?ref=1</link><description>0000Z, Nov 28 to 2400Z, Nov 29</description></item></channel></rss>`;
   if (kind === "pota") return feed.potaDown ? { status: 503 } : (feed.pota ? feed.pota() : XOTA.potaRows());
   if (kind === "qrz") {
     const q = url.searchParams;
@@ -108,6 +109,8 @@ async function openPage(t, setup) {
   page.on("console", (m) => { if (m.type() === "error" && !/fonts\.(googleapis|gstatic)/.test(m.location().url || "")) errors.push(m.text()); });
   page.on("requestfailed", (r) => { if (!/fonts\.|unpkg\.com|tile\.openstreetmap|sdo\.gsfc|websdr|about:blank/.test(r.url())) errors.push(`request failed: ${r.url()}`); });
   t.after(() => page.context().close());
+  // Satellite orbits: the page asks CelesTrak itself, so give it a fixed copy (no internet needed to test).
+  await page.context().route("https://celestrak.org/NORAD/**", (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(require("./fixtures/sats.js")) }));
   await page.context().route("https://www.qrz.com/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<title>QRZ</title>" }));
   await page.goto(base + "/");
   await page.waitForFunction(() => document.getElementById("banner").textContent !== "Loading live data…");
@@ -3201,7 +3204,8 @@ test("Digital voice add-on: hidden until ticked; one click puts a pretend FT-991
   await page.click("#dvGo");
   assert.match(await page.textContent("#dvNote"), /2 m \(144–146 MHz\) and 70 cm/);
   assert.equal(await page.evaluate(() => window.__radio.hz), 430400000);
-  assert.ok(await page.evaluate((n) => !window.__radio.sent.slice(n).some((c) => /^(FA\d|MD0)/.test(c)), before));
+  // No new frequency or mode *set* (FA<digits>, MD0<mode>); the plain FA / MD0 reads from polling are fine.
+  assert.ok(await page.evaluate((n) => !window.__radio.sent.slice(n).some((c) => /^(FA\d|MD0\w)/.test(c)), before));
   // Only frequency and mode were ever set: no transmit, MOX or power commands
   assert.deepEqual(await page.evaluate(() => window.__radio.sent.filter((c) => /^(TX|MX|PC|AC)/.test(c))), []);
   // The radio's C4FM shows up in Band Watch (FM listen mode)
