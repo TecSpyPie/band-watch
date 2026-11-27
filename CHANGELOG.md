@@ -1,5 +1,9 @@
 # What's new
 
+## 1.44.3 (27 Nov 2026)
+- **ClearRX 1.6.2: no more silent PC sound.** Installing VB-CABLE often makes "CABLE Input" Windows' default speakers, so ClearRX's "Default speakers" quietly played back into the cable and you heard nothing. ClearRX now shows which speakers are the default ("Default speakers (CABLE Input …)"). It won't start if that would go round in a circle, it says plainly when nobody would hear it, and it tells you how to fix it: pick your speakers in "Play to", and set them back as the default in Windows Settings > System > Sound > Output. This is also the first ClearRX you can get with ClearRX's own Update button.
+- **Release notes: ClearRX with internet radio, WebSDR, KiwiSDR or YouTube.** Every release now has step-by-step instructions for using ClearRX with the free **VB-CABLE**: install it, set your speakers back as Windows' default, send the browser into "CABLE Input" in the Volume mixer, then press PC sound in ClearRX and Play to your speakers.
+
 ## 1.44.2 (27 Nov 2026)
 - **ClearRX 1.6.1 updates itself.** When a newer ClearRX is out, a green **Update to …** button shows on ClearRX's toolbar. Press it and ClearRX downloads the new version from HamShack's release, checks it against the release's check numbers, puts it in place and restarts. The open window reloads by itself and your settings stay. Each release now also carries `clearrx-version.txt` so ClearRX can tell what's new. You install 1.6.1 by hand once; after that it updates itself. HamShack already updates itself in Settings > Updates.
 

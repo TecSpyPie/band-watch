@@ -1,4 +1,4 @@
-ClearRX by M3VRV & King Coder - radio audio processor (version 1.6.1)
+ClearRX by M3VRV & King Coder - radio audio processor (version 1.6.2)
 
 Install
   1. Unzip it into C:\BandWatch (the zip has its own ClearRX folder, so you get
@@ -58,6 +58,9 @@ Use
     picks "CABLE Output" in Sound from), Play to your speakers or headphones,
     and press Start. Don't use Stereo Mix: it hears ClearRX too and howls.
     ClearRX won't start if "Play to" is the cable it's listening to.
+    Installing VB-CABLE often makes the cable Windows' default speakers: then
+    pick your speakers by name in "Play to", and set them back as the default
+    in Windows Settings > System > Sound > Output. ClearRX tells you if so.
   - Updates: when a newer ClearRX is out, a green "Update to ..." button shows
     on the toolbar. Press it: ClearRX downloads the new version, checks it,
     puts it in place and restarts by itself. Your settings stay.

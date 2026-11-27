@@ -1,6 +1,6 @@
 {
   "name": "band-watch",
-  "version": "1.44.2",
+  "version": "1.44.3",
   "private": true,
   "license": "MIT",
   "description": "HamShack by M0GLP & M3VRV: live HF band conditions from PSK Reporter spots and NOAA solar data",

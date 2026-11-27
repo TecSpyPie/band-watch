@@ -90,8 +90,11 @@ async function listDevices() {
     sel.innerHTML = `<option value="">${first}</option>${devs.map((d, i) => `<option value="${esc(d.deviceId)}">${esc(d.label || `${kind === "audioinput" ? "Input" : "Output"} ${i + 1}`)}</option>`).join("")}`;
     if ([...sel.options].some((o) => o.value === keep)) sel.value = keep;
   };
+  // Windows' default speakers, by name: after installing VB-CABLE they're often the cable itself
+  const def = all.find((d) => d.kind === "audiooutput" && d.deviceId === "default");
+  app.defaultOut = PcSound.defaultName(def && def.label);
   fill($("inDev"), "audioinput", "Default input");
-  fill($("outDev"), "audiooutput", "Default speakers");
+  fill($("outDev"), "audiooutput", app.defaultOut ? `Default speakers (${esc(app.defaultOut)})` : "Default speakers");
   $("outDev").disabled = !("setSinkId" in AudioContext.prototype);
   if ($("outDev").disabled) $("outDev").title = "This browser plays to the default speakers only";
 }
@@ -99,8 +102,8 @@ async function listDevices() {
 async function start() {
   if (app.running) return;
   // Never start a circle: ClearRX playing into the cable it listens to would howl at once
-  const risk0 = PcSound.loopRisk(selectedName($("inDev")), $("outDev").value ? selectedName($("outDev")) : "");
-  if (risk0 === "loop") { setStatus(PcSound.loopWords(risk0)); render(); return; }
+  const risk0 = PcSound.loopRisk(selectedName($("inDev")), outName());
+  if (risk0 === "loop") { setStatus(PcSound.loopWords(risk0, !$("outDev").value)); render(); return; }
   try {
     const id = $("inDev").value;
     // The radio's sound as it is: no echo cancelling, noise suppression or automatic gain from the browser
@@ -132,9 +135,9 @@ async function start() {
     scopeKick();
     await listDevices(); // now the names show (the browser only gives them after you allow the sound)
     // The names may only show now, so check for a circle again
-    const risk = PcSound.loopRisk(selectedName($("inDev")), $("outDev").value ? selectedName($("outDev")) : "");
-    if (risk === "loop") { stop(); setStatus(PcSound.loopWords(risk)); return; }
-    setStatus(`Running: ${selectedName($("inDev"))} → ${selectedName($("outDev"))}.${risk ? " " + PcSound.loopWords(risk) : ""}`);
+    const risk = PcSound.loopRisk(selectedName($("inDev")), outName());
+    if (risk === "loop") { stop(); setStatus(PcSound.loopWords(risk, !$("outDev").value)); return; }
+    setStatus(`Running: ${selectedName($("inDev"))} → ${selectedName($("outDev"))}.${risk ? " " + PcSound.loopWords(risk, !$("outDev").value) : ""}`);
     if (app.findAfterStart) { app.findAfterStart = false; setTimeout(() => pickRadio(app.s.radio, false), 0); }
   } catch (e) {
     stop();
@@ -154,6 +157,8 @@ function stop() {
   render();
 }
 
+/** Where ClearRX plays: the "Play to" choice by name, or Windows' default speakers' name. */
+const outName = () => ($("outDev").value ? selectedName($("outDev")) : app.defaultOut || "");
 const selectedName = (sel) => (sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : "default");
 function setStatus(t) { $("status").textContent = t; }
 
