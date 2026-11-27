@@ -22,7 +22,7 @@
 
   const ROOMS = ["general", "160", "80", "60", "40", "30", "20", "17", "15", "12", "10", "6", "2", "70"];
   const roomName = (r) => (r === "general" ? "General" : r === "70" ? "70 cm" : `${r} m`);
-  const S = { room: get("bwx-chat-room", "general"), msgs: [], last: 0, hidden: new Set(get("bwx-chat-hidden", [])), busy: false, err: "", timer: 0 };
+  const S = { room: get("bwx-chat-room", "general"), msgs: [], last: 0, hidden: new Set(get("bwx-chat-hidden", [])), busy: false, err: "", timer: 0, reported: new Set() };
   if (!ROOMS.includes(S.room)) S.room = "general";
 
   const css = `
@@ -35,7 +35,9 @@
 .bwc-call.me{color:var(--warm)}
 .bwc-text{white-space:pre-wrap;overflow-wrap:anywhere;min-width:0}
 .bwc-time{font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
-.bwc-hide{grid-column:3;justify-self:end;font-size:.75rem;color:var(--muted);background:none;border:0;cursor:pointer;padding:0}
+.bwc-acts{grid-column:3;justify-self:end;display:flex;gap:10px}
+.bwc-hide{font-size:.75rem;color:var(--muted);background:none;border:0;cursor:pointer;padding:0}
+.bwc-hide:disabled{cursor:default;opacity:.7}
 .bwc-empty{color:var(--muted);margin:auto;text-align:center}
 .bwc-form{display:flex;gap:8px;margin-top:8px}
 .bwc-form textarea{flex:1;min-width:0;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;resize:vertical;min-height:40px}
@@ -64,7 +66,11 @@
         mk("span", { class: "bwc-call" + (m.call === me ? " me" : ""), text: m.call }),
         mk("span", { class: "bwc-text", text: m.text }),
         mk("span", { class: "bwc-time", title: new Date(m.t).toUTCString(), text: hhmm(m.t) }),
-        m.call !== me ? mk("button", { type: "button", class: "bwc-hide", text: "Hide", title: `Hide all messages from ${m.call}`, "aria-label": `Hide messages from ${m.call}`, onclick: () => hideCall(m.call) }) : null));
+        m.call !== me ? mk("span", { class: "bwc-acts" },
+          mk("button", { type: "button", class: "bwc-hide", text: "Hide", title: `Hide all messages from ${m.call}, on this device only`, "aria-label": `Hide messages from ${m.call}`, onclick: () => hideCall(m.call) }),
+          S.reported.has(m.id)
+            ? mk("button", { type: "button", class: "bwc-hide", text: "Reported", disabled: true })
+            : mk("button", { type: "button", class: "bwc-hide", text: "Report", title: "Report this message as abusive or spam. When three people report it, it's removed for everyone.", "aria-label": `Report this message from ${m.call}`, onclick: (e) => reportMsg(m, e.currentTarget) })) : null));
     }
     if (atBottom) ul.scrollTop = ul.scrollHeight;
     const hid = byId("bwcHidden");
@@ -72,6 +78,25 @@
       hid.replaceChildren();
       if (S.hidden.size) hid.append(`Hiding ${[...S.hidden].join(", ")} `, mk("button", { type: "button", class: "lbtn", text: "Show all", onclick: () => { S.hidden.clear(); put("bwx-chat-hidden", []); renderList(); } }));
     }
+  }
+  /** First tap asks "Sure?", second tap sends the report: easy to undo a slip of the finger. */
+  async function reportMsg(m, btn) {
+    if (btn.dataset.sure !== "1") {
+      btn.dataset.sure = "1"; btn.textContent = "Sure? Tap again";
+      setTimeout(() => { if (btn.isConnected && btn.dataset.sure === "1") { btn.dataset.sure = ""; btn.textContent = "Report"; } }, 4000);
+      return;
+    }
+    btn.disabled = true;
+    const note = byId("bwcNote");
+    try {
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ room: S.room, report: m.id }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok && res.status !== 404) throw new Error(d.error || "Couldn't send the report. Try again.");
+      S.reported.add(m.id);
+      if (d.removed || res.status === 404) S.msgs = S.msgs.filter((x) => x.id !== m.id);
+      note.textContent = d.removed ? "Thanks. That message has been removed." : "Thanks. It comes down when three people report it."; note.className = "";
+    } catch (err) { note.textContent = err.message; note.className = "bwc-err"; }
+    renderList();
   }
   function hideCall(c) { S.hidden.add(c); put("bwx-chat-hidden", [...S.hidden]); renderList(); }
 
@@ -83,6 +108,7 @@
       const d = await res.json();
       if (d.available === false) return webOnly(d.web);
       if (room !== S.room) return;
+      if (Array.isArray(d.removed) && d.removed.length) { const gone = new Set(d.removed); S.msgs = S.msgs.filter((m) => !gone.has(m.id)); }
       if (Array.isArray(d.messages) && d.messages.length) {
         const seen = new Set(S.msgs.map((m) => m.id));
         S.msgs = [...S.msgs, ...d.messages.filter((m) => !seen.has(m.id))].slice(-200);
