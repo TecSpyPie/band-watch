@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Help · HamShack by M0GLP &amp; M3VRV</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css?v=1.44.3">
+<link rel="stylesheet" href="/style.css?v=1.45.0">
 <script>
   // The same colours as HamShack itself (Settings > Display)
   try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
@@ -235,6 +235,9 @@
         It is a simplified summary of the RSGB plan: check the RSGB plan and your licence before you transmit.</li>
       <li><b>Band scope:</b> where on the band the activity is. With an RTL-SDR, click <b class="btn">Start live scope</b>
         for a live spectrum and waterfall. Click anywhere on it to tune there.</li>
+      <li><b>3D view:</b> press <b class="btn">3D view</b> under the band scope for the live band as a 3D landscape: the band
+        from left to right, the last few seconds going back into the distance, and each signal rising above the noise. The
+        frequency you're tuned to is the bright line. It needs the live RTL-SDR scope, and HamShack remembers whether it's on.</li>
     </ul>
     <figure><img src="/help/live-scope.webp" alt="The band scope showing a live spectrum and waterfall from an RTL-SDR" loading="lazy">
       <figcaption>The band scope, live from an RTL-SDR.</figcaption></figure>
@@ -584,6 +587,6 @@
       <a href="https://github.com/TecSpyPie/band-watch" target="_blank" rel="noopener">github.com/TecSpyPie/band-watch</a>.</p>
   </section>
 </div>
-<script src="/js/support.js?v=1.44.3"></script>
+<script src="/js/support.js?v=1.45.0"></script>
 </body>
 </html>

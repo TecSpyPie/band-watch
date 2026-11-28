@@ -323,6 +323,7 @@ async function quitDesktop() {
 
 // What each version added. The build date of the copy you're running comes from the server.
 const VERSION_HISTORY = [
+  ["1.45.0", "A 3D view for the band scope: the live band as a landscape, signals rising above the noise"],
   ["1.44.3", "ClearRX 1.6.2 notices when Windows' default speakers are the virtual cable, so PC sound doesn't go silent"],
   ["1.44.2", "ClearRX 1.6.1 updates itself: an Update button on its toolbar when a newer ClearRX is out"],
   ["1.44.1", "ClearRX 1.6.0: PC sound, to clean up an internet radio, WebSDR or KiwiSDR playing on this PC"],

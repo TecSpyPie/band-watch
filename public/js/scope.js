@@ -132,6 +132,54 @@ function scopeLiveFeed() {
     : rel;
   liveAddRow(rel, N);
   drawScope();
+  scope3dFeed(rel, lo, hi);
+}
+
+/* ---------- 3D view (live RTL-SDR only) ---------- */
+const scope3d = {
+  on: (() => { try { return localStorage.getItem("bw-scope-3d") === "on"; } catch { return false; } })(),
+  view: null,
+};
+
+/** A new live row for the 3D view, when it's open and on screen. */
+function scope3dFeed(rel, lo, hi) {
+  if (!scope3d.on || typeof RfScope3D === "undefined") return;
+  const box = $("scope3dBox");
+  if (!box) return;
+  if (box.hidden) { renderScope3d(); if (box.hidden) return; } // the receiver has just gone live
+  if (box.offsetParent === null) return;
+  if (!scope3d.view) scope3d.view = new RfScope3D.RfScope3DView($("scope3d"));
+  const v = scope3d.view, now = performance.now();
+  v.setSpan(lo, hi);
+  v.marker = typeof listen !== "undefined" && listen.kHz ? listen.kHz / 1000 : null;
+  v.push(rel, (typeof sdr !== "undefined" && sdr.range) || 60, now);
+  v.draw(now);
+}
+
+/** The 3D view's button and its message. */
+function renderScope3d() {
+  const btn = $("scope3dBtn"), box = $("scope3dBox"), msg = $("scope3dMsg");
+  if (!btn) return;
+  const live = scopeIsLive();
+  btn.setAttribute("aria-pressed", String(scope3d.on));
+  btn.textContent = scope3d.on ? "3D view: on" : "3D view";
+  box.hidden = !(scope3d.on && live);
+  msg.textContent = !scope3d.on ? ""
+    : live ? "The band left to right, the last few seconds going back, signals rising above the noise."
+      : "3D view shows your RTL-SDR live: start the live scope to see it.";
+  if (!box.hidden && scope3d.view) { scope3d.view.geo = null; scope3d.view.draw(performance.now()); }
+}
+
+function setupScope3d() {
+  const btn = $("scope3dBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    scope3d.on = !scope3d.on;
+    try { localStorage.setItem("bw-scope-3d", scope3d.on ? "on" : "off"); } catch { /* private mode */ }
+    renderScope3d();
+  });
+  window.addEventListener("resize", () => { if (scope3d.view) scope3d.view.geo = null; });
+  renderScope3d();
 }
 
 /** Waterfall rows are kept in frequency order across the scope, so they stay put when the receiver retunes. */
@@ -166,6 +214,7 @@ function liveAddRow(rel, N) {
 function renderScopeSrc() {
   const el = $("scopeSrc");
   if (!el) return;
+  if (typeof renderScope3d === "function") setTimeout(renderScope3d, 0);
   el.innerHTML = [["live", "Live (RTL-SDR)"], ["spots", "From spots"]]
     .map(([k, l]) => `<button type="button" data-src="${k}" aria-pressed="${liveScope.src === k}">${l}</button>`).join("");
   el.querySelectorAll("button").forEach((b) => {
