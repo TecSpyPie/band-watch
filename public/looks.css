@@ -160,6 +160,27 @@
   :root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button){transition:none}
   :root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button):hover{transform:none}
 }
+/* Glossy 3D keys: a wet shine across the top half of each button (with a faint glow reflected at the bottom), and a
+   solid edge underneath that the button sinks into when pressed. Gradients only, no extra blur, so it stays cheap. */
+:root[data-look="glass"]:not(#_){
+  --g-gl-hi:rgb(255 255 255/.85);--g-gl-lo:rgb(255 255 255/.3);--g-gl-floor:rgb(255 255 255/.28);--g-key:rgb(0 0 0/.2);
+  --g-gloss:linear-gradient(180deg,var(--g-gl-hi),var(--g-gl-lo) 46%,transparent 50%,transparent 80%,var(--g-gl-floor))}
+@media (prefers-color-scheme:dark){:root[data-look="glass"]:not([data-theme="light"]):not(#_){
+  --g-gl-hi:rgb(255 255 255/.34);--g-gl-lo:rgb(255 255 255/.1);--g-gl-floor:rgb(255 255 255/.07);--g-key:rgb(0 0 0/.6)}}
+:root[data-look="glass"][data-theme="dark"]:not(#_){
+  --g-gl-hi:rgb(255 255 255/.34);--g-gl-lo:rgb(255 255 255/.1);--g-gl-floor:rgb(255 255 255/.07);--g-key:rgb(0 0 0/.6)}
+:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button){
+  background:var(--g-gloss),color-mix(in srgb,var(--surface) 82%,transparent);
+  box-shadow:var(--g-bevel),0 3px 0 var(--g-key),var(--g-sh-top)}
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+  :root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button):hover{
+    transform:translateY(-1px);box-shadow:var(--g-bevel),0 4px 0 var(--g-key),0 2px 3px rgb(0 0 0/.14),0 12px 20px -6px rgb(0 0 0/.3)}
+}
+:root[data-look="glass"]:not(#_) :is(.lbtn,.qbtn,.tbtn,.tune,.chips button,.rigbtn,.filebtn,.dbtns button,.lsbar button,.optrow button,.dcrow button,.xtctl button,.secnav button,.navfold,.spotzoom button):active{
+  transform:translateY(3px);box-shadow:inset 0 2px 5px rgb(0 0 0/.3),0 0 0 var(--g-key),0 1px 0 var(--g-hi)}
+:root[data-look="glass"]:not(#_) :is(.chips button[aria-pressed="true"],.qbtn.on,.lbtn.on,.rigbtn.on,.lk button,.tune[aria-pressed="true"]){
+  background:var(--g-gloss),color-mix(in srgb,var(--cool) 92%,transparent);color:var(--g-on);
+  box-shadow:var(--g-bevel),0 3px 0 color-mix(in srgb,var(--cool) 45%,#000),0 6px 18px color-mix(in srgb,var(--cool) 50%,transparent)}
 
 /* TOP layer: dialogs get the deepest shadow and a dimmed, blurred page behind them; the toast and map tip float too */
 :root[data-look="glass"]:not(#_) dialog{
@@ -180,12 +201,12 @@
 /* Asked for less transparency or more contrast: opaque surfaces, no blur, shadows and edges kept for depth */
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more){
   :root[data-look="glass"]:not(#_){--g-panel:var(--surface);--g-top:var(--surface);--g-dlg:var(--surface);--g-sheen:transparent;
-    --g-bf-mid:none;--g-bf-top:none;--g-bf-dlg:none}
+    --g-gl-hi:transparent;--g-gl-lo:transparent;--g-gl-floor:transparent;--g-bf-mid:none;--g-bf-top:none;--g-bf-dlg:none}
   :root[data-look="glass"]:not(#_) dialog::backdrop{background:rgb(0 0 0/.55);-webkit-backdrop-filter:none;backdrop-filter:none}
 }
 /* High contrast and Night are never given a look; if one ever slips through, stay plain and opaque */
 :root[data-look="glass"][data-theme="contrast"]:not(#_),:root[data-look="glass"][data-theme="night"]:not(#_){
-  --g-panel:var(--surface);--g-top:var(--surface);--g-dlg:var(--surface);--g-sheen:transparent;--g-hi:transparent;--g-rim:var(--line);
+  --g-panel:var(--surface);--g-top:var(--surface);--g-dlg:var(--surface);--g-sheen:transparent;--g-hi:transparent;--g-rim:var(--line);--g-gl-hi:transparent;--g-gl-lo:transparent;--g-gl-floor:transparent;--g-key:transparent;
   --g-bf-mid:none;--g-bf-top:none;--g-bf-dlg:none}
 
 /* ======================= Space station ======================= */
