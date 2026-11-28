@@ -60,6 +60,8 @@ func main() {
 	cfg.ContestURL = env("BW_CONTEST_URL", cfg.ContestURL)
 	cfg.UpdateURL = env("BW_UPDATE_URL", cfg.UpdateURL)
 	cfg.UpdateAssets = os.Getenv("BW_UPDATE_ASSETS")
+	cfg.AndroidPackage = os.Getenv("ANDROID_PACKAGE")
+	cfg.AndroidCerts = os.Getenv("ANDROID_CERT_SHA256")
 
 	if *serve {
 		cfg.TestHooks = os.Getenv("BW_TEST") == "1"

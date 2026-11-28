@@ -1,0 +1,42 @@
+{
+  "packageId": "io.github.tecspypie.hamshack",
+  "host": "band-watch.ample.run",
+  "name": "HamShack by M0GLP & M3VRV",
+  "launcherName": "HamShack",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#0B7285",
+  "themeColorDark": "#0F1A1F",
+  "navigationColor": "#0F1A1F",
+  "navigationColorDark": "#0F1A1F",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#00000000",
+  "backgroundColor": "#0F1A1F",
+  "enableNotifications": false,
+  "enableSiteSettingsShortcut": true,
+  "startUrl": "/?app=1",
+  "iconUrl": "https://band-watch.ample.run/icons/icon-512.png",
+  "maskableIconUrl": "https://band-watch.ample.run/icons/maskable-512.png",
+  "webManifestUrl": "https://band-watch.ample.run/manifest.webmanifest",
+  "fullScopeUrl": "https://band-watch.ample.run/",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./upload-key.jks",
+    "alias": "upload"
+  },
+  "appVersionName": "1.45.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "minSdkVersion": 21,
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
