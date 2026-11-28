@@ -34,6 +34,7 @@ function start() {
 
   loadMonitor();
   setupScopeInput();
+  setupScope3d();
   setupMonitorControls();
   $("grid").addEventListener("change", setGrid);
   $("lk").addEventListener("submit", lookupCall);

@@ -3280,3 +3280,83 @@ test("chat: the website has the chat; the Windows app links to it instead", { sk
   // Feeds the page fetches from other sites (NOAA, CelesTrak) and the contest calendar aren't part of this test.
   assert.deepEqual(errors.filter((e) => !/api\/contests|swpc\.noaa|celestrak|ERR_TUNNEL|ERR_NAME|status of 502/.test(e)), []);
 });
+
+/** A stand-in for rtl_tcp with a busy band: several carriers at different strengths, some keyed on and off like CW,
+ *  and a wider hump like an SSB voice, over noise. */
+function startBusyRtlTcp() {
+  const net = require("net");
+  const FS = 960000, n = FS * 2;
+  const bytes = Buffer.alloc(n * 2);
+  // Offsets from the dongle's centre (Hz), amplitude, and on/off keying (cycles per second; 0 = steady)
+  const sigs = [[-300000, 9, 0], [-262000, 14, 3], [-241000, 22, 0], [-200000, 6, 5], [-150000, 18, 0], [-90000, 11, 2], [-30000, 7, 0], [40000, 16, 4], [120000, 10, 0], [210000, 20, 1.5], [280000, 8, 0]];
+  for (let k = 0; k < n; k++) {
+    let re = (Math.random() - 0.5) * 6, im = (Math.random() - 0.5) * 6;
+    const t = k / FS;
+    for (const [f, a, key] of sigs) {
+      if (key && Math.sin(2 * Math.PI * key * t) < 0) continue;
+      const ph = 2 * Math.PI * f * t;
+      re += a * Math.cos(ph); im += a * Math.sin(ph);
+    }
+    // A voice-like hump: a few close tones whose levels wander
+    for (let j = 0; j < 6; j++) {
+      const f = 160000 + j * 450, a = 5 * (1 + Math.sin(2 * Math.PI * (0.7 + j * 0.3) * t));
+      const ph = 2 * Math.PI * f * t;
+      re += a * Math.cos(ph); im += a * Math.sin(ph);
+    }
+    bytes[2 * k] = Math.max(0, Math.min(255, Math.round(127.5 + re)));
+    bytes[2 * k + 1] = Math.max(0, Math.min(255, Math.round(127.5 + im)));
+  }
+  const state = { sockets: new Set() };
+  const server = net.createServer((sock) => {
+    state.sockets.add(sock);
+    sock.write(Buffer.from([0x52, 0x54, 0x4c, 0x30, 0, 0, 0, 6, 0, 0, 0, 29]));
+    let pos = 0;
+    const timer = setInterval(() => {
+      const len = FS * 2 * 0.02;
+      const out = Buffer.alloc(len);
+      for (let i = 0; i < len; i++) { out[i] = bytes[pos]; pos = (pos + 1) % bytes.length; }
+      if (!sock.destroyed) sock.write(out);
+    }, 20);
+    sock.on("data", () => {});
+    sock.on("close", () => { clearInterval(timer); state.sockets.delete(sock); });
+    sock.on("error", () => {});
+  });
+  return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve({ server, state, port: server.address().port })));
+}
+
+test("3D band scope: off until asked, says it needs the live receiver, then builds a terrain from the RTL-SDR", { skip }, async (t) => {
+  const fake = await startBusyRtlTcp();
+  t.after(() => { for (const s of fake.state.sockets) s.destroy(); fake.server.close(); });
+  const { page, errors } = await openPage(t);
+  assert.equal(await page.isVisible("#scope3dBox"), false, "off to start with");
+  await page.click("#scope3dBtn");
+  assert.equal(await page.getAttribute("#scope3dBtn", "aria-pressed"), "true");
+  assert.match(await page.textContent("#scope3dMsg"), /start the live scope/);
+  assert.equal(await page.isVisible("#scope3dBox"), false, "nothing to show without the receiver");
+
+  await page.selectOption("#lsRx", "rtl");
+  await page.fill("#rtlAddr", `127.0.0.1:${fake.port}`);
+  await page.press("#rtlAddr", "Enter");
+  await page.fill("#lsFreq", "14200");
+  await page.press("#lsFreq", "Enter");
+  await page.click("#lsGo");
+  await page.waitForFunction(() => /Connected/.test(document.getElementById("rtlStatus").textContent));
+  await page.click('#scopeBands button[data-b="20"]');
+  await page.click('#scopeSpan button[data-s="full"]');
+  await page.waitForFunction(() => !document.getElementById("scope3dBox").hidden);
+  await page.evaluate(() => document.getElementById("scope3dBox").scrollIntoView({ block: "center" }));
+  await page.waitForFunction(() => scope3d.view && scope3d.view.ring.count >= 40, null, { timeout: 15000 });
+  assert.match(await page.textContent("#scope3dMsg"), /signals rising above the noise/);
+  // Peaks stand up out of the floor, and the tuned line is in the span
+  const st = await page.evaluate(() => { const r = scope3d.view.ring.get(0); return { max: Math.max(...r), span: scope3d.view.span, marker: scope3d.view.marker }; });
+  assert.ok(st.max > 0.4, `signals stand up (${st.max})`);
+  assert.ok(st.marker >= st.span[0] && st.marker <= st.span[1], "the tuned frequency is on the 3D scope");
+  if (process.env.SHOT_3D) await page.locator("#scopeTitle").evaluate((e) => e.scrollIntoView());
+  if (process.env.SHOT_3D) await page.screenshot({ path: process.env.SHOT_3D, clip: await (async () => { const a = await page.locator("#scopeTitle").boundingBox(), b = await page.locator("#scope3dBox").boundingBox(); return { x: 0, y: a.y - 8, width: 1200, height: b.y + b.height - a.y + 16 }; })() });
+  // Switching it off hides it, and the choice is remembered
+  await page.click("#scope3dBtn");
+  assert.equal(await page.isVisible("#scope3dBox"), false);
+  assert.equal(await page.evaluate(() => localStorage.getItem("bw-scope-3d")), "off");
+  assert.deepEqual(errors, []);
+  await page.click("#lsStop");
+});

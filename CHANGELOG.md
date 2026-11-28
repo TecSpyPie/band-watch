@@ -1,5 +1,8 @@
 # What's new
 
+## 1.45.0 (28 Nov 2026)
+- **3D band scope.** Press **3D view** under the band scope to see the live band from your RTL-SDR as a 3D landscape: the band from left to right (the same span as the scope above), the last few seconds going back into the distance and fading, and each signal rising above the noise as a peak, coloured from blue up to amber. The frequency you're tuned to is a bright line running into the distance. It follows the band and span you pick, needs the live RTL-SDR scope (it says so if the receiver isn't running), draws only while it's on screen, and HamShack remembers whether it's on. Like ClearRX's 3D scope, it's plain drawing with no add-ons. New `public/js/rfscope3d.js`, with tests.
+
 ## 1.44.3 (27 Nov 2026)
 - **ClearRX 1.6.2: no more silent PC sound.** Installing VB-CABLE often makes "CABLE Input" Windows' default speakers, so ClearRX's "Default speakers" quietly played back into the cable and you heard nothing. ClearRX now shows which speakers are the default ("Default speakers (CABLE Input …)"). It won't start if that would go round in a circle, it says plainly when nobody would hear it, and it tells you how to fix it: pick your speakers in "Play to", and set them back as the default in Windows Settings > System > Sound > Output. This is also the first ClearRX you can get with ClearRX's own Update button.
 - **Release notes: ClearRX with internet radio, WebSDR, KiwiSDR or YouTube.** Every release now has step-by-step instructions for using ClearRX with the free **VB-CABLE**: install it, set your speakers back as Windows' default, send the browser into "CABLE Input" in the Volume mixer, then press PC sound in ClearRX and Play to your speakers.

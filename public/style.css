@@ -330,6 +330,10 @@ dialog label.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;ma
 .optabout dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .abhist{margin:6px 0 0;padding-left:18px}
 .abhist li{margin:3px 0}
+.scope3dbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:8px 0 6px}
+.scope3dbox{margin-bottom:4px}
+.scope3dbox canvas{display:block;width:100%;height:260px}
+@media (max-width:600px){.scope3dbox canvas{height:200px}}
 .scopesrc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:8px}
 .scopesrc .chips{margin:0}
 .rigbtn.on{background:var(--cool);color:var(--bg);border-color:var(--cool);font-variant-numeric:tabular-nums}

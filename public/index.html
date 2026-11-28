@@ -15,10 +15,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css?v=1.44.3">
-<link rel="stylesheet" href="/listen.css?v=1.44.3">
-<link rel="stylesheet" href="/looks.css?v=1.44.3">
-<link rel="stylesheet" href="/nav.css?v=1.44.3">
+<link rel="stylesheet" href="/style.css?v=1.45.0">
+<link rel="stylesheet" href="/listen.css?v=1.45.0">
+<link rel="stylesheet" href="/looks.css?v=1.45.0">
+<link rel="stylesheet" href="/nav.css?v=1.45.0">
 </head>
 <body>
 <div class="wrap">
@@ -128,6 +128,9 @@
         <span class="small muted" id="scopeLiveMsg" role="status"></span>
         <button type="button" class="tune" id="scopeLiveGo" hidden>Start live scope</button></div>
       <div class="scopebox" id="scopebox"><canvas id="scope" tabindex="0" role="img"></canvas><div class="cur" id="cur"></div><div class="sel" id="scopeSel"></div></div>
+      <div class="scope3dbar"><button type="button" class="tune" id="scope3dBtn" aria-pressed="false" aria-controls="scope3dBox">3D view</button>
+        <span class="small muted" id="scope3dMsg" role="status"></span></div>
+      <div class="scopebox scope3dbox" id="scope3dBox" hidden><canvas id="scope3d" role="img" aria-label="3D band scope: the band from left to right, the last few seconds going back into the distance, and each signal's height above the noise. The tuned frequency is the bright line."></canvas></div>
       <p class="read" id="scopeRead" aria-live="polite"></p>
       <p id="scopeNote" class="foot" style="margin:2px 0 0"></p>
       <ul class="spots" id="spots"></ul>
@@ -1233,62 +1236,63 @@
   The scope is drawn from those spot reports, not from a receiver. On the map, the Map view draws curved great-circle paths and the Bowl view draws simple straight lines.
   Listening uses public web receivers run by volunteers; HamShack doesn't control what they hear.</p>
 </div>
-<script src="/js/install.js?v=1.44.3"></script>
-<script src="/js/bandplan.js?v=1.44.3"></script>
-<script src="/js/core.js?v=1.44.3"></script>
-<script src="/js/networds.js?v=1.44.3"></script>
-<script src="/js/modes.js?v=1.44.3"></script>
-<script src="/js/vendor/land110.js?v=1.44.3"></script>
-<script src="/js/mapmath.js?v=1.44.3"></script>
-<script src="/js/map.js?v=1.44.3"></script>
-<script src="/js/spotmap.js?v=1.44.3"></script>
-<script src="/js/scope.js?v=1.44.3"></script>
-<script src="/js/monitor.js?v=1.44.3"></script>
-<script src="/js/lookup.js?v=1.44.3"></script>
-<script src="/js/worldclock.js?v=1.44.3"></script>
-<script src="/js/locator.js?v=1.44.3"></script>
-<script src="/js/activity.js?v=1.44.3"></script>
-<script src="/js/qrz.js?v=1.44.3"></script>
-<script src="/js/hovercard.js?v=1.44.3"></script>
-<script src="/js/station.js?v=1.44.3"></script>
-<script src="/js/sdr-dsp.js?v=1.44.3"></script>
-<script src="/js/sdr-stall.js?v=1.44.3"></script>
-<script src="/js/sdr.js?v=1.44.3"></script>
-<script src="/js/rxfx.js?v=1.44.3"></script>
-<script src="/js/clearrx-link.js?v=1.44.3"></script>
-<script src="/js/listen.js?v=1.44.3"></script>
-<script src="/js/rig.js?v=1.44.3"></script>
-<script src="/js/rigrx.js?v=1.44.3"></script>
-<script src="/js/xota.js?v=1.44.3"></script>
-<script src="/js/satmath.js?v=1.44.3"></script>
-<script src="/js/sats.js?v=1.44.3"></script>
-<script src="/js/eibi-data.js?v=1.44.3"></script>
-<script src="/js/eibi.js?v=1.44.3"></script>
-<script src="/js/panel.js?v=1.44.3"></script>
-<script src="/js/logbook.js?v=1.44.3"></script>
-<script src="/js/wanted.js?v=1.44.3"></script>
-<script src="/js/dccols.js?v=1.44.3"></script>
-<script src="/js/dcwording.js?v=1.44.3"></script>
-<script src="/js/decoders.js?v=1.44.3"></script>
-<script src="/js/ft8.js?v=1.44.3"></script>
-<script src="/js/ftxtx.js?v=1.44.3"></script>
-<script src="/js/tx.js?v=1.44.3"></script>
-<script src="/js/cwtx.js?v=1.44.3"></script>
-<script src="/js/cwkey.js?v=1.44.3"></script>
-<script src="/js/sstv.js?v=1.44.3"></script>
-<script src="/js/sstvui.js?v=1.44.3"></script>
-<script src="/js/aprsui.js?v=1.44.3"></script>
-<script src="/js/sun.js?v=1.44.3"></script>
-<script src="/js/options.js?v=1.44.3"></script>
-<script src="/js/windows.js?v=1.44.3"></script>
-<script src="/js/rotmath.js?v=1.44.3"></script>
-<script src="/js/rotator.js?v=1.44.3"></script>
-<script src="/js/antenna.js?v=1.44.3"></script>
-<script src="/js/dv.js?v=1.44.3"></script>
-<script src="/js/repeaters.js?v=1.44.3"></script>
-<script src="/js/looks.js?v=1.44.3"></script>
-<script src="/js/app.js?v=1.44.3"></script>
-<script src="/js/nav.js?v=1.44.3"></script>
-<script src="/js/support.js?v=1.44.3"></script>
+<script src="/js/install.js?v=1.45.0"></script>
+<script src="/js/bandplan.js?v=1.45.0"></script>
+<script src="/js/core.js?v=1.45.0"></script>
+<script src="/js/networds.js?v=1.45.0"></script>
+<script src="/js/modes.js?v=1.45.0"></script>
+<script src="/js/vendor/land110.js?v=1.45.0"></script>
+<script src="/js/mapmath.js?v=1.45.0"></script>
+<script src="/js/map.js?v=1.45.0"></script>
+<script src="/js/spotmap.js?v=1.45.0"></script>
+<script src="/js/rfscope3d.js?v=1.45.0"></script>
+<script src="/js/scope.js?v=1.45.0"></script>
+<script src="/js/monitor.js?v=1.45.0"></script>
+<script src="/js/lookup.js?v=1.45.0"></script>
+<script src="/js/worldclock.js?v=1.45.0"></script>
+<script src="/js/locator.js?v=1.45.0"></script>
+<script src="/js/activity.js?v=1.45.0"></script>
+<script src="/js/qrz.js?v=1.45.0"></script>
+<script src="/js/hovercard.js?v=1.45.0"></script>
+<script src="/js/station.js?v=1.45.0"></script>
+<script src="/js/sdr-dsp.js?v=1.45.0"></script>
+<script src="/js/sdr-stall.js?v=1.45.0"></script>
+<script src="/js/sdr.js?v=1.45.0"></script>
+<script src="/js/rxfx.js?v=1.45.0"></script>
+<script src="/js/clearrx-link.js?v=1.45.0"></script>
+<script src="/js/listen.js?v=1.45.0"></script>
+<script src="/js/rig.js?v=1.45.0"></script>
+<script src="/js/rigrx.js?v=1.45.0"></script>
+<script src="/js/xota.js?v=1.45.0"></script>
+<script src="/js/satmath.js?v=1.45.0"></script>
+<script src="/js/sats.js?v=1.45.0"></script>
+<script src="/js/eibi-data.js?v=1.45.0"></script>
+<script src="/js/eibi.js?v=1.45.0"></script>
+<script src="/js/panel.js?v=1.45.0"></script>
+<script src="/js/logbook.js?v=1.45.0"></script>
+<script src="/js/wanted.js?v=1.45.0"></script>
+<script src="/js/dccols.js?v=1.45.0"></script>
+<script src="/js/dcwording.js?v=1.45.0"></script>
+<script src="/js/decoders.js?v=1.45.0"></script>
+<script src="/js/ft8.js?v=1.45.0"></script>
+<script src="/js/ftxtx.js?v=1.45.0"></script>
+<script src="/js/tx.js?v=1.45.0"></script>
+<script src="/js/cwtx.js?v=1.45.0"></script>
+<script src="/js/cwkey.js?v=1.45.0"></script>
+<script src="/js/sstv.js?v=1.45.0"></script>
+<script src="/js/sstvui.js?v=1.45.0"></script>
+<script src="/js/aprsui.js?v=1.45.0"></script>
+<script src="/js/sun.js?v=1.45.0"></script>
+<script src="/js/options.js?v=1.45.0"></script>
+<script src="/js/windows.js?v=1.45.0"></script>
+<script src="/js/rotmath.js?v=1.45.0"></script>
+<script src="/js/rotator.js?v=1.45.0"></script>
+<script src="/js/antenna.js?v=1.45.0"></script>
+<script src="/js/dv.js?v=1.45.0"></script>
+<script src="/js/repeaters.js?v=1.45.0"></script>
+<script src="/js/looks.js?v=1.45.0"></script>
+<script src="/js/app.js?v=1.45.0"></script>
+<script src="/js/nav.js?v=1.45.0"></script>
+<script src="/js/support.js?v=1.45.0"></script>
 </body>
 </html>
