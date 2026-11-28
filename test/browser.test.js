@@ -647,6 +647,32 @@ test("station time for a callsign that hasn't been spotted", { skip }, async (t)
   assert.equal(await page.getAttribute("#stListen a", "href"), "http://rx.linkfanel.net/");
 });
 
+test("glass look: glossy 3D buttons with a key edge that press in", { skip }, async (t) => {
+  const { page, errors } = await openPage(t);
+  const style = (sel) => page.$eval(sel, (el) => { const c = getComputedStyle(el); return { bg: c.backgroundImage, sh: c.boxShadow }; });
+  const plain = await style("#scope3dBtn");
+  assert.doesNotMatch(plain.sh, /0px 3px 0px/, "Classic has no key edge");
+  await page.click("#optBtn");
+  await page.selectOption("#optTheme", "dark");
+  await page.selectOption("#optLook", "glass");
+  await page.waitForFunction(() => document.documentElement.dataset.look === "glass" && document.documentElement.dataset.theme === "dark");
+  await page.click("#optDone");
+  const glass = await style("#scope3dBtn");
+  assert.match(glass.bg, /^linear-gradient/, "a gloss layer over the glass: " + glass.bg);
+  assert.match(glass.bg, /rgba\(255, 255, 255, 0\.34\)/, "the dark-mode shine at the top");
+  assert.match(glass.sh, /0px 3px 0px/, "a solid edge underneath: " + glass.sh);
+  await page.$eval("#scope3dBtn", (b) => b.setAttribute("aria-pressed", "true"));
+  // (the shadow eases over a fifth of a second, so wait for it to settle)
+  await page.waitForFunction(() => /0px 6px 18px/.test(getComputedStyle(document.getElementById("scope3dBtn")).boxShadow), null, { timeout: 3000 });
+  await page.$eval("#scope3dBtn", (b) => b.setAttribute("aria-pressed", "false"));
+  await page.click("#optBtn");
+  await page.selectOption("#optTheme", "contrast");
+  await page.waitForFunction(() => !document.documentElement.dataset.look);
+  await page.click("#optDone");
+  assert.doesNotMatch((await style("#scope3dBtn")).sh, /0px 3px 0px/, "High contrast stays plain");
+  assert.deepEqual(errors, []);
+});
+
 test("display options: colours, accent, text size, scale, layout, sections and scope resolution", { skip }, async (t) => {
   const { page, errors } = await openPage(t);
   const css = (sel, prop) => page.$eval(sel, (el, p) => getComputedStyle(el)[p], prop);
@@ -654,10 +680,12 @@ test("display options: colours, accent, text size, scale, layout, sections and s
   await page.click("#optBtn");
   assert.equal(await page.$eval("#optDlg", (d) => d.open), true);
 
+  // A theme change fades in (a view transition), so the new colours land a moment later
   await page.selectOption("#optTheme", "night");
-  assert.equal(await page.getAttribute("html", "data-theme"), "night");
+  await page.waitForFunction(() => document.documentElement.dataset.theme === "night");
   assert.equal(await rootVar("--bg"), "#050000");
   await page.selectOption("#optTheme", "contrast");
+  await page.waitForFunction(() => document.documentElement.dataset.theme === "contrast");
   assert.equal(await rootVar("--text"), "#fff");
 
   await page.click('#optAccent button[aria-label="Orange"]');
