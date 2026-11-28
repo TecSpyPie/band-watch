@@ -1,0 +1,133 @@
+# Builds the Android app (Google Play) from android/twa-manifest.json with Bubblewrap.
+# It only runs when started by hand: Actions > "Android app (Play Store)" > Run workflow.
+# It makes a signed .aab (Android App Bundle) and keeps it as a download on the run's page.
+# It never makes a release, never pushes, and doesn't touch main. See android/README.md.
+#
+# Repository secrets it needs (Settings > Secrets and variables > Actions), all made by the owner:
+#   ANDROID_UPLOAD_KEYSTORE_BASE64  the upload key file (upload-key.jks), base64-encoded
+#   ANDROID_UPLOAD_KEYSTORE_PASSWORD  the keystore's password
+#   ANDROID_UPLOAD_KEY_PASSWORD     the key's password (often the same)
+#   ANDROID_UPLOAD_KEY_ALIAS        the key's alias (optional; "upload" if not set)
+name: Android app (Play Store)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "Version code: a whole number, higher than any .aab uploaded to Play before (1, 2, 3...)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-build
+  cancel-in-progress: false
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Bubblewrap 1.28.0 wants JDK 17 and Android build-tools 36.1.0 (its BUILD_TOOLS_VERSION).
+      BUBBLEWRAP: "@bubblewrap/cli@1.28.0"
+      BUILD_TOOLS: "36.1.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the version code
+        env:
+          CODE: ${{ inputs.version_code }}
+        run: |
+          case "$CODE" in ''|*[!0-9]*) echo "::error::The version code must be a whole number, like 3."; exit 1;; esac
+          if [ "$CODE" -lt 1 ] || [ "$CODE" -gt 2100000000 ]; then echo "::error::The version code must be between 1 and 2100000000."; exit 1; fi
+
+      - name: Check the signing secrets are there
+        env:
+          KS: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          KSP: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          KP: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          missing=""
+          [ -n "$KS" ] || missing="$missing ANDROID_UPLOAD_KEYSTORE_BASE64"
+          [ -n "$KSP" ] || missing="$missing ANDROID_UPLOAD_KEYSTORE_PASSWORD"
+          [ -n "$KP" ] || missing="$missing ANDROID_UPLOAD_KEY_PASSWORD"
+          if [ -n "$missing" ]; then echo "::error::Add these repository secrets first (see android/README.md):$missing"; exit 1; fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android command-line tools
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools build-tools;${{ env.BUILD_TOOLS }} platforms;android-36"
+
+      - name: Tell Bubblewrap where the JDK and Android SDK are
+        run: |
+          # Bubblewrap looks for sdkmanager in <sdk>/bin; the command-line tools keep it in cmdline-tools/latest/bin.
+          [ -e "$ANDROID_HOME/bin" ] || ln -s "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/bin"
+          mkdir -p ~/.bubblewrap
+          node -e 'require("fs").writeFileSync(require("os").homedir() + "/.bubblewrap/config.json",
+            JSON.stringify({ jdkPath: process.env.JAVA_HOME, androidSdkPath: process.env.ANDROID_HOME }))'
+
+      - name: Wake the website
+        run: |
+          # The app's icons and manifest come from the live site, which sleeps when nobody is using it.
+          host=$(node -p 'require("./android/twa-manifest.json").host')
+          for i in 1 2 3 4 5 6; do
+            curl -fsS -o /dev/null "https://$host/manifest.webmanifest" && exit 0
+            sleep 10
+          done
+          echo "::error::Couldn't reach https://$host. Is the website up?"; exit 1
+
+      - name: Make the Android project
+        env:
+          CODE: ${{ inputs.version_code }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/twa"
+          # The version name is HamShack's own version (package.json); the code is the one typed in above.
+          node -e '
+            const fs = require("fs");
+            const m = JSON.parse(fs.readFileSync("android/twa-manifest.json", "utf8"));
+            m.appVersionName = require("./package.json").version;
+            m.appVersionCode = Number(process.env.CODE);
+            m.signingKey = { path: process.env.RUNNER_TEMP + "/upload-key.jks", alias: m.signingKey.alias };
+            fs.writeFileSync(process.env.RUNNER_TEMP + "/twa/twa-manifest.json", JSON.stringify(m, null, 2));
+          '
+          cd "$RUNNER_TEMP/twa"
+          npx --yes "$BUBBLEWRAP" update --skipVersionUpgrade --manifest="$RUNNER_TEMP/twa/twa-manifest.json" --directory="$RUNNER_TEMP/twa"
+
+      - name: Build and sign the app bundle
+        env:
+          KS: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+        run: |
+          # The key only exists in this run's temporary folder, and is never printed.
+          umask 077
+          printf '%s' "$KS" | base64 -d > "$RUNNER_TEMP/upload-key.jks"
+          unset KS
+          cd "$RUNNER_TEMP/twa"
+          npx --yes "$BUBBLEWRAP" build --manifest="$RUNNER_TEMP/twa/twa-manifest.json" --directory="$RUNNER_TEMP/twa" \
+            --signingKeyPath="$RUNNER_TEMP/upload-key.jks" --signingKeyAlias="${KEY_ALIAS:-upload}"
+          ls -l app-release-bundle.aab
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload-key.jks"
+
+      - name: Keep the .aab as a download
+        uses: actions/upload-artifact@v4
+        with:
+          name: hamshack-android-${{ inputs.version_code }}
+          path: ${{ runner.temp }}/twa/app-release-bundle.aab
+          if-no-files-found: error
+          retention-days: 30
