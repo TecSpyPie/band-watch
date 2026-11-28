@@ -53,11 +53,12 @@ function buildGo() {
   return (goBinary = path.join(ROOT, "desktop", "build", "bandwatch-test"));
 }
 
-/** Start a HamShack server (node or go) pointed at the fake upstream. */
-async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node") {
+/** Start a HamShack server (node or go) pointed at the fake upstream. `extraEnv` adds settings (e.g. ANDROID_*). */
+async function startServer(upstreamBase, kind = process.env.BW_SERVER || "node", extraEnv = {}) {
   const port = await freePort();
   const env = {
     ...process.env,
+    ...extraEnv,
     PORT: String(port),
     HOST: "127.0.0.1",
     BW_TEST: "1",

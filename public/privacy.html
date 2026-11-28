@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · HamShack by M0GLP &amp; M3VRV</title>
+<meta name="description" content="What HamShack keeps, what it sends, and what it never collects.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css?v=1.45.0">
+<script>
+  // The same colours as HamShack itself (Settings > Display)
+  try { const d = JSON.parse(localStorage.getItem("bw-display")); if (d && d.theme && d.theme !== "system") document.documentElement.dataset.theme = d.theme; } catch { /* default */ }
+</script>
+<style>
+  body{margin:0}
+  .help{max-width:880px;margin:0 auto;padding:16px 16px 60px}
+  .help header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  .help h1{margin:0}
+  .help h2{margin:0 0 6px;scroll-margin-top:12px}
+  .help section{margin:0 0 22px}
+  .help p,.help li{line-height:1.55}
+  .help ul{padding-left:1.4em;margin:6px 0}
+  .help li{margin:3px 0}
+  .help .tip{padding:8px 12px;border-left:4px solid var(--cool);background:color-mix(in srgb,var(--cool) 8%,transparent);border-radius:6px}
+</style>
+</head>
+<body>
+<div class="help wrap">
+  <header>
+    <h1>HamShack privacy</h1>
+    <a class="lbtn" href="/">Back to HamShack</a>
+  </header>
+
+  <section class="panel" id="short" aria-labelledby="hShort">
+    <h2 id="hShort">The short version</h2>
+    <p class="tip">HamShack has no accounts, no adverts, no analytics and no tracking. Your settings, your log and
+      your callsign stay on your own device. The few things that do reach our server are there to show you
+      spots, run the chat and stop abuse, and they are not sold or shared.</p>
+    <p>This page covers the HamShack website (band-watch.ample.run), the HamShack app on Google Play (which is
+      the same website in an app window) and the Windows app. Last updated 28 November 2026.</p>
+  </section>
+
+  <section class="panel" id="device" aria-labelledby="hDevice">
+    <h2 id="hDevice">Kept on your device only</h2>
+    <p>These are saved in your browser's own storage on your phone or PC. They never leave it unless one of the
+      points further down says so. Clearing the site's data (or uninstalling the app) removes them.</p>
+    <ul>
+      <li>Your callsign and locator, and all your settings (bands, colours, panels, radio and decoder choices).</li>
+      <li>Your logbook, Wanted list, repeaters and SSTV pictures.</li>
+      <li>Your QRZ Logbook API key, if you add one.</li>
+    </ul>
+    <p><b>Your location:</b> if you press the button to find your locator, your device works out the locator
+      itself. Your exact position is never sent anywhere. You can always type your locator instead.</p>
+    <p><b>The microphone or sound input:</b> if you start a decoder (FT8, CW, SSTV and so on), the sound is
+      decoded on your device. It is never recorded or sent anywhere.</p>
+  </section>
+
+  <section class="panel" id="server" aria-labelledby="hServer">
+    <h2 id="hServer">What reaches the HamShack server</h2>
+    <ul>
+      <li><b>Spots:</b> the first four characters of your locator (for example IO93), to fetch the PSK Reporter
+        reports for your area. Answers are kept for 5 minutes so PSK Reporter isn't asked too often.</li>
+      <li><b>Who heard me:</b> your callsign, if you use it, to ask PSK Reporter who heard you. Callsigns are
+        public on the air.</li>
+      <li><b>Chat:</b> the callsign you type and your message. Messages are public, and the newest 200 in each room
+        are kept for 48 hours, then deleted. Your internet address is held in memory for a minute to stop
+        flooding; if you report a message, only a scrambled form of your address is kept, so nobody can tell
+        who reported it.</li>
+      <li><b>QRZ.com:</b> if you sign in to QRZ, your QRZ username and password are passed straight to QRZ once and
+        never stored. The server keeps QRZ's session key in memory for up to a day so lookups work, and your browser
+        only holds a cookie that points to it. Signing out removes it. Logbook uploads pass your key through to QRZ
+        and the server doesn't keep it.</li>
+      <li><b>Ordinary web logs:</b> like every website, the company hosting HamShack may briefly keep standard
+        request logs (internet address, time, page asked for) to keep the service running and safe. HamShack
+        itself doesn't log who you are.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="others" aria-labelledby="hOthers">
+    <h2 id="hOthers">Other sites your device talks to</h2>
+    <p>Some parts of HamShack load things straight from other services. Those services see your internet address,
+      as with any web page, and have their own privacy policies.</p>
+    <ul>
+      <li>OpenStreetMap (map tiles) and unpkg.com (the map's code), when you open a map.</li>
+      <li>CelesTrak (satellite orbits, at most once every 2 hours) and NASA SDO (the picture of the sun).</li>
+      <li>wspr.live, if you use the antenna comparison with WSPR reports for your callsign.</li>
+      <li>Any web receiver (WebSDR, KiwiSDR), QRZ page or other link you choose to open.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="never" aria-labelledby="hNever">
+    <h2 id="hNever">What HamShack never does</h2>
+    <ul>
+      <li>No analytics, adverts, advertising IDs or trackers.</li>
+      <li>No selling or sharing of anything about you.</li>
+      <li>No names, email addresses or phone numbers asked for.</li>
+      <li>No contacts, photos or files read from your device.</li>
+    </ul>
+  </section>
+
+  <section class="panel" id="contact" aria-labelledby="hContact">
+    <h2 id="hContact">Questions or a chat message to remove</h2>
+    <p>Any chat message can be reported with its <b>Report</b> button; when three people report it, it comes down
+      for everyone, and every message is gone after 48 hours anyway. For anything else, open an issue on
+      <a href="https://github.com/TecSpyPie/band-watch/issues" target="_blank" rel="noopener">github.com/TecSpyPie/band-watch</a>.
+      HamShack by M0GLP &amp; M3VRV is free and open source (MIT licence), so you can read exactly what it does.</p>
+    <p>Children: HamShack is meant for radio amateurs and isn't aimed at children.</p>
+  </section>
+</div>
+</body>
+</html>

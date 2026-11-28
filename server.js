@@ -669,9 +669,32 @@ function handleSdr(req, res, url) {
 }
 
 // Pages served without their .html ending.
-const PAGES = { "/": "index.html", "/install": "install.html", "/decodes": "decodes.html", "/help": "help.html" };
+const PAGES = { "/": "index.html", "/install": "install.html", "/decodes": "decodes.html", "/help": "help.html", "/privacy": "privacy.html" };
 // Files that must be checked for updates on every visit.
-const NO_CACHE = new Set(["index.html", "install.html", "decodes.html", "help.html", "sw.js", "manifest.webmanifest"]);
+const NO_CACHE = new Set(["index.html", "install.html", "decodes.html", "help.html", "privacy.html", "sw.js", "manifest.webmanifest"]);
+
+/* ---------- Android app (Trusted Web Activity) ---------- */
+// The Play Store app is this website in Chrome without the address bar. Android only allows that when the
+// site lists the app at /.well-known/assetlinks.json: its package name and the SHA-256 of the key Google
+// Play signs it with (Play Console > Test and release > App integrity). Both come from the environment:
+//   ANDROID_CERT_SHA256  one or more fingerprints, comma-separated (AB:CD:...:EF, 32 pairs)
+//   ANDROID_PACKAGE      the app's package name (default below, the same as android/twa-manifest.json)
+// With no valid fingerprint the file isn't there (404), so a copy of the site that isn't the app's says nothing.
+const ANDROID_PACKAGE_DEFAULT = "io.github.tecspypie.hamshack";
+const PACKAGE_RE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
+const SHA256_RE = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/;
+
+/** The Digital Asset Links statement for the Android app, or null when it isn't set up. */
+function assetLinks(env = process.env) {
+  const pkg = String(env.ANDROID_PACKAGE || "").trim() || ANDROID_PACKAGE_DEFAULT;
+  if (!PACKAGE_RE.test(pkg)) return null;
+  const prints = [...new Set(String(env.ANDROID_CERT_SHA256 || "").split(",").map((f) => f.trim().toUpperCase()).filter((f) => SHA256_RE.test(f)))];
+  if (!prints.length) return null;
+  return [{
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: { namespace: "android_app", package_name: pkg, sha256_cert_fingerprints: prints },
+  }];
+}
 // Optional downloads offered by the install page, kept next to server.js in ./download.
 const DOWNLOAD_DIR = process.env.BW_DOWNLOAD_DIR || path.join(__dirname, "download");
 const DOWNLOADS = new Set(["BandWatch-Windows.zip", "BandWatch-Setup.exe"]);
@@ -719,6 +742,11 @@ async function handle(req, res) {
         ok: true, version: VERSION,
         build: { date: BUILD_DATE, server: "Node.js", runtime: process.version, platform: `${process.platform}/${process.arch}`, started: STARTED },
       });
+    }
+    if (url.pathname === "/.well-known/assetlinks.json") {
+      const links = assetLinks();
+      if (!links) return sendJson(res, 404, { error: "not found" });
+      return sendJson(res, 200, links, { "Cache-Control": "public, max-age=300" });
     }
     if (url.pathname === "/api/sun") return sendJson(res, 200, await getSun());
     if (url.pathname === "/api/solar") return sendJson(res, 200, await getSolar());
@@ -772,4 +800,4 @@ function resetAll() {
   clock.resetClock();
 }
 
-module.exports = { VERSION, createServer, parsePskXml, parseMyReportsXml, locatorToLatLon, latestByTime, summariseSun, clearCache, resetAll };
+module.exports = { VERSION, createServer, assetLinks, ANDROID_PACKAGE_DEFAULT, parsePskXml, parseMyReportsXml, locatorToLatLon, latestByTime, summariseSun, clearCache, resetAll };

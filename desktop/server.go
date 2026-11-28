@@ -51,7 +51,10 @@ type Config struct {
 	UpdateAssets string // where release files may come from (tests only; default HamShack's GitHub releases)
 	TestHooks    bool   // /api/test/reset and /api/test/advance
 	Desktop      bool   // only answer to localhost, and allow /api/quit
-	Quit         func() // called by /api/quit
+	// The Android app (Play Store): served at /.well-known/assetlinks.json. See assetlinks.go.
+	AndroidPackage string // ANDROID_PACKAGE (default io.github.tecspypie.hamshack)
+	AndroidCerts   string // ANDROID_CERT_SHA256: comma-separated SHA-256 fingerprints; none means 404
+	Quit           func() // called by /api/quit
 }
 
 func defaultConfig() Config {
@@ -282,6 +285,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		sendJSON(w, 200, map[string]any{"ok": true, "version": version, "desktop": s.cfg.Desktop,
 			"build": map[string]any{"date": buildDate, "server": "BandWatch.exe", "runtime": runtime.Version(), "platform": runtime.GOOS + "/" + runtime.GOARCH, "started": startedAt.UTC().Format(time.RFC3339)}}, nil)
 		return
+	case p == "/.well-known/assetlinks.json":
+		links := assetLinks(s.cfg.AndroidPackage, s.cfg.AndroidCerts)
+		if links == nil {
+			sendJSON(w, 404, errJSON("not found"), nil)
+			return
+		}
+		sendJSON(w, 200, links, map[string]string{"Cache-Control": "public, max-age=300"})
+		return
 	case p == "/api/solar":
 		data, err = s.getSolar()
 	case p == "/api/forecast":
@@ -379,8 +390,8 @@ var mimeTypes = map[string]string{
 }
 
 // Pages served without their .html ending, and files that must be checked for updates on every visit.
-var pages = map[string]string{"": "index.html", "install": "install.html", "decodes": "decodes.html", "help": "help.html"}
-var noCache = map[string]bool{"index.html": true, "install.html": true, "decodes.html": true, "help.html": true, "sw.js": true, "manifest.webmanifest": true}
+var pages = map[string]string{"": "index.html", "install": "install.html", "decodes": "decodes.html", "help": "help.html", "privacy": "privacy.html"}
+var noCache = map[string]bool{"index.html": true, "install.html": true, "decodes.html": true, "help.html": true, "privacy.html": true, "sw.js": true, "manifest.webmanifest": true}
 
 func (s *Server) sendStatic(w http.ResponseWriter, r *http.Request, p string) {
 	rel := strings.TrimPrefix(p, "/")
