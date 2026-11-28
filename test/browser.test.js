@@ -3353,6 +3353,19 @@ test("3D band scope: off until asked, says it needs the live receiver, then buil
   assert.ok(st.marker >= st.span[0] && st.marker <= st.span[1], "the tuned frequency is on the 3D scope");
   if (process.env.SHOT_3D) await page.locator("#scopeTitle").evaluate((e) => e.scrollIntoView());
   if (process.env.SHOT_3D) await page.screenshot({ path: process.env.SHOT_3D, clip: await (async () => { const a = await page.locator("#scopeTitle").boundingBox(), b = await page.locator("#scope3dBox").boundingBox(); return { x: 0, y: a.y - 8, width: 1200, height: b.y + b.height - a.y + 16 }; })() });
+  // Pop out: the 3D view goes into a window of its own and keeps drawing there; closing it brings it back
+  const [popup] = await Promise.all([page.waitForEvent("popup"), page.click("#scope3dPop")]);
+  await page.waitForFunction(() => scope3d.popView && scope3d.popView.ring.count >= 10, null, { timeout: 10000 });
+  assert.equal(await page.isVisible("#scope3dBox"), false, "not drawn twice");
+  assert.match(await page.textContent("#scope3dMsg"), /in its own window/);
+  assert.equal(await page.textContent("#scope3dPop"), "Back on the page");
+  assert.match(await popup.title(), /3D band scope/);
+  const lit = await popup.evaluate(() => { const c = document.getElementById("c"), d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 16) if (d[i + 3] > 0) n++; return n; });
+  assert.ok(lit > 1000, `the popped-out window draws (${lit})`);
+  if (process.env.SHOT_3D_POP) { await popup.setViewportSize({ width: 960, height: 460 }); await page.waitForTimeout(800); await popup.screenshot({ path: process.env.SHOT_3D_POP }); }
+  await page.click("#scope3dPop");
+  await page.waitForFunction(() => !document.getElementById("scope3dBox").hidden);
+  assert.equal(await page.textContent("#scope3dPop"), "Pop out");
   // Switching it off hides it, and the choice is remembered
   await page.click("#scope3dBtn");
   assert.equal(await page.isVisible("#scope3dBox"), false);
