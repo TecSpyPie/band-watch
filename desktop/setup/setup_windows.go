@@ -215,3 +215,14 @@ func checkSmartAppControl(silent bool) {
 func openBandWatch(dest string) {
 	_ = hidden(exec.Command("cmd", "/c", "start", "", "/min", filepath.Join(dest, "start-bandwatch.bat"))).Start()
 }
+
+// stopClearRX closes a running ClearRX before its files are replaced: politely first (ClearRX --stop), then for sure.
+func stopClearRX(dest string) {
+	for _, exe := range []string{filepath.Join(dest, "ClearRX", "ClearRX.exe"), filepath.Join(dest, "ClearRX.exe")} {
+		if fileExists(exe) {
+			_ = hidden(exec.Command(exe, "--stop")).Run()
+		}
+	}
+	time.Sleep(500 * time.Millisecond)
+	_ = hidden(exec.Command("taskkill", "/im", "ClearRX.exe", "/f")).Run()
+}

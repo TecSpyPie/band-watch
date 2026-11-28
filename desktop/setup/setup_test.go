@@ -123,3 +123,30 @@ func TestInstalledVersion(t *testing.T) {
 		t.Error(got)
 	}
 }
+
+// The HamShack and ClearRX installer: ClearRX goes in its own folder, and ClearRX's settings and a running ClearRX's
+// leftovers are dealt with, not lost.
+func TestWriteFilesWithClearRX(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "BandWatch")
+	os.MkdirAll(filepath.Join(dest, "ClearRX"), 0o755)
+	os.WriteFile(filepath.Join(dest, "ClearRX", "clearrx-settings.json"), []byte(`{"keep":"me"}`), 0o644)
+	os.WriteFile(filepath.Join(dest, "ClearRX", "ClearRX.exe"), []byte("old"), 0o644)
+	files := map[string][]byte{"BandWatch.exe": []byte("hs"), "ClearRX/ClearRX.exe": []byte("new clearrx"), "ClearRX/README-ClearRX.txt": []byte("readme")}
+	if err := writeFiles(dest, files); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(filepath.Join(dest, "ClearRX", "ClearRX.exe")); string(b) != "new clearrx" {
+		t.Error("ClearRX.exe not updated")
+	}
+	if b, _ := os.ReadFile(filepath.Join(dest, "ClearRX", "clearrx-settings.json")); string(b) != `{"keep":"me"}` {
+		t.Error("ClearRX's settings were touched")
+	}
+	if withClearRX() {
+		t.Error("the test build is the HamShack-only installer")
+	}
+	bundle = "clearrx"
+	defer func() { bundle = "" }()
+	if !withClearRX() {
+		t.Error("bundle clearrx should carry ClearRX")
+	}
+}

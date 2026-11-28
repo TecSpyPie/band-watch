@@ -3,10 +3,11 @@
 #   dist/BandWatch-Windows.zip       (BandWatch.exe, install.bat and the Node.js copy)
 #   dist/BandWatch-Setup.exe         (the one-file installer)
 #   dist/BandWatch-Setup-<ver>.exe   (the same, named with its version)
+#   dist/BandWatch-ClearRX-Setup.exe (HamShack and ClearRX in one installer, also with -<ver>)
 set -eu
 cd "$(dirname "$0")/.."
 VERSION=$(node -p 'require("./package.json").version')
-[ -f desktop/build/BandWatch.exe ] && [ -f "desktop/build/BandWatch-Setup-$VERSION.exe" ] || { echo "Build first: sh desktop/build.sh && sh desktop/build-setup.sh"; exit 1; }
+[ -f desktop/build/BandWatch.exe ] && [ -f "desktop/build/BandWatch-Setup-$VERSION.exe" ] && [ -f "desktop/build/BandWatch-ClearRX-Setup-$VERSION.exe" ] || { echo "Build first: sh desktop/build.sh && sh desktop/build-setup.sh"; exit 1; }
 T=$(mktemp -d)
 W="$T/BandWatch-Windows"
 mkdir -p "$W/app/server"
@@ -34,6 +35,9 @@ mv "$T/ClearRX-Windows.zip" dist/
 tr -d '\r\n' < clearrx/VERSION > dist/clearrx-version.txt
 cp "desktop/build/BandWatch-Setup-$VERSION.exe" dist/
 cp "desktop/build/BandWatch-Setup-$VERSION.exe" dist/BandWatch-Setup.exe
+# HamShack and ClearRX together in one installer
+cp "desktop/build/BandWatch-ClearRX-Setup-$VERSION.exe" dist/
+cp "desktop/build/BandWatch-ClearRX-Setup-$VERSION.exe" dist/BandWatch-ClearRX-Setup.exe
 rm -rf "$T"
 # The source of the rtl-sdr version included (GPL-2.0), attached to the release beside the binaries.
 RTL_SRC=rtl-sdr-blog-V1.4.0-source.tar.gz
@@ -42,5 +46,5 @@ if ! curl -fsSL --retry 3 -o "dist/$RTL_SRC" "https://github.com/rtlsdrblog/rtl-
   if [ "${CI:-}" = true ]; then echo "Couldn't fetch the rtl-sdr source"; exit 1; fi
   echo "(rtl-sdr source not fetched: only needed for a release)"
 fi
-(cd dist && sha256sum BandWatch-Setup.exe "BandWatch-Setup-$VERSION.exe" BandWatch-Windows.zip ClearRX-Windows.zip clearrx-version.txt > SHA256SUMS.txt)
+(cd dist && sha256sum BandWatch-Setup.exe "BandWatch-Setup-$VERSION.exe" BandWatch-ClearRX-Setup.exe "BandWatch-ClearRX-Setup-$VERSION.exe" BandWatch-Windows.zip ClearRX-Windows.zip clearrx-version.txt > SHA256SUMS.txt)
 ls -l dist

@@ -139,34 +139,66 @@ function scopeLiveFeed() {
 const scope3d = {
   on: (() => { try { return localStorage.getItem("bw-scope-3d") === "on"; } catch { return false; } })(),
   view: null,
+  pop: null, // the popped-out window, if there is one
+  popView: null,
 };
 
-/** A new live row for the 3D view, when it's open and on screen. */
+/** Is the 3D view in its own window right now? */
+const scope3dPopped = () => Boolean(scope3d.pop && !scope3d.pop.closed);
+
+/** A new live row for the 3D view, when it's open: on the page (if on screen) and in its own window. */
 function scope3dFeed(rel, lo, hi) {
   if (!scope3d.on || typeof RfScope3D === "undefined") return;
   const box = $("scope3dBox");
   if (!box) return;
-  if (box.hidden) { renderScope3d(); if (box.hidden) return; } // the receiver has just gone live
-  if (box.offsetParent === null) return;
-  if (!scope3d.view) scope3d.view = new RfScope3D.RfScope3DView($("scope3d"));
-  const v = scope3d.view, now = performance.now();
-  v.setSpan(lo, hi);
-  v.marker = typeof listen !== "undefined" && listen.kHz ? listen.kHz / 1000 : null;
-  v.push(rel, (typeof sdr !== "undefined" && sdr.range) || 60, now);
-  v.draw(now);
+  if (scope3d.pop && scope3d.pop.closed) { scope3d.pop = scope3d.popView = null; renderScope3d(); }
+  const views = [];
+  if (scope3dPopped()) views.push(scope3d.popView);
+  else {
+    if (box.hidden) { renderScope3d(); if (box.hidden) return; } // the receiver has just gone live
+    if (box.offsetParent === null) return;
+    if (!scope3d.view) scope3d.view = new RfScope3D.RfScope3DView($("scope3d"));
+    views.push(scope3d.view);
+  }
+  const now = performance.now(), marker = typeof listen !== "undefined" && listen.kHz ? listen.kHz / 1000 : null;
+  const range = (typeof sdr !== "undefined" && sdr.range) || 60;
+  for (const v of views) { v.setSpan(lo, hi); v.marker = marker; v.push(rel, range, now); v.draw(now); }
 }
 
-/** The 3D view's button and its message. */
+/** Open the 3D view in a window of its own (to put on another screen, or make big). HamShack keeps drawing into it. */
+function popOutScope3d() {
+  if (scopeDPoppedFocus()) return;
+  const w = window.open("", "hamshack-3d-scope", "width=960,height=460");
+  if (!w) { $("scope3dMsg").textContent = "Your browser blocked the window: allow pop-ups for HamShack, then press Pop out again."; return; }
+  const css = getComputedStyle(document.documentElement), vars = ["--wfbg", "--cool", "--warm", "--text", "--muted", "--bg"];
+  const bg = css.getPropertyValue("--wfbg").trim() || "#0b1a21";
+  w.document.open();
+  w.document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>3D band scope · HamShack by M0GLP &amp; M3VRV</title>
+<style>:root{${vars.map((v) => `${v}:${css.getPropertyValue(v).trim()}`).join(";")}}html,body{margin:0;height:100%;background:${bg};overflow:hidden}
+canvas{display:block;width:100vw;height:100vh}</style></head><body><canvas id="c" role="img" aria-label="3D band scope: the band from left to right, the last few seconds going back, each signal's height above the noise. The tuned frequency is the bright line."></canvas></body></html>`);
+  w.document.close();
+  scope3d.pop = w;
+  scope3d.popView = new RfScope3D.RfScope3DView(w.document.getElementById("c"));
+  w.addEventListener("resize", () => { if (scope3d.popView) scope3d.popView.geo = null; });
+  w.addEventListener("pagehide", () => setTimeout(() => { if (scope3d.pop && scope3d.pop.closed) { scope3d.pop = scope3d.popView = null; renderScope3d(); } }, 50));
+  renderScope3d();
+}
+function scopeDPoppedFocus() { if (scope3dPopped()) { scope3d.pop.focus(); return true; } return false; }
+
+/** The 3D view's buttons and its message. */
 function renderScope3d() {
-  const btn = $("scope3dBtn"), box = $("scope3dBox"), msg = $("scope3dMsg");
+  const btn = $("scope3dBtn"), box = $("scope3dBox"), msg = $("scope3dMsg"), pop = $("scope3dPop");
   if (!btn) return;
-  const live = scopeIsLive();
+  const live = scopeIsLive(), popped = scope3dPopped();
   btn.setAttribute("aria-pressed", String(scope3d.on));
   btn.textContent = scope3d.on ? "3D view: on" : "3D view";
-  box.hidden = !(scope3d.on && live);
+  pop.hidden = !scope3d.on;
+  pop.textContent = popped ? "Back on the page" : "Pop out";
+  box.hidden = !(scope3d.on && live) || popped;
   msg.textContent = !scope3d.on ? ""
-    : live ? "The band left to right, the last few seconds going back, signals rising above the noise."
-      : "3D view shows your RTL-SDR live: start the live scope to see it.";
+    : !live ? "3D view shows your RTL-SDR live: start the live scope to see it."
+      : popped ? "The 3D view is in its own window."
+        : "The band left to right, the last few seconds going back, signals rising above the noise.";
   if (!box.hidden && scope3d.view) { scope3d.view.geo = null; scope3d.view.draw(performance.now()); }
 }
 
@@ -176,9 +208,16 @@ function setupScope3d() {
   btn.addEventListener("click", () => {
     scope3d.on = !scope3d.on;
     try { localStorage.setItem("bw-scope-3d", scope3d.on ? "on" : "off"); } catch { /* private mode */ }
+    if (!scope3d.on && scope3dPopped()) scope3d.pop.close();
+    if (!scope3d.on) scope3d.pop = scope3d.popView = null;
     renderScope3d();
   });
+  $("scope3dPop").addEventListener("click", () => {
+    if (scope3dPopped()) { scope3d.pop.close(); scope3d.pop = scope3d.popView = null; renderScope3d(); }
+    else popOutScope3d();
+  });
   window.addEventListener("resize", () => { if (scope3d.view) scope3d.view.geo = null; });
+  window.addEventListener("pagehide", () => { if (scope3dPopped()) scope3d.pop.close(); });
   renderScope3d();
 }
 

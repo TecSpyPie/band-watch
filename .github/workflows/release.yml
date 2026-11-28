@@ -124,7 +124,7 @@ jobs:
         if: vars.SIGNPATH_ORGANIZATION_ID != ''
         run: cp desktop/build/signed/BandWatch.exe desktop/build/BandWatch.exe
 
-      - name: Build BandWatch-Setup.exe (with BandWatch.exe inside)
+      - name: Build BandWatch-Setup.exe and BandWatch-ClearRX-Setup.exe (with BandWatch.exe inside)
         run: sh desktop/build-setup.sh
 
       - name: Upload the installer for signing
@@ -161,6 +161,8 @@ jobs:
           ### Download
           - **Windows:** `BandWatch-Setup.exe`: run it and answer Yes. It installs to `C:\BandWatch`
             for you only, no administrator rights needed.
+          - **Windows, HamShack and ClearRX together:** `BandWatch-ClearRX-Setup.exe`: one installer for both. ClearRX
+            goes in `C:\BandWatch\ClearRX` with its own shortcut, and your ClearRX settings are kept.
           - **Windows with Smart App Control on:** `BandWatch-Windows.zip`, then `install.bat`.
           - **ClearRX by M3VRV & King Coder** (radio audio processor, Windows): `ClearRX-Windows.zip`: unzip it into
             `C:\BandWatch` (it makes the `ClearRX` folder) and run `ClearRX\ClearRX.exe`.
@@ -192,8 +194,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$TAG" --target "$GITHUB_SHA" --title "HamShack ${TAG#v}" --notes-file notes.md \
-            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/ClearRX-Windows.zip dist/clearrx-version.txt dist/SHA256SUMS.txt \
+            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-ClearRX-Setup.exe dist/BandWatch-ClearRX-Setup-*.exe dist/BandWatch-Windows.zip dist/ClearRX-Windows.zip dist/clearrx-version.txt dist/SHA256SUMS.txt \
             dist/rtl-sdr-blog-*-source.tar.gz \
           || gh release upload "$TAG" --clobber \
-            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-Windows.zip dist/ClearRX-Windows.zip dist/clearrx-version.txt dist/SHA256SUMS.txt \
+            dist/BandWatch-Setup.exe dist/BandWatch-Setup-*.exe dist/BandWatch-ClearRX-Setup.exe dist/BandWatch-ClearRX-Setup-*.exe dist/BandWatch-Windows.zip dist/ClearRX-Windows.zip dist/clearrx-version.txt dist/SHA256SUMS.txt \
             dist/rtl-sdr-blog-*-source.tar.gz

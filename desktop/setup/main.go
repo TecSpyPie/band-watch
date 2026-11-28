@@ -27,6 +27,7 @@ var payload []byte
 
 var version = "dev"
 var buildDate = "" // set at build time (UTC, RFC 3339)
+var bundle = ""    // "clearrx": BandWatch-ClearRX-Setup.exe, which also installs ClearRX in <install folder>\ClearRX
 
 // builtText is the build date for people: "16 Nov 2026, 20:50 UTC".
 func builtText() string {
@@ -45,7 +46,16 @@ func versionText() string {
 	return version + " (built " + builtText() + ")"
 }
 
-const title = "HamShack by M0GLP & M3VRV - Setup"
+var title = "HamShack by M0GLP & M3VRV - Setup"
+
+// withClearRX: this installer also carries ClearRX.
+func withClearRX() bool { return bundle == "clearrx" }
+
+func init() {
+	if withClearRX() {
+		title = "HamShack and ClearRX - Setup"
+	}
+}
 
 // Files earlier versions left in the install folder that are no longer used.
 var oldFiles = []string{"server.js", "qrz.js", "clock.js", "package.json", "bandwatch-status.ps1"}
@@ -116,6 +126,12 @@ func install(dest string, silent, chosen bool) error {
 		}
 	}
 
+	// ClearRX too, if this installer carries it (its settings, clearrx-settings.json, aren't in the payload, so they stay)
+	if _, ok := files["ClearRX/ClearRX.exe"]; ok {
+		stopClearRX(dest)
+		_ = os.Remove(filepath.Join(dest, "ClearRX", "ClearRX.exe.old"))
+	}
+
 	if err := os.MkdirAll(dest, 0o755); err != nil {
 		return fmt.Errorf("couldn't create %s: %v", dest, err)
 	}
@@ -138,7 +154,11 @@ func install(dest string, silent, chosen bool) error {
 	removeOldCopy(dest, silent)
 	checkSmartAppControl(silent)
 
-	if silent || askYesNo(title, "HamShack by M0GLP & M3VRV is installed.\n\nUse the \"HamShack by M0GLP & M3VRV\" shortcut on your desktop or in the Start menu. It opens in your web browser.\n\nOpen HamShack now?", true) {
+	done := "HamShack by M0GLP & M3VRV is installed.\n\nUse the \"HamShack by M0GLP & M3VRV\" shortcut on your desktop or in the Start menu. It opens in your web browser."
+	if withClearRX() {
+		done = "HamShack by M0GLP & M3VRV and ClearRX are installed.\n\nUse the \"HamShack by M0GLP & M3VRV\" and \"ClearRX by M3VRV\" shortcuts on your desktop or in the Start menu. ClearRX updates itself with the Update button on its toolbar."
+	}
+	if silent || askYesNo(title, done+"\n\nOpen HamShack now?", true) {
 		openBandWatch(dest)
 	}
 	return nil
